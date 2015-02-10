@@ -33,11 +33,15 @@
 
 /**
  * @file aa241x_fw_control_main.cpp
- * Implementation of a generic attitude controller based on classic orthogonal PIDs.
+ *
+ * Wrapper for the flight controller to be designed for
+ * Stanford's AA241X course.  Fixed wing controller based on
+ * the fw_att_control file in the original PX4 source code.
  *
  * @author Lorenz Meier 	<lm@inf.ethz.ch>
  * @author Thomas Gubler 	<thomasgubler@gmail.com>
  * @author Roman Bapst		<bapstr@ethz.ch>
+ * @author Adrien Perkins	<adrienp@stanford.edu>
  *
  */
 
@@ -64,7 +68,10 @@
 #include <uORB/topics/vehicle_control_mode.h>
 #include <uORB/topics/parameter_update.h>
 #include <uORB/topics/vehicle_global_position.h>
+#include <uORB/topics/vehicle_local_position.h>
 #include <uORB/topics/vehicle_status.h>
+#include <uORB/topics/sensor_combined.h>
+#include <uORB/topics/battery_status.h>
 #include <systemlib/param/param.h>
 #include <systemlib/err.h>
 #include <systemlib/pid/pid.h>
@@ -75,9 +82,10 @@
 
 #include <platforms/px4_defines.h>
 
-#include "aa241x_fw_control_params.h"
-#include "aa241x_fw_control.h"
+
 #include "aa241x_fw_aux.h"
+#include "aa241x_fw_control.h"
+#include "aa241x_fw_control_params.h"
 
 /**
  * Fixedwing attitude control app start / stop handling function
@@ -130,7 +138,10 @@ private:
 	int 	_params_sub;			/**< notification of parameter updates */
 	int 	_manual_sub;			/**< notification of manual control updates */
 	int		_global_pos_sub;		/**< global position subscription */
+	int		_local_pos_sub;			/**< local position subscription */
 	int		_vehicle_status_sub;	/**< vehicle status subscription */
+	int		_sensor_combined_sub;	/**< sensor data subscription */
+	int		_battery_status_sub;	/**< battery status subscription */
 
 	// the data that will be published from this controller
 	orb_advert_t	_rate_sp_pub;			/**< rate setpoint publication */
@@ -142,44 +153,42 @@ private:
 
 
 	// structures of data that comes in from the uORB subscriptions
-	struct vehicle_attitude_s			_att;			/**< vehicle attitude */
-	struct accel_report					_accel;			/**< body frame accelerations */
-	struct vehicle_rates_setpoint_s		_rates_sp;		/**< attitude rates setpoint TODO: potentially remove*/
-	struct manual_control_setpoint_s	_manual;		/**< r/c channel data */
-	struct airspeed_s					_airspeed;		/**< airspeed */
-	struct vehicle_control_mode_s		_vcontrol_mode;	/**< vehicle control mode */
-	struct actuator_controls_s			_actuators;		/**< actuator control inputs */
-	struct vehicle_global_position_s	_global_pos;	/**< global position */
-	struct vehicle_status_s				_vehicle_status;/**< vehicle status */
+	struct vehicle_attitude_s			_att;				/**< vehicle attitude */
+	struct accel_report					_accel;				/**< body frame accelerations */
+	struct vehicle_rates_setpoint_s		_rates_sp;			/**< attitude rates setpoint TODO: potentially remove */
+	struct vehicle_attitude_setpoint_s	_att_sp;			/**< attitude setpoint (for debugging help */
+	struct manual_control_setpoint_s	_manual;			/**< r/c channel data */
+	struct airspeed_s					_airspeed;			/**< airspeed */
+	struct vehicle_control_mode_s		_vcontrol_mode;		/**< vehicle control mode */
+	struct actuator_controls_s			_actuators;			/**< actuator control inputs */
+	struct vehicle_global_position_s	_global_pos;		/**< global position */
+	struct vehicle_local_position_s		_local_pos;			/**< local position */
+	struct vehicle_status_s				_vehicle_status;	/**< vehicle status */
+	struct sensor_combined_s			_sensor_combined;	/**< raw / minimal filtered sensor data (for some accelerations) */
+	struct battery_status_s				_battery_status;	/**< battery status */
 
 	// some flags
 	bool		_setpoint_valid;		/**< flag if the position control setpoint is valid */
 	bool		_debug;					/**< if set to true, print debug output */
 
+
+	// general RC parameters
 	struct {
-		// TODO: add custom parameter values here (will all be floats)
-
-
 		float trim_roll;
 		float trim_pitch;
 		float trim_yaw;
-
-
 	}		_parameters;			/**< local copies of interesting parameters */
 
+	// handles for general RC parameters
 	struct {
-
-		// TODO: add custom parameter handles here
-
 		param_t trim_roll;
 		param_t trim_pitch;
 		param_t trim_yaw;
-
 	}		_parameter_handles;		/**< handles for interesting parameters */
 
 
-	// TODO: these structs should maybe belong to a header file...
-	struct aa_params			_aa_parameters;
+	// handles for custom parameters
+	// NOTE: the struct for the parameters themselves can be found in the aa241x_fw_aux file
 	struct aa_param_handles		_aa_parameter_handles;
 
 
@@ -221,14 +230,34 @@ private:
 	void		global_pos_poll();
 
 	/**
+	 * Check for local position updates.
+	 */
+	void		local_pos_poll();
+
+	/**
 	 * Check for vehicle status updates.
 	 */
 	void		vehicle_status_poll();
 
 	/**
+	 * Check for combined sensor data updates.
+	 */
+	void		sensor_combined_poll();
+
+	/**
+	 * Check for battery status updates.
+	 */
+	void		battery_status_poll();
+
+	/**
 	 * Set all the aux variables needed for control law.
 	 */
 	void 		set_aux_values();
+
+	/**
+	 * Set the actuator output values from the control law.
+	 */
+	void		set_actuators();
 
 	/**
 	 * Shim for calling task_main from task_create.
@@ -268,7 +297,10 @@ FixedwingControl::FixedwingControl() :
 	_params_sub(-1),
 	_manual_sub(-1),
 	_global_pos_sub(-1),
+	_local_pos_sub(-1),
 	_vehicle_status_sub(-1),
+	_sensor_combined_sub(-1),
+	_battery_status_sub(-1),
 
 /* publications */
 	_rate_sp_pub(-1),
@@ -286,12 +318,16 @@ FixedwingControl::FixedwingControl() :
 	_att = {};
 	_accel = {};
 	_rates_sp = {};
+	_att_sp = {};
 	_manual = {};
 	_airspeed = {};
 	_vcontrol_mode = {};
 	_actuators = {};
 	_global_pos = {};
+	_local_pos = {};
 	_vehicle_status = {};
+	_sensor_combined = {};
+	_battery_status = {};
 
 	// initialize the global remote parameters
 	_parameter_handles.trim_roll = param_find("TRIM_ROLL");
@@ -299,14 +335,14 @@ FixedwingControl::FixedwingControl() :
 	_parameter_handles.trim_yaw = param_find("TRIM_YAW");
 
 	// initialize the aa241x control parameters
-	aa_parameters_init(&_aa_parameter_handles);
+	//aa_parameters_init(&_aa_parameter_handles);
 
 
 	// fetch initial remote parameters
 	parameters_update();
 
 	// fetch initial aa241x control parameters
-	aa_parameters_update(&_aa_parameter_handles, &_aa_parameters);
+	//aa_parameters_update(&_aa_parameter_handles, &aa_parameters);
 }
 
 FixedwingControl::~FixedwingControl()
@@ -331,10 +367,6 @@ FixedwingControl::~FixedwingControl()
 		} while (_control_task != -1);
 	}
 
-	perf_free(_loop_perf);
-	perf_free(_nonfinite_input_perf);
-	perf_free(_nonfinite_output_perf);
-
 	att_control::g_control = nullptr;
 }
 
@@ -349,7 +381,7 @@ FixedwingControl::parameters_update()
 	param_get(_parameter_handles.trim_yaw, &(_parameters.trim_yaw));
 
 	// update the aa241x control parameters
-	aa_parameters_update(&_aa_parameter_handles, &_aa_parameters);
+	//aa_parameters_update(&_aa_parameter_handles, &aa_parameters);
 
 	return OK;
 }
@@ -417,6 +449,18 @@ FixedwingControl::global_pos_poll()
 }
 
 void
+FixedwingControl::local_pos_poll()
+{
+	/* check if there is a new local position */
+	bool local_pos_updated;
+	orb_check(_local_pos_sub, &local_pos_updated);
+
+	if (local_pos_updated) {
+		orb_copy(ORB_ID(vehicle_local_position), _local_pos_sub, &_local_pos);
+	}
+}
+
+void
 FixedwingControl::vehicle_status_poll()
 {
 	/* check if there is new status information */
@@ -427,22 +471,52 @@ FixedwingControl::vehicle_status_poll()
 		orb_copy(ORB_ID(vehicle_status), _vehicle_status_sub, &_vehicle_status);
 		/* set correct uORB ID, depending on if vehicle is VTOL or not */
 		if (!_rates_sp_id) {
-			if (_vehicle_status.is_vtol) {
-				_rates_sp_id = ORB_ID(fw_virtual_rates_setpoint);
-				_actuators_id = ORB_ID(actuator_controls_virtual_fw);
-			} else {
-				_rates_sp_id = ORB_ID(vehicle_rates_setpoint);
-				_actuators_id = ORB_ID(actuator_controls_0);
-			}
+			_rates_sp_id = ORB_ID(vehicle_rates_setpoint);
+			_actuators_id = ORB_ID(actuator_controls_0);
 		}
 	}
 }
 
+void
+FixedwingControl::sensor_combined_poll()
+{
+	/* check if there is new sensor combined data */
+	bool sensor_combined_updated;
+	orb_check(_sensor_combined_sub, &sensor_combined_updated);
+
+	if (sensor_combined_updated) {
+		orb_copy(ORB_ID(sensor_combined), _sensor_combined_sub, &_sensor_combined);
+	}
+}
+
+
+void
+FixedwingControl::battery_status_poll()
+{
+	/* check if there is a new battery status */
+	bool battery_status_updated;
+	orb_check(_battery_status_sub, &battery_status_updated);
+
+	if (battery_status_updated) {
+		orb_copy(ORB_ID(battery_status), _battery_status_sub, &_battery_status);
+	}
+}
 
 
 void
 FixedwingControl::set_aux_values()
 {
+
+	// set the euler angles and rates
+	roll = _att.roll;
+	pitch = _att.pitch;
+	yaw = _att.yaw;
+
+	// set the angular rates
+	roll_rate = _att.rollspeed;
+	pitch_rate = _att.pitchspeed;
+	yaw_rate = _att.yawspeed;
+
 
 	// calculate the body velocities
 	speed_body_u = 0.0f;		// set them to 0 just in case unable to do calculation
@@ -458,16 +532,111 @@ FixedwingControl::set_aux_values()
 		}
 	}
 
-	// set the euler angles and rates
-	roll = _att.roll;
-	pitch = _att.pitch;
-	yaw = _att.yaw;
+	// body accelerations [m/s^2]
+	accel_body_x = _sensor_combined.accelerometer_m_s2[0];
+	accel_body_y = _sensor_combined.accelerometer_m_s2[1];
+	accel_body_z = _sensor_combined.accelerometer_m_s2[2];
 
-	roll_rate = _att.rollspeed;
-	pitch_rate = _att.pitchspeed;
-	yaw_rate = _att.yawspeed;
+	// velocities in the NED frame [m/s]
+	// TODO: maybe use local position...
+	vel_N = _global_pos.vel_n;
+	vel_E = _global_pos.vel_e;
+	vel_D = _global_pos.vel_d;
+
+	// local position in NED frame [m] from center of lake lag
+	position_N = 0.0f;
+	position_E = 0.0f;
+	position_D = 0.0f;
+	if (_local_pos.xy_valid) {		// only copy the data if it is valid
+		position_N = _local_pos.x;
+		position_E = _local_pos.y;
+	}
+	if (_local_pos.z_valid) {
+		position_D = _local_pos.z;
+	}
+
+	// TODO: set the reference point of the local position information to be the center of the lake
 
 
+	// ground course and speed
+	// TODO: maybe use local position....
+	ground_speed = sqrtf(_global_pos.vel_n * _global_pos.vel_n + _global_pos.vel_e * _global_pos.vel_e);		// speed relative to ground in [m/s]
+	ground_course = _global_pos.yaw; 	// this is course over ground (direction of velocity relative to North in [rad])
+
+	// airspeed [m/s]
+	air_speed = _airspeed.true_airspeed_m_s;		// speed relative to air in [m/s] (measured by pitot tube)
+
+	// status check
+	//TODO: gps_ok; 			// boolean as to whether or not the gps data coming in is valid
+
+	// battery info
+	battery_voltage = _battery_status.voltage_filtered_v;
+	battery_current = _battery_status.current_a;
+	//TODO: battery_energy_consumed;	// battery energy consumed since last boot [J] = [VAs]
+	//TODO: mission_energy_consumed;	// battery energy consumed since the start of the mission [J]
+
+
+	// manual control inputs
+	// input for each of the controls from the remote control, ranging from TODO: figure out range
+	man_roll_in = _manual.y;
+	man_pitch_in = _manual.x;
+	man_yaw_in = _manual.r;
+	man_throttle_in = _manual.z;
+
+	// trim conditions (from remote control)
+	roll_trim = _parameters.trim_roll;
+	pitch_trim = _parameters.trim_pitch;
+	yaw_trim = _parameters.trim_yaw;
+
+	// time information
+	timestamp = hrt_absolute_time();
+	utc_timestamp = _global_pos.time_utc_usec;
+
+}
+
+void
+FixedwingControl::set_actuators()
+{
+	// do some safety checking to ensure that all the values are within the required bounds of -1..1 or 0..1
+	// check roll
+	if (roll_servo_out > 1) {
+		roll_servo_out = 1.0f;
+	}
+	if (roll_servo_out < -1) {
+		roll_servo_out = -1.0f;
+	}
+
+	// check pitch
+	if (pitch_servo_out > 1) {
+		pitch_servo_out = 1.0f;
+	}
+	if (pitch_servo_out < -1) {
+		pitch_servo_out = -1.0f;
+	}
+
+	// check yaw
+	if (yaw_servo_out > 1) {
+		yaw_servo_out = 1.0f;
+	}
+	if (yaw_servo_out < -1) {
+		yaw_servo_out = -1.0f;
+	}
+
+	// check throttle
+	if (throttle_servo_out > 1) {
+		throttle_servo_out = 1.0f;
+	}
+	if (throttle_servo_out < 0) {
+		throttle_servo_out = 0.0f;
+	}
+
+
+	// set the actuators
+	_actuators.control[0] = (isfinite(roll_servo_out)) ? roll_servo_out : roll_trim;
+	_actuators.control[1] = (isfinite(roll_servo_out)) ? pitch_servo_out : pitch_trim;
+	_actuators.control[2] = (isfinite(roll_servo_out)) ? yaw_servo_out : yaw_trim;
+	_actuators.control[3] = (isfinite(roll_servo_out)) ? throttle_servo_out : 0.0f;
+	_actuators.control[4] = _manual.flaps;
 }
 
 
@@ -495,7 +664,10 @@ FixedwingControl::task_main()
 	_params_sub = orb_subscribe(ORB_ID(parameter_update));
 	_manual_sub = orb_subscribe(ORB_ID(manual_control_setpoint));
 	_global_pos_sub = orb_subscribe(ORB_ID(vehicle_global_position));
+	_local_pos_sub = orb_subscribe(ORB_ID(vehicle_local_position));
 	_vehicle_status_sub = orb_subscribe(ORB_ID(vehicle_status));
+	_sensor_combined_sub = orb_subscribe(ORB_ID(sensor_combined));
+	_battery_status_sub = orb_subscribe(ORB_ID(battery_status));
 
 	/* rate limit vehicle status updates to 5Hz */
 	orb_set_interval(_vcontrol_mode_sub, 200);
@@ -509,7 +681,11 @@ FixedwingControl::task_main()
 	vehicle_accel_poll();
 	vehicle_control_mode_poll();
 	vehicle_manual_poll();
+	global_pos_poll();	// TODO: might remove this....
+	local_pos_poll();
 	vehicle_status_poll();
+	sensor_combined_poll();
+	battery_status_poll();
 
 	/* wakeup source(s) */
 	struct pollfd fds[2];
@@ -538,8 +714,6 @@ FixedwingControl::task_main()
 			warn("poll error %d, %d", pret, errno);
 			continue;
 		}
-
-		perf_begin(_loop_perf);
 
 		/* only update parameters if they changed */
 		if (fds[0].revents & POLLIN) {
@@ -573,8 +747,10 @@ FixedwingControl::task_main()
 			vehicle_control_mode_poll();
 			vehicle_manual_poll();
 			global_pos_poll();
+			local_pos_poll();
 			vehicle_status_poll();
-
+			sensor_combined_poll();
+			battery_status_poll();
 
 
 			if (_vcontrol_mode.flag_control_auto_enabled) {
@@ -587,6 +763,14 @@ FixedwingControl::task_main()
 				// TODO: potentially add stabilize and other modes back in....
 				flight_control();
 
+				// set the user desired servo positions (that were set in the flight control function)
+				set_actuators();
+
+				// set the attitude setpoint values
+				_att_sp.roll_body = (isfinite(roll_desired)) ? roll_desired : 0.0f;
+				_att_sp.pitch_body = (isfinite(pitch_desired)) ? pitch_desired : 0.0f;
+				_att_sp.yaw_body = (isfinite(yaw_desired)) ? yaw_desired : 0.0f;
+				_att_sp.thrust = (isfinite(throttle_desired)) ? throttle_desired : 0.0f;
 
 
 			} else { // have manual control of the plane
@@ -615,6 +799,13 @@ FixedwingControl::task_main()
 				orb_publish(_actuators_id, _actuators_0_pub, &_actuators);
 			} else if (_actuators_id) {
 				_actuators_0_pub= orb_advertise(_actuators_id, &_actuators);
+			}
+
+			/* publish the attitude setpoint (the targeted roll, pitch and yaw angles) */
+			if (_attitude_sp_pub > 0) {
+				orb_publish(ORB_ID(vehicle_attitude_setpoint), _attitude_sp_pub, &_att_sp);
+			} else {
+				_attitude_sp_pub = orb_advertise(ORB_ID(vehicle_attitude_setpoint), &_att_sp);
 			}
 
 		}
