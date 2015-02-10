@@ -4,6 +4,7 @@
  *  Created on: Feb 9, 2015
  *      Author: adrienp
  */
+#pragma once
 
 #ifndef AA241X_FW_CONTROL_MAIN_H_
 #define AA241X_FW_CONTROL_MAIN_H_
