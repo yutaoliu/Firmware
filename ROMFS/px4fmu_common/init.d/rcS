@@ -488,7 +488,8 @@ then
 		# Start standard fixedwing apps
 		if [ $LOAD_DAPPS == yes ]
 		then
-			sh /etc/init.d/rc.fw_apps
+			#sh /etc/init.d/rc.fw_apps
+			sh /etc/init.d/rc.fw_aa241x
 		fi
 	fi
 
