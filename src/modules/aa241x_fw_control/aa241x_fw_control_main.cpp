@@ -85,7 +85,6 @@
 
 #include "aa241x_fw_aux.h"
 #include "aa241x_fw_control.h"
-#include "aa241x_fw_control_params.h"
 
 /**
  * Fixedwing attitude control app start / stop handling function
@@ -335,14 +334,14 @@ FixedwingControl::FixedwingControl() :
 	_parameter_handles.trim_yaw = param_find("TRIM_YAW");
 
 	// initialize the aa241x control parameters
-	//aa_parameters_init(&_aa_parameter_handles);
+	aa_parameters_init(&_aa_parameter_handles);
 
 
 	// fetch initial remote parameters
 	parameters_update();
 
 	// fetch initial aa241x control parameters
-	//aa_parameters_update(&_aa_parameter_handles, &aa_parameters);
+	aa_parameters_update(&_aa_parameter_handles, &aa_parameters);
 }
 
 FixedwingControl::~FixedwingControl()
@@ -381,7 +380,7 @@ FixedwingControl::parameters_update()
 	param_get(_parameter_handles.trim_yaw, &(_parameters.trim_yaw));
 
 	// update the aa241x control parameters
-	//aa_parameters_update(&_aa_parameter_handles, &aa_parameters);
+	aa_parameters_update(&_aa_parameter_handles, &aa_parameters);
 
 	return OK;
 }
