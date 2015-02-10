@@ -36,6 +36,7 @@
  *
  * Definition of parameters for fixedwing example
  */
+#pragma once
 
 #ifndef AA241X_FW_CONTROL_PARAMS_H_
 #define AA241X_FW_CONTROL_PARAMS_H_
