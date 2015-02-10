@@ -44,6 +44,10 @@
 
 #include <systemlib/param/param.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct aa_params {
 	float param_1;
 
@@ -65,7 +69,9 @@ int aa_parameters_init(struct aa_param_handles *h);
  */
 int aa_parameters_update(const struct aa_param_handles *h, struct aa_params *p);
 
-
+#ifdef __cplusplus
+}
+#endif
 
 
 
