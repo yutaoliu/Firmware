@@ -34,6 +34,13 @@ public:
 	 */
 	int		start();
 
+	/**
+	 * Task status
+	 *
+	 * @return	true if the mainloop is running
+	 */
+	bool		task_running() { return _task_running; }
+
 private:
 
 	bool	_task_should_exit;		/**< if true, aa241x mission should exit */
@@ -45,6 +52,7 @@ private:
 	int		_global_pos_sub;		/**< global position subscription */
 	int		_local_pos_sub;			/**< local position subscription */
 	int		_vehicle_status_sub;	/**< vehicle status (navigation mode) subscription */
+	int		_params_sub;			/**< parameters update subscription */
 
 	// structures for subscribed data
 	struct vehicle_control_mode_s		_vcontrol_mode;		/**< vehicle control mode */
@@ -55,19 +63,45 @@ private:
 	struct {
 		float min_alt;
 		float max_alt;
-		float start_alt;
+		float auto_alt;
 		float duration;
+		float max_radius;
+		float timestep;
+		float std;
+		float ctr_lat;
+		float ctr_lon;
+		float ctr_alt;
 	}		_parameters;			/**< local copies of interesting parameters */
 
 	struct {
 		param_t min_alt;
 		param_t max_alt;
-		param_t start_alt;
+		param_t auto_alt;
 		param_t duration;
+		param_t max_radius;
+		param_t timestep;
+		param_t std;
+		param_t ctr_lat;
+		param_t ctr_lon;
+		param_t ctr_alt;
 	}		_parameter_handles;		/**< handles for interesting parameters */
 
 	hrt_abstime _mission_start_time;	/**< timestamp of when entered mission */
+	hrt_abstime	_last_propagation_time;	/**< timestamp of when the last fire propagation was done */
 	bool 		_in_mission;			/**< if true, currently running a mission (fire is spreading) */
+	bool		_can_start;				/**< if false conditions for starting have been violated */
+	bool		_early_termination;		/**< if true terminating mission early, but still need to finish running fire */
+	bool		_mission_failed;		/**< if true terminating mission entirely with a score of 0 */
+	float		_score;					/**< the current mission score */
+
+	enum WIND_DIRECTION {
+		WIND_OTHER = 0,
+		NORTH,
+		EAST,
+		SOUTH,
+		WEST
+	} _wind_direction;					/**< the direction of the wind */
+
 
 	int8_t	_grid[21][21];			/**< the grid that represents the lake */
 
@@ -95,6 +129,11 @@ private:
 	 * Check for vehicle status updates.
 	 */
 	void	vehicle_status_poll();
+
+	/**
+	 * Initialize the mission parameters needed
+	 */
+	void	initialize_mission();
 
 	/**
 	 * Spread the fire at a given time step.
