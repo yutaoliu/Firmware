@@ -267,6 +267,9 @@ private:
 		float magb_pnoise;
 		float eas_noise;
 		float pos_stddev_threshold;
+		float origin_lat;
+		float origin_lon;
+		float origin_alt;
 	}		_parameters;			/**< local copies of interesting parameters */
 
 	struct {
@@ -288,6 +291,9 @@ private:
 		param_t magb_pnoise;
 		param_t eas_noise;
 		param_t pos_stddev_threshold;
+		param_t origin_lat;
+		param_t origin_lon;
+		param_t origin_alt;
 	}		_parameter_handles;		/**< handles for interesting parameters */
 
 	AttPosEKF					*_ekf;
@@ -444,6 +450,9 @@ FixedwingEstimator::FixedwingEstimator() :
 	_parameter_handles.magb_pnoise = param_find("PE_MAGB_PNOISE");
 	_parameter_handles.eas_noise = param_find("PE_EAS_NOISE");
 	_parameter_handles.pos_stddev_threshold = param_find("PE_POSDEV_INIT");
+	_parameter_handles.origin_lat = param_find("PE_CTR_LAT");
+	_parameter_handles.origin_lon = param_find("PE_CTR_LON");
+	_parameter_handles.origin_alt = param_find("PE_CTR_ALT");
 
 	/* fetch initial parameter values */
 	parameters_update();
@@ -543,6 +552,9 @@ FixedwingEstimator::parameters_update()
 	param_get(_parameter_handles.magb_pnoise, &(_parameters.magb_pnoise));
 	param_get(_parameter_handles.eas_noise, &(_parameters.eas_noise));
 	param_get(_parameter_handles.pos_stddev_threshold, &(_parameters.pos_stddev_threshold));
+	param_get(_parameter_handles.origin_lat, &(_parameters.origin_lat));
+	param_get(_parameter_handles.origin_lon, &(_parameters.origin_lon));
+	param_get(_parameter_handles.origin_alt, &(_parameters.origin_alt));
 
 	if (_ekf) {
 		// _ekf->yawVarScale = 1.0f;
@@ -1240,9 +1252,20 @@ FixedwingEstimator::task_main()
 					_ekf->InitialiseFilter(initVelNED, math::radians(lat), math::radians(lon) - M_PI, gps_alt, declination);
 
 					// Initialize projection
-					_local_pos.ref_lat = lat;
-					_local_pos.ref_lon = lon;
-					_local_pos.ref_alt = gps_alt;
+					if (_parameters.origin_lat >= -90.0f && _parameters.origin_lat <= 90.0f && _parameters.origin_lon >= -180.0f && _parameters.origin_lon <= 180.0f) {
+						_local_pos.ref_lat = _parameters.origin_lat;
+						_local_pos.ref_lon = _parameters.origin_lon;
+					} else {
+						_local_pos.ref_lat = lat;
+						_local_pos.ref_lon = lon;
+					}
+
+					if (_parameters.origin_alt >= 0.0f) {
+						_local_pos.ref_alt = _parameters.origin_alt;
+					} else {
+						_local_pos.ref_alt = gps_alt;
+					}
+
 					_local_pos.ref_timestamp = _gps.timestamp_position;
 
 					map_projection_init(&_pos_ref, lat, lon);
