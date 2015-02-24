@@ -270,10 +270,11 @@ private:
 
 };
 
+
 namespace att_control
 {
 
-/* oddly, ERROR is not defined for c++ */
+// oddly, ERROR is not defined for c++
 #ifdef ERROR
 # undef ERROR
 #endif
@@ -281,6 +282,7 @@ static const int ERROR = -1;
 
 FixedwingControl	*g_control = nullptr;
 }
+
 
 FixedwingControl::FixedwingControl() :
 

@@ -99,7 +99,4 @@ extern struct aa_params aa_parameters;		// struct containing all of the user edi
 
 
 
-
-
-
 #endif /* AA241X_FW_AUX_H_ */
