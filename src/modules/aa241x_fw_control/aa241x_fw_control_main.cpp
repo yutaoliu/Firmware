@@ -825,7 +825,7 @@ FixedwingControl::start()
 	ASSERT(_control_task == -1);
 
 	/* start the task */
-	_control_task = task_spawn_cmd("fw_att_control",
+	_control_task = task_spawn_cmd("aa241x_fw_control",
 				       SCHED_DEFAULT,
 				       SCHED_PRIORITY_MAX - 5,
 				       2048,
