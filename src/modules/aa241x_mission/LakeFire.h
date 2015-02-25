@@ -68,6 +68,7 @@ private:
 		float max_radius;
 		float timestep;
 		float std;
+		int index;
 		float ctr_lat;
 		float ctr_lon;
 		float ctr_alt;
@@ -81,6 +82,7 @@ private:
 		param_t max_radius;
 		param_t timestep;
 		param_t std;
+		param_t index;
 		param_t ctr_lat;
 		param_t ctr_lon;
 		param_t ctr_alt;
@@ -97,10 +99,20 @@ private:
 	enum WIND_DIRECTION {
 		WIND_OTHER = 0,
 		NORTH,
+		NORTH_EAST,
 		EAST,
+		SOUTH_EAST,
 		SOUTH,
-		WEST
+		SOUTH_WEST,
+		WEST,
+		NORTH_WEST
 	} _wind_direction;					/**< the direction of the wind */
+
+	enum FIRE_STATE {
+		WATER = -1,
+		OPEN_LAND,
+		ON_FIRE
+	};
 
 
 	int8_t	_grid[21][21];			/**< the grid that represents the lake */
@@ -129,6 +141,19 @@ private:
 	 * Check for vehicle status updates.
 	 */
 	void	vehicle_status_poll();
+
+	/**
+	 * Gaussian random number generator.
+	 *
+	 * Uses the Box-Muller transform
+	 */
+	float	generate_normal_random(const float &mean);
+
+	/**
+	 * Determine the coordinates of the cell to which the
+	 * fire has propagated.
+	 */
+	void	get_prop_coords(int *i_prop, int *j_prop, const int &prop_dir);
 
 	/**
 	 * Initialize the mission parameters needed
