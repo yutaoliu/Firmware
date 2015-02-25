@@ -25,6 +25,7 @@
 #include <arch/board/board.h>
 
 #include "LakeFire.h"
+#include "fires.h"
 
 
 /**
@@ -57,13 +58,13 @@ LakeFire::LakeFire() :
 	_early_termination(false),
 	_mission_failed(true),
 	_score(0.0f),
-	_wind_direction(WIND_OTHER)
+	_wind_direction(WIND_OTHER),
+	_grid{{0}}
 {
 	_vcontrol_mode = {};
 	_global_pos = {};
 	_local_pos = {};
 	_vehicle_status = {};
-	_grid = {{0}};
 
 	_parameter_handles.min_alt = param_find("AAMIS_MIN_ALT");
 	_parameter_handles.max_alt = param_find("AAMIS_MAX_ALT");
@@ -72,6 +73,7 @@ LakeFire::LakeFire() :
 	_parameter_handles.max_radius = param_find("AAMIS_MAX_RAD");
 	_parameter_handles.timestep = param_find("AAMIS_TSTEP");
 	_parameter_handles.std = param_find("AAMIS_STD");
+	_parameter_handles.index = param_find("AAMIS_INDEX");
 	_parameter_handles.ctr_lat = param_find("PE_CTR_LAT");
 	_parameter_handles.ctr_lon = param_find("PE_CTR_LON");
 	_parameter_handles.ctr_alt = param_find("PE_CTR_ALT");
@@ -81,7 +83,27 @@ LakeFire::LakeFire() :
 }
 
 LakeFire::~LakeFire() {
-	// TODO Auto-generated destructor stub
+	if (_control_task != -1) {
+
+		/* task wakes up every 100ms or so at the longest */
+		_task_should_exit = true;
+
+		/* wait for a second for the task to quit at our request */
+		unsigned i = 0;
+
+		do {
+			/* wait 20ms */
+			usleep(20000);
+
+			/* if we have given up, kill it */
+			if (++i > 50) {
+				task_delete(_control_task);
+				break;
+			}
+		} while (_control_task != -1);
+	}
+
+	aa241x_mission::g_aa241x_mission = nullptr;
 }
 
 int
@@ -94,6 +116,7 @@ LakeFire::parameters_update()
 	param_get(_parameter_handles.max_radius, &(_parameters.max_radius));
 	param_get(_parameter_handles.timestep, &(_parameters.timestep));
 	param_get(_parameter_handles.std, &(_parameters.std));
+	param_get(_parameter_handles.index, &(_parameters.index));
 	param_get(_parameter_handles.ctr_lat, &(_parameters.ctr_lat));
 	param_get(_parameter_handles.ctr_lon, &(_parameters.ctr_lon));
 	param_get(_parameter_handles.ctr_alt, &(_parameters.ctr_alt));
@@ -150,11 +173,101 @@ LakeFire::vehicle_status_poll()
 	}
 }
 
+
+float
+LakeFire::generate_normal_random(const float &mean)
+{
+
+	bool have_spare = false;
+
+	/* get uniform random values on interval (0,1) */
+	float rand1 = (float) rand() / ((float) MAX_RAND);
+	float rand2 = (float) rand() / ((float) MAX_RAND);
+
+	float R;
+	float theta;
+
+	/* generate 2 random numbers at a time, but only use 1, check for leftover from previous request */
+	if (have_spare) {
+		have_spare = false;
+		return (_parameters.std * sqrtf(R) * sinf(theta)) + mean;
+	}
+
+	have_spare = true;
+	R = -2*logf(rand1);
+	theta = rand2 * 2.0f * (float) M_PI;
+
+	/* return Box-Muller transform for normal random */
+	return (_parameters.std * sqrtf(R) * cosf(theta)) + mean;
+}
+
+
+void
+LakeFire::get_prop_coords(int *i_prop, int *j_prop, const int &prop_dir)
+{
+	/* adjust new fire cell coords based on propagation direction */
+	switch (prop_dir) {
+	case NORTH:
+		(*i_prop)--;
+		break;
+	case NORTH_EAST:
+		(*i_prop)--;
+		(*j_prop)++;
+		break;
+	case EAST:
+		(*j_prop)++;
+		break;
+	case SOUTH_EAST:
+		(*i_prop)++;
+		(*j_prop)++;
+		break;
+	case SOUTH:
+		(*i_prop)++;
+		break;
+	case SOUTH_WEST:
+		(*i_prop)++;
+		(*j_prop)--;
+		break;
+	case WEST:
+		(*j_prop)--;
+		break;
+	case NORTH_WEST:
+		(*i_prop)--;
+		(*j_prop)--;
+		break;
+	}
+}
+
 void
 LakeFire::initialize_mission()
 {
 	// TODO: load up the initial locations for the fire
 	// TODO: load up the wind direction
+
+	if (_parameters.index >= NUM_FIRES) {
+		// TODO: throw a system warning
+		_can_start = false;
+		return;
+	}
+
+	_wind_direction = WIND_DIRECTION(fire_wind_dir[_parameters.index]);
+	srand(seed_start[_parameters.index]); // TODO: check to see if this works beyond the scope of this function
+
+	int i_s;
+	int j_s;
+	for (int i = 0; i < NUM_STARTS; i++) {
+		i_s = i_start[_parameters.index][i];
+		j_s = j_start[_parameters.index][i];
+
+		/* check to see if reached the end of valid locations */
+		if (i_s < 0 || j_s < 0) {
+			return;
+		}
+
+		/* set this starting grid on fire */
+		_grid[i_s][j_s] = ON_FIRE;
+	}
+
 }
 
 
@@ -164,7 +277,65 @@ LakeFire::propagate_fire()
 	// TODO: write propagation script, and somehow need to be able
 	// to save the list of new fire locations to publish via uORB and
 	// then via mavlink to the ground
+	float prop_dir;
+	int8_t cell_val;
+	int i_prop;
+	int j_prop;
+
+	for (int i = 0; i < 21; i++) {
+		for (int j = 0; j < 21; j++) {
+
+			/* check for fire in cell, continue if no fire in cell */
+			cell_val = _grid[i][j];
+			if (cell_val < ON_FIRE) {
+				continue;
+			}
+
+			prop_dir = roundf(generate_normal_random(_wind_direction));
+
+			/* wrap the propagation direction to be within (0,8) */
+			if (prop_dir < 0) prop_dir += 8;
+			if (prop_dir > 7) prop_dir -= 8;
+
+			i_prop = i;
+			j_prop = j;
+
+			get_prop_coords(&i_prop, &j_prop, (int) prop_dir);
+
+			/* check to make sure new fire cell is a valid location */
+			if (i_prop >= 21 || i_prop < 0 || j_prop >= 21 || j_prop < 0) continue;
+
+			/* check for new fire cell value */
+			cell_val = _grid[i_prop][j_prop];
+			if (cell_val == OPEN_LAND) {
+				/* add fire to this cell */
+				_grid[i_prop][j_prop] = ON_FIRE;
+				// TODO: add this cell to a list of newly on fire cells
+			}
+		}
+	}
 }
+
+void
+LakeFire::calculate_score()
+{
+	int count = 0;
+	int8_t cell_val;
+
+	for (int i = 0; i < 21; i++) {
+		for (int j = 0; j < 21; j++) {
+
+			/* check for fire in cell */
+			cell_val = _grid[i][j];
+			if (cell_val < ON_FIRE) {
+				count++;
+			}
+		}
+	}
+
+	_score = 1.0f - (float) count / (float) worst_case_score[_parameters.index];
+}
+
 
 void
 LakeFire::task_main_trampoline(int argc, char **argv)
@@ -250,6 +421,7 @@ LakeFire::task_main()
 				_in_mission = true;
 				_mission_start_time = hrt_absolute_time();
 				_last_propagation_time = hrt_absolute_time();
+				initialize_mission();
 			}
 		}
 
@@ -283,21 +455,22 @@ LakeFire::task_main()
 
 			/* check to see if mission time has elapsed */
 			hrt_abstime current_time = hrt_absolute_time();
-			if ((current_time - _mission_start_time) >= _parameters.duration*1E6) {
+			if ((current_time - _mission_start_time) >= _parameters.duration*1E6f) {
 				_in_mission = false;
 				// TODO: end mission gracefully and report final score
 			}
 
 			/* check if timestep has advanced */
-			if ((current_time - _last_propagation_time) >= _parameters.timestep*1E6) {
+			if ((current_time - _last_propagation_time) >= _parameters.timestep*1E6f) {
 				_last_propagation_time = current_time;
+
+				/* propagate the fire for this next timestep */
 				propagate_fire();
+
+				/* calculate the new score */
+				calculate_score();
 			}
-
-
 		}
-
-
 	}
 
 	warnx("exiting.\n");

@@ -90,8 +90,9 @@ MODULES		+= modules/mc_att_control
 MODULES		+= modules/mc_pos_control
 MODULES 	+= modules/vtol_att_control
 #
-# turning off all vehicle control modules except 241x module
+# AA241x modules
 MODULES		+= modules/aa241x_fw_control
+MODULES		+= modules/aa241x_mission
 
 #
 # Logging
@@ -124,7 +125,7 @@ MODULES		+= platforms/nuttx
 #
 # OBC challenge
 #
-#MODULES		+= modules/bottle_drop
+MODULES		+= modules/bottle_drop
 
 #
 # Demo apps

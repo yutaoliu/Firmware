@@ -68,14 +68,6 @@ PARAM_DEFINE_FLOAT(AAMIS_TSTEP, 10.0f);
 PARAM_DEFINE_FLOAT(AAMIS_STD, 0.35f);
 
 /**
- * Timestep in [sec] for each propagation of the fire.
- *
- * @unit seconds
- * @group AA241x Mission
- */
-PARAM_DEFINE_FLOAT(AAMIS_TSTEP, 10.0f);
-
-/**
  * Index (0 based) of the mission to be executed.
  *
  * @min 0
