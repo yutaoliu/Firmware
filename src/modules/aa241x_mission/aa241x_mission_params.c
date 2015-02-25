@@ -50,7 +50,7 @@ PARAM_DEFINE_FLOAT(AAMIS_AUTO_ALT, 50.0f);
  * @unit minutes
  * @group AA241x Mission
  */
-PARAM_DEFINE_FLOAT(AAMIS_DURATION, 8.0f);
+PARAM_DEFINE_FLOAT(AAMIS_DURATION, 1.0f);
 
 /**
  * Timestep in [sec] for each propagation of the fire.
@@ -58,14 +58,14 @@ PARAM_DEFINE_FLOAT(AAMIS_DURATION, 8.0f);
  * @unit seconds
  * @group AA241x Mission
  */
-PARAM_DEFINE_FLOAT(AAMIS_TSTEP, 10.0f);
+PARAM_DEFINE_FLOAT(AAMIS_TSTEP, 5.0f);
 
 /**
  * Standard deviation for fire propagation.
  *
  * @group AA241x Mission
  */
-PARAM_DEFINE_FLOAT(AAMIS_STD, 0.35f);
+PARAM_DEFINE_FLOAT(AAMIS_STD, 0.25f);
 
 /**
  * Index (0 based) of the mission to be executed.

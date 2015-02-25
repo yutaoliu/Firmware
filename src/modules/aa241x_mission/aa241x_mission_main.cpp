@@ -16,6 +16,7 @@
 #include <math.h>
 #include <poll.h>
 #include <time.h>
+#include <algorithm>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -126,7 +127,7 @@ LakeFire::parameters_update()
 
 
 void
-LakeFire::vehicle_control_mode_poll()
+LakeFire::vehicle_control_mode_update()
 {
 	/* Check if vehicle control mode has changed */
 	bool vcontrol_mode_updated;
@@ -138,7 +139,7 @@ LakeFire::vehicle_control_mode_poll()
 }
 
 void
-LakeFire::global_pos_poll()
+LakeFire::global_pos_update()
 {
 	/* check if there is a new global position */
 	bool global_pos_updated;
@@ -150,7 +151,7 @@ LakeFire::global_pos_poll()
 }
 
 void
-LakeFire::local_pos_poll()
+LakeFire::local_pos_update()
 {
 	/* check if there is a new local position */
 	bool local_pos_updated;
@@ -162,7 +163,7 @@ LakeFire::local_pos_poll()
 }
 
 void
-LakeFire::vehicle_status_poll()
+LakeFire::vehicle_status_update()
 {
 	/* check if there is new status information */
 	bool vehicle_status_updated;
@@ -177,7 +178,7 @@ LakeFire::vehicle_status_poll()
 float
 LakeFire::generate_normal_random(const float &mean)
 {
-
+	// TODO: it is never actually using the spare, would need to make params global
 	bool have_spare = false;
 
 	/* get uniform random values on interval (0,1) */
@@ -205,8 +206,9 @@ LakeFire::generate_normal_random(const float &mean)
 void
 LakeFire::get_prop_coords(int *i_prop, int *j_prop, const int &prop_dir)
 {
+
 	/* adjust new fire cell coords based on propagation direction */
-	switch (prop_dir) {
+	switch (WIND_DIRECTION(prop_dir)) {
 	case NORTH:
 		(*i_prop)--;
 		break;
@@ -234,6 +236,8 @@ LakeFire::get_prop_coords(int *i_prop, int *j_prop, const int &prop_dir)
 	case NORTH_WEST:
 		(*i_prop)--;
 		(*j_prop)--;
+		break;
+	default:
 		break;
 	}
 }
@@ -282,14 +286,23 @@ LakeFire::propagate_fire()
 	int i_prop;
 	int j_prop;
 
+	std::vector<int> i_new;
+	std::vector<int> j_new;
+
+	int count = 0;
+
 	for (int i = 0; i < 21; i++) {
 		for (int j = 0; j < 21; j++) {
 
-			/* check for fire in cell, continue if no fire in cell */
-			cell_val = _grid[i][j];
-			if (cell_val < ON_FIRE) {
+			/* make sure this cell isn't a new fire cell */
+			if (std::find(i_new.begin(), i_new.end(), i) != i_new.end() && std::find(j_new.begin(), j_new.end(), i) != j_new.end()) {
 				continue;
 			}
+
+			/* check for fire in cell, continue if no fire in cell */
+			cell_val = _grid[i][j];
+			if (cell_val < ON_FIRE) continue;
+			count++;
 
 			prop_dir = roundf(generate_normal_random(_wind_direction));
 
@@ -302,6 +315,8 @@ LakeFire::propagate_fire()
 
 			get_prop_coords(&i_prop, &j_prop, (int) prop_dir);
 
+			// printf("(%i,%i) : %i  ->  (%i,%i)\n", i, j, (int) prop_dir, i_prop, j_prop);  // DEBUG
+
 			/* check to make sure new fire cell is a valid location */
 			if (i_prop >= 21 || i_prop < 0 || j_prop >= 21 || j_prop < 0) continue;
 
@@ -310,10 +325,19 @@ LakeFire::propagate_fire()
 			if (cell_val == OPEN_LAND) {
 				/* add fire to this cell */
 				_grid[i_prop][j_prop] = ON_FIRE;
+				i_new.push_back(i_prop);
+				j_new.push_back(j_prop);
 				// TODO: add this cell to a list of newly on fire cells
 			}
 		}
 	}
+
+	// printf("on fire propagated: %i\n", count);  // DEBUG
+
+	/* clear vectors after having published the info */
+	i_new.clear();
+	j_new.clear();
+
 }
 
 void
@@ -333,14 +357,73 @@ LakeFire::calculate_score()
 		}
 	}
 
-	_score = 1.0f - (float) count / (float) worst_case_score[_parameters.index];
+	_score = (1.0f - (float) count / (float) worst_case_score[_parameters.index])*100.0f;
 }
 
 
 void
 LakeFire::task_main_trampoline(int argc, char **argv)
 {
-	aa241x_mission::g_aa241x_mission->task_main();
+	// aa241x_mission::g_aa241x_mission->task_main();
+	aa241x_mission::g_aa241x_mission->testing(); // DEBUG
+}
+
+void
+LakeFire::print_grid() {
+	printf("\n");
+	for (int i = 0; i < 21; i++) {
+		for (int j = 0;j < 21; j++) {
+			printf("%d ", _grid[i][j]);
+		}
+		printf("\n");
+	}
+	printf("\n");
+}
+
+void
+LakeFire::testing()
+{
+	const int nrolls=10000;  // number of experiments
+	const int nstars=100;    // maximum number of stars to distribute
+	int mean = 5;
+
+	int p[10]={};
+
+	for (int i=0; i<nrolls; ++i) {
+		float number = roundf(generate_normal_random(mean));
+
+		if ((number>=0.0f)&&(number<10.0f)) ++p[int(number)];
+	}
+
+	printf("normal_distribution (5):\n");
+
+	for (int i=0; i<10; ++i) {
+		printf("%i: ", i);
+		int num_stars = p[i]*nstars/nrolls;
+		for (int j= 0; j < num_stars; j++) {
+			printf("*");
+		}
+		printf("\n");
+	}
+
+
+	initialize_mission();
+	print_grid();
+
+	for (int i = 0; i < 60; i++) {
+		propagate_fire();
+		// usleep(500000);
+	}
+
+	print_grid();
+
+
+
+	warnx("exiting.\n");
+
+	_control_task = -1;
+	_task_running = false;
+	_exit(0);
 }
 
 void
@@ -365,28 +448,37 @@ LakeFire::task_main()
 	parameters_update();
 
 	/* get an initial update for all sensor and status data */
-	vehicle_control_mode_poll();
-	global_pos_poll();
-	local_pos_poll();
-	vehicle_status_poll();
+	vehicle_control_mode_update();
+	global_pos_update();
+	local_pos_update();
+	vehicle_status_update();
 
 	/* wakeup source(s) */
-	struct pollfd fds[1];
+	struct pollfd fds[5];
 
 	/* Setup of loop */
 	fds[0].fd = _params_sub;
 	fds[0].events = POLLIN;
+	fds[1].fd = _vcontrol_mode_sub;
+	fds[1].events = POLLIN;
+	fds[2].fd = _global_pos_sub;
+	fds[2].events = POLLIN;
+	fds[3].fd = _local_pos_sub;
+	fds[3].events = POLLIN;
+	fds[4].fd = _vehicle_status_sub;
+	fds[4].events = POLLIN;
 
 	_task_running = true;
 
 	while (!_task_should_exit) {
 
-		/* wait for up to 500ms for data */
+		/* wait for up to 100ms for data */
 		int pret = poll(&fds[0], (sizeof(fds) / sizeof(fds[0])), 100);
 
 		/* timed out - periodic check for _task_should_exit, etc. */
-		if (pret == 0)
+		if (pret == 0) {
 			continue;
+		}
 
 		/* this is undesirable but not much we can do - might want to flag unhappy status */
 		if (pret < 0) {
@@ -404,11 +496,31 @@ LakeFire::task_main()
 			parameters_update();
 		}
 
+		/* vehicle control mode updated */
+		if (fds[1].revents & POLLIN) {
+			vehicle_control_mode_update();
+		}
+
+		/* global position updated */
+		if (fds[2].revents & POLLIN) {
+			global_pos_update();
+		}
+
+		/* local position updated */
+		if (fds[3].revents & POLLIN) {
+			local_pos_update();
+		}
+
+		/* vehicle status updated */
+		if (fds[4].revents & POLLIN) {
+			vehicle_status_update();
+		}
+
 		/* check auto start requirements */
 		if (_can_start && !_in_mission) {
 
 			if (-_local_pos.z >= _parameters.auto_alt && !_vcontrol_mode.flag_control_auto_enabled) {
-				/* not allowed to start is above auto alt and not in auto mode */
+				// not allowed to start is above auto alt and not in auto mode
 				_can_start = false;
 			}
 		}
@@ -430,7 +542,7 @@ LakeFire::task_main()
 
 			/* check auto requirements */
 			if (!_vcontrol_mode.flag_control_auto_enabled) {
-				/* end mission and set score to 0 if switch to manual mode */
+				// end mission and set score to 0 if switch to manual mode
 				_in_mission = false;
 				_mission_failed = true;
 				_score = 0.0f;  // TODO: check with Robbie about this
@@ -440,7 +552,7 @@ LakeFire::task_main()
 			float r2 = _local_pos.x*_local_pos.x + _local_pos.y*_local_pos.y;
 			float max_r2 = _parameters.max_radius*_parameters.max_radius;
 			if (-_local_pos.z >= _parameters.max_alt || r2 > max_r2) {
-				/* end mission and set score to 0 if violate max altitude */
+				// end mission and set score to 0 if violate max altitude
 				_in_mission = false;
 				_mission_failed = true;
 				_score = 0.0f;
@@ -448,15 +560,17 @@ LakeFire::task_main()
 
 			/* check min altitude requirements */
 			if (-_local_pos.z <= _parameters.min_alt) {
-				/* end mission, but let fire propagate for rest of time */
+				// end mission, but let fire propagate for rest of time
 				_in_mission = false;
 				_early_termination = true;
 			}
 
 			/* check to see if mission time has elapsed */
 			hrt_abstime current_time = hrt_absolute_time();
-			if ((current_time - _mission_start_time) >= _parameters.duration*1E6f) {
+			if ((current_time - _mission_start_time)/1000000.0f >= _parameters.duration*60.0f) {
+				// TODO: would be nice to send a message that mission is over
 				_in_mission = false;
+				_can_start = false;
 				// TODO: end mission gracefully and report final score
 			}
 

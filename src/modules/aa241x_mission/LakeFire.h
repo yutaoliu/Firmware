@@ -97,7 +97,7 @@ private:
 	float		_score;					/**< the current mission score */
 
 	enum WIND_DIRECTION {
-		WIND_OTHER = 0,
+		WIND_OTHER = -1,
 		NORTH,
 		NORTH_EAST,
 		EAST,
@@ -125,22 +125,22 @@ private:
 	/**
 	 * Check for changes in vehicle control mode.
 	 */
-	void	vehicle_control_mode_poll();
+	void	vehicle_control_mode_update();
 
 	/**
 	 * Check for global position updates.
 	 */
-	void	global_pos_poll();
+	void	global_pos_update();
 
 	/**
 	 * Check for local position updates.
 	 */
-	void	local_pos_poll();
+	void	local_pos_update();
 
 	/**
 	 * Check for vehicle status updates.
 	 */
-	void	vehicle_status_poll();
+	void	vehicle_status_update();
 
 	/**
 	 * Gaussian random number generator.
@@ -174,6 +174,10 @@ private:
 	 * Shim for calling task_main from task_create.
 	 */
 	static void	task_main_trampoline(int argc, char *argv[]);
+
+	void testing();
+
+	void print_grid();
 
 	/**
 	 * Main task.
