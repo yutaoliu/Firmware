@@ -166,6 +166,11 @@ private:
 	void	propagate_fire();
 
 	/**
+	 * Calculate the current score.
+	 */
+	void 	calculate_score();
+
+	/**
 	 * Shim for calling task_main from task_create.
 	 */
 	static void	task_main_trampoline(int argc, char *argv[]);

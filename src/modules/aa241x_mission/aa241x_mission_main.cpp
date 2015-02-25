@@ -312,10 +312,30 @@ LakeFire::propagate_fire()
 				_grid[i_prop][j_prop] = ON_FIRE;
 				// TODO: add this cell to a list of newly on fire cells
 			}
-
 		}
 	}
 }
+
+void
+LakeFire::calculate_score()
+{
+	int count = 0;
+	int8_t cell_val;
+
+	for (int i = 0; i < 21; i++) {
+		for (int j = 0; j < 21; j++) {
+
+			/* check for fire in cell */
+			cell_val = _grid[i][j];
+			if (cell_val < ON_FIRE) {
+				count++;
+			}
+		}
+	}
+
+	_score = 1.0f - (float) count / (float) worst_case_score[_parameters.index];
+}
+
 
 void
 LakeFire::task_main_trampoline(int argc, char **argv)
@@ -443,13 +463,14 @@ LakeFire::task_main()
 			/* check if timestep has advanced */
 			if ((current_time - _last_propagation_time) >= _parameters.timestep*1E6f) {
 				_last_propagation_time = current_time;
+
+				/* propagate the fire for this next timestep */
 				propagate_fire();
+
+				/* calculate the new score */
+				calculate_score();
 			}
-
-
 		}
-
-
 	}
 
 	warnx("exiting.\n");
