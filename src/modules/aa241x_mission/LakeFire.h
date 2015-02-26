@@ -60,6 +60,9 @@ private:
 	struct vehicle_local_position_s		_local_pos;			/**< local position */
 	struct vehicle_status_s				_vehicle_status;	/**< vehicle status */
 
+	orb_advert_t	_mission_status_pub;
+	orb_advert_t	_new_fire_pub;
+
 	struct {
 		float min_alt;
 		float max_alt;
@@ -141,6 +144,16 @@ private:
 	 * Check for vehicle status updates.
 	 */
 	void	vehicle_status_update();
+
+	/**
+	 * Publish the current mission status information.
+	 */
+	void 	publish_mission_status();
+
+	/**
+	 * Publish a list of (i,j) coords of the new fire locations.
+	 */
+	void	publish_new_fire(const std::vector<int> &i_new, const std::vector<int> &j_new);
 
 	/**
 	 * Gaussian random number generator.

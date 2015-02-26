@@ -52,6 +52,8 @@ LakeFire::LakeFire() :
 	_local_pos_sub(-1),
 	_vehicle_status_sub(-1),
 	_params_sub(-1),
+	_mission_status_pub(-1),
+	_new_fire_pub(-1),
 	_mission_start_time(-1),
 	_last_propagation_time(-1),
 	_in_mission(false),
@@ -171,6 +173,39 @@ LakeFire::vehicle_status_update()
 
 	if (vehicle_status_updated) {
 		orb_copy(ORB_ID(vehicle_status), _vehicle_status_sub, &_vehicle_status);
+	}
+}
+
+void
+LakeFire::publish_mission_status()
+{
+	aa241x_mission_status_s mis_stat;
+	mis_stat.can_start = _can_start;
+	mis_stat.in_mission = _in_mission;
+	mis_stat.score = _score;
+	mis_stat.mission_time = (hrt_absolute_time() - _mission_start_time)/(1000000.0f*60.0f);
+
+	/* publish the mission status */
+	if (_mission_status_pub > 0) {
+		orb_publish(ORB_ID(aa241x_mission_status), _mission_status_pub, &mis_stat);
+	} else {
+		_mission_status_pub = orb_advertise(ORB_ID(aa241x_mission_status), &mis_stat);
+	}
+}
+
+void
+LakeFire::publish_new_fire(const std::vector<int> &i_new, const std::vector<int> &j_new)
+{
+	aa241x_new_fire_s new_fire;
+	new_fire.mission_time = _last_propagation_time;
+	new_fire.i_new = i_new;
+	new_fire.j_new = j_new;
+
+	/* publish the new fire cells */
+	if (_new_fire_pub > 0) {
+		orb_publish(ORB_ID(aa241x_new_fire), _new_fire_pub, &new_fire);
+	} else {
+		_new_fire_pub = orb_advertise(ORB_ID(aa241x_new_fire), &new_fire);
 	}
 }
 
