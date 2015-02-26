@@ -253,3 +253,6 @@ ORB_DEFINE(rc_parameter_map, struct rc_parameter_map_s);
 
 #include "topics/aa241x_mission_status.h"
 ORB_DEFINE(aa241x_mission_status, struct aa241x_mission_status_s);
+
+#include "topics/aa241x_new_fire.h"
+ORB_DEFINE(aa241x_new_fire, struct aa241x_new_fire_s);
