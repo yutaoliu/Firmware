@@ -20,6 +20,7 @@ struct aa241x_mission_status_s {
 	float score;			/**< current mission score */
 };
 
-
+/* register this as object request broker structure */
+ORB_DECLARE(aa241x_mission_status);
 
 #endif /* TOPIC_AA241X_MISSION_STATUS_H_ */
