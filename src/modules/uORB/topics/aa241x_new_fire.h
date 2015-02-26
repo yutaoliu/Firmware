@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <vector>
 #include "../uORB.h"
 
 struct aa241x_new_fire_s {
@@ -20,6 +21,6 @@ struct aa241x_new_fire_s {
 };
 
 /* register this as object request broker structure */
-ORB_DECLARE(aa241x_mission_status);
+ORB_DECLARE(aa241x_new_fire);
 
 #endif /* TOPIC_AA241X_NEW_FIRE_H_ */
