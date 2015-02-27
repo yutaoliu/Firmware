@@ -85,8 +85,17 @@ uint64_t timestamp = 0; 	// timestamp of microseconds since boot
 uint64_t utc_timestamp = 0; // GPS UTC timestamp in microseconds
 
 
-
 // user config parameters structure
 struct aa_params aa_parameters = {};		// struct containing all of the user editable parameters (via ground station)
 
 
+/* functions */
+
+snapshot_s take_picture() {
+	snapshot_s snapshot = {};
+	snapshot.pic_taken = false;
+
+	// TODO: do this with mission class
+
+	return snapshot;
+}

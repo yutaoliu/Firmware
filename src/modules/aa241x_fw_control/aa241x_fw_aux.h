@@ -12,7 +12,10 @@
 #define AA241X_FW_AUX_H_
 
 #include <stdint.h>
+#include <stdlib.h>
+#include <vector>
 #include "aa241x_fw_control_params.h"
+#include "../aa241x_mission/aa241x_mission_namespace.h"
 
 // set these variables for help in debugging (these will be sent to the ground station)
 extern float roll_desired;
@@ -96,6 +99,21 @@ extern uint64_t utc_timestamp; // GPS UTC timestamp in microseconds
 
 // user config parameters structure
 extern struct aa_params aa_parameters;		// struct containing all of the user editable parameters (via ground station)
+
+
+struct snapshot_s {
+	bool pic_taken;			/**< if true, a picture was successfully taken */
+	uint64_t time_us;		/**< timestamp in microseconds since boot at which the picture was taken */
+	float center_n;			/**< North coordinate (North distance from center in [m]) of the center of the picture */
+	float center_e;			/**< East coordinate (East distance from center in [m]) of the center of the picture */
+	float pic_d;			/**< diameter in [m] of the picture taken */
+	int num_cells;			/**< number of grid cells in view (length of vectors i, j, and state) */
+	std::vector<int> i;		/**< list of i grid coordinates in view */
+	std::vector<int> j;		/**< list of j grid coordinates in view */
+	std::vector<int> state; /**< state of each grid coordinate in view (-1 = water, 0 = nothing, 1 = on fire) */
+};
+
+snapshot_s take_picture();
 
 
 

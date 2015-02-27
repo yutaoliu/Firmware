@@ -39,6 +39,10 @@
 
 #include "aa241x_fw_control_params.h"
 
+#define AA_PARAM_1			AA_TEST
+#define AA_PARAM_1_NAME		"AA_TEST"
+
+
 /* controller parameters, use max. 15 characters for param name! */
 
 /**
@@ -51,7 +55,7 @@ PARAM_DEFINE_FLOAT(AA_PARAM_1, 0.0f);
 int aa_parameters_init(struct aa_param_handles *h)
 {
 	/* PID parameters */
-	h->param_1 	=	param_find("AA_PARAM_1");
+	h->param_1 	=	param_find(AA_PARAM_1_NAME);
 
 	return OK;
 }

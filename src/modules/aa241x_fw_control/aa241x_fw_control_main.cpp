@@ -83,6 +83,7 @@
 #include <platforms/px4_defines.h>
 
 
+#include "aa241x_fw_control_params.h"
 #include "aa241x_fw_aux.h"
 #include "aa241x_fw_control.h"
 
@@ -119,6 +120,8 @@ public:
 	 * @return	true if the mainloop is running
 	 */
 	bool		task_running() { return _task_running; }
+
+	int			take_picture();
 
 private:
 
@@ -200,63 +203,63 @@ private:
 	 * Update control outputs
 	 *
 	 */
-	void		control_update();
+	void	control_update();
 
 	/**
 	 * Check for changes in vehicle control mode.
 	 */
-	void		vehicle_control_mode_poll();
+	void	vehicle_control_mode_poll();
 
 	/**
 	 * Check for changes in manual inputs.
 	 */
-	void		vehicle_manual_poll();
+	void	vehicle_manual_poll();
 
 
 	/**
 	 * Check for airspeed updates.
 	 */
-	void		vehicle_airspeed_poll();
+	void	vehicle_airspeed_poll();
 
 	/**
 	 * Check for accel updates.
 	 */
-	void		vehicle_accel_poll();
+	void	vehicle_accel_poll();
 
 	/**
 	 * Check for global position updates.
 	 */
-	void		global_pos_poll();
+	void	global_pos_poll();
 
 	/**
 	 * Check for local position updates.
 	 */
-	void		local_pos_poll();
+	void	local_pos_poll();
 
 	/**
 	 * Check for vehicle status updates.
 	 */
-	void		vehicle_status_poll();
+	void	vehicle_status_poll();
 
 	/**
 	 * Check for combined sensor data updates.
 	 */
-	void		sensor_combined_poll();
+	void	sensor_combined_poll();
 
 	/**
 	 * Check for battery status updates.
 	 */
-	void		battery_status_poll();
+	void	battery_status_poll();
 
 	/**
 	 * Set all the aux variables needed for control law.
 	 */
-	void 		set_aux_values();
+	void 	set_aux_values();
 
 	/**
 	 * Set the actuator output values from the control law.
 	 */
-	void		set_actuators();
+	void	set_actuators();
 
 	/**
 	 * Shim for calling task_main from task_create.
@@ -266,11 +269,11 @@ private:
 	/**
 	 * Main attitude controller collection task.
 	 */
-	void		task_main();
+	void	task_main();
 
 };
 
-
+/* define namespace to hold the controller */
 namespace att_control
 {
 
@@ -369,6 +372,12 @@ FixedwingControl::~FixedwingControl()
 	}
 
 	att_control::g_control = nullptr;
+}
+
+int
+FixedwingControl::take_picture()
+{
+	return 0;
 }
 
 int
