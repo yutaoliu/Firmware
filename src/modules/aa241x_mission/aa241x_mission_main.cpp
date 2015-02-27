@@ -27,6 +27,7 @@
 
 #include "LakeFire.h"
 #include "fires.h"
+#include "aa241x_mission_namespace.h"
 
 
 /**
@@ -40,7 +41,7 @@ extern "C" __EXPORT int aa241x_mission_main(int argc, char *argv[]);
 namespace aa241x_mission
 {
 
-LakeFire	*g_aa241x_mission;
+LakeFire	*g_aa241x_mission = nullptr;
 }
 
 LakeFire::LakeFire() :
