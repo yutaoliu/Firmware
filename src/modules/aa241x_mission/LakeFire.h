@@ -7,12 +7,17 @@
 
 #ifndef LAKEFIRE_H_
 #define LAKEFIRE_H_
+#include <drivers/drv_hrt.h>
+#include <time.h>
 
 #include <uORB/uORB.h>
 #include <uORB/topics/vehicle_control_mode.h>
 #include <uORB/topics/vehicle_global_position.h>
 #include <uORB/topics/vehicle_local_position.h>
 #include <uORB/topics/vehicle_status.h>
+#include <uORB/topics/aa241x_mission_status.h>
+#include <uORB/topics/aa241x_new_fire.h>
+#include <uORB/topics/aa241x_water_drop.h>
 
 class LakeFire
 {
