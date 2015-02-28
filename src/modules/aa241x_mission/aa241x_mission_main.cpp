@@ -136,8 +136,18 @@ LakeFire::take_picture()
 	pic_result.time_us = curr_time;
 	float time_diff = (curr_time - _last_picture)/1000000.0f;
 
-	if (time_diff <= _parameters.t_pic) {
+	/* check mission logic */
+	if (!_in_mission || time_diff <= _parameters.t_pic) {
 		/* do not take a picture */
+		pic_result.pic_taken = false;
+		return pic_result;
+	}
+
+	/* check position */
+	float d = pic_result.center_d;
+	float n = pic_result.center_n;
+	float e = pic_result.center_e;
+	if (-d < _parameters.min_alt || -d > _parameters.max_alt || (n*n + e*e) >= _parameters.max_radius*_parameters.max_radius) {
 		pic_result.pic_taken = false;
 		return pic_result;
 	}
