@@ -41,26 +41,33 @@
 
 
 
-/* controller parameters, use max. 15 characters for param name! */
+/* controller parameters, use max. 15 characters for param name!
+ *
+ * DO NOT DELETE AA_WATER_WGHT PARAMETER!!!!!!
+ */
 
 /**
+ * The amount of weight in [grams] of "water" being carried by this UAV.
  *
+ * @unit grams
+ * @min 0
+ * @group AA241x Student Params
  */
-PARAM_DEFINE_FLOAT(AA_PARAM_1, 0.0f);
+PARAM_DEFINE_FLOAT(AA_WATER_WGHT, 10.0f);
 
 
 
 int aa_parameters_init(struct aa_param_handles *h)
 {
 	/* PID parameters */
-	h->param_1 	=	param_find("AA_PARAM_1");
+	h->water_weight 	=	param_find("AA_WATER_WGHT");
 
 	return OK;
 }
 
 int aa_parameters_update(const struct aa_param_handles *h, struct aa_params *p)
 {
-	param_get(h->param_1, &(p->param_1));
+	param_get(h->water_weight, &(p->water_weight));
 
 	return OK;
 }

@@ -49,12 +49,12 @@ extern "C" {
 #endif
 
 struct aa_params {
-	float param_1;
+	float water_weight;
 
 };
 
 struct aa_param_handles {
-	param_t param_1;
+	param_t water_weight;
 };
 
 /**
