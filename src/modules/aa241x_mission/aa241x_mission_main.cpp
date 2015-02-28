@@ -126,8 +126,6 @@ LakeFire::take_picture()
 {
 	picture_result_s pic_result = {};
 
-	// TODO: check altitude and position
-
 	pic_result.center_n = _local_pos.x;
 	pic_result.center_e = _local_pos.y;
 	pic_result.center_d = _local_pos.z;
@@ -473,8 +471,6 @@ LakeFire::get_prop_coords(int *i_prop, int *j_prop, const int &prop_dir)
 void
 LakeFire::initialize_mission()
 {
-	// TODO: load up the initial locations for the fire
-	// TODO: load up the wind direction
 
 	if (_parameters.index >= NUM_FIRES) {
 		// TODO: throw a system warning
@@ -482,8 +478,9 @@ LakeFire::initialize_mission()
 		return;
 	}
 
+	// TODO: need to ensure that the wind direction is valid
 	_wind_direction = WIND_DIRECTION(fire_wind_dir[_parameters.index]);
-	srand(seed_start[_parameters.index]); // TODO: check to see if this works beyond the scope of this function
+	srand(seed_start[_parameters.index]);
 
 	int i_s;
 	int j_s;
@@ -506,9 +503,6 @@ LakeFire::initialize_mission()
 void
 LakeFire::propagate_fire()
 {
-	// TODO: write propagation script, and somehow need to be able
-	// to save the list of new fire locations to publish via uORB and
-	// then via mavlink to the ground
 	float prop_dir;
 	int8_t cell_val;
 	int i_prop;
@@ -555,7 +549,6 @@ LakeFire::propagate_fire()
 				_grid[i_prop][j_prop] = ON_FIRE;
 				i_new.push_back(i_prop);
 				j_new.push_back(j_prop);
-				// TODO: add this cell to a list of newly on fire cells
 			}
 		}
 	}
@@ -771,8 +764,7 @@ LakeFire::task_main()
 			if (!_vcontrol_mode.flag_control_auto_enabled) {
 				// end mission and set score to 0 if switch to manual mode
 				_in_mission = false;
-				_mission_failed = true;
-				_score = 0.0f;  // TODO: check with Robbie about this
+				_early_termination = true;
 			}
 
 			/* check strict requirements (max alt and radius) */
@@ -800,6 +792,9 @@ LakeFire::task_main()
 				_can_start = false;
 				// TODO: end mission gracefully and report final score
 			}
+
+			// TODO: if early termination, want to propagate the fire for the rest of the duration quickly
+			// to be able to give a score
 
 			/* check if timestep has advanced */
 			if ((current_time - _last_propagation_time) >= _parameters.timestep*1E6f) {

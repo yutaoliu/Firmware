@@ -21,8 +21,8 @@
 #include <uORB/topics/aa241x_water_drop.h>
 #include <uORB/topics/aa241x_picture_result.h>
 
-#define GRID_WIDTH 21
-#define GRID_CENTER 11
+#define GRID_WIDTH 21		/**< the number of cells wide and tall the grid is */
+#define GRID_CENTER 10		/**< the index of the center row and column */
 
 class LakeFire
 {
