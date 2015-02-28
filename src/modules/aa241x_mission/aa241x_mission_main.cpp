@@ -24,6 +24,7 @@
 #include <drivers/device/device.h>
 #include <drivers/drv_hrt.h>
 #include <arch/board/board.h>
+#include <mathlib/mathlib.h>
 
 #include "LakeFire.h"
 #include "fires.h"
@@ -207,7 +208,7 @@ LakeFire::get_fire_info(picture_result_s *pic_result)
 	int j_min = e2j(center_e - pic_r);
 	int j_max = e2j(center_e + pic_r);
 
-	float d2 = (pic_result->pic_d)^2;
+	float d2 = (pic_result->pic_d) * (pic_result->pic_d);
 
 	math::Vector<2> center;
 	center(0) = center_n;

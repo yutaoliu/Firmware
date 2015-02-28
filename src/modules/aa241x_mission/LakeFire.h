@@ -9,6 +9,7 @@
 #define LAKEFIRE_H_
 #include <drivers/drv_hrt.h>
 #include <time.h>
+#include <mathlib/mathlib.h>
 
 #include <uORB/uORB.h>
 #include <uORB/topics/vehicle_control_mode.h>
