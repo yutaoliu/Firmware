@@ -84,11 +84,15 @@ LakeFire::LakeFire() :
 	_parameter_handles.min_fov = param_find("AAMIS_FOV_MIN");
 	_parameter_handles.max_fov = param_find("AAMIS_FOV_MAX");
 	_parameter_handles.index = param_find("AAMIS_INDEX");
+	_parameter_handles.water_weight = param_find("AA_WATER_WGHT");
+	_parameter_handles.water_weight = param_find("AAMIS_WGHT_DROP");
 	_parameter_handles.ctr_lat = param_find("PE_CTR_LAT");
 	_parameter_handles.ctr_lon = param_find("PE_CTR_LON");
 	_parameter_handles.ctr_alt = param_find("PE_CTR_ALT");
 
 	parameters_update();
+
+	_water_drops_remaining = int(_parameters.water_weight/_parameters.weight_per_drop);
 
 }
 
@@ -122,6 +126,8 @@ LakeFire::take_picture()
 {
 	picture_result_s pic_result = {};
 
+	// TODO: check altitude and position
+
 	pic_result.center_n = _local_pos.x;
 	pic_result.center_e = _local_pos.y;
 	pic_result.center_d = _local_pos.z;
@@ -148,6 +154,43 @@ LakeFire::take_picture()
 	publish_picture_result(pic_result);
 
 	return pic_result;
+}
+
+aa241x_water_drop_s
+LakeFire::drop_water()
+{
+	aa241x_water_drop_s water_drop;
+
+	water_drop.time_us = hrt_absolute_time();
+
+	float n = _local_pos.x;
+	float e = _local_pos.y;
+	float d = _local_pos.z;
+
+	/* mission logic checks */
+	if (!_in_mission || _water_drops_remaining <= 0) {
+		water_drop.success = false;
+		return water_drop;
+	}
+
+	/* position checks */
+	if (-d < _parameters.min_alt || -d > _parameters.max_alt || (n*n + e*e) >= _parameters.max_radius*_parameters.max_radius) {
+		water_drop.success = false;
+		return water_drop;
+	}
+
+	int i = n2i(n);
+	int j = e2j(e);
+
+	// TODO: need to check to make sure these are a valid (i,j) pair
+	/* water this grid cell */
+	_grid[i][j] = WATER;
+
+	water_drop.success = true;
+	water_drop.i = i;
+	water_drop.j = j;
+
+	return water_drop;
 }
 
 float
@@ -217,6 +260,8 @@ LakeFire::get_fire_info(picture_result_s *pic_result)
 	for (int i = i_min; i < i_max; i++) {
 		for (int j = j_min; j <= j_max; j++) {
 
+			// TODO: need to check to make sure these are a valid (i,j) pair
+
 			/* check to ensure center of cell is within fov */
 			if ((ij2ne(i,j) - center).length_squared() <= d2) {
 				pic_result->i.push_back(i);
@@ -232,9 +277,6 @@ LakeFire::get_fire_info(picture_result_s *pic_result)
 	return;
 }
 
-
-
-
 int
 LakeFire::parameters_update()
 {
@@ -248,6 +290,8 @@ LakeFire::parameters_update()
 	param_get(_parameter_handles.std, &(_parameters.std));
 	param_get(_parameter_handles.t_pic, &(_parameters.t_pic));
 	param_get(_parameter_handles.index, &(_parameters.index));
+	param_get(_parameter_handles.water_weight, &(_parameters.water_weight));
+	param_get(_parameter_handles.weight_per_drop, &(_parameters.weight_per_drop));
 	param_get(_parameter_handles.ctr_lat, &(_parameters.ctr_lat));
 	param_get(_parameter_handles.ctr_lon, &(_parameters.ctr_lon));
 	param_get(_parameter_handles.ctr_alt, &(_parameters.ctr_alt));

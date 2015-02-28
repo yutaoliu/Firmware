@@ -32,14 +32,14 @@ PARAM_DEFINE_FLOAT(AAMIS_ALT_MAX, 121.92f);
  * @unit meter
  * @group AA241x Mission
  */
-PARAM_DEFINE_FLOAT(AAMIS_RAD_MAX, 300.0f);
+PARAM_DEFINE_FLOAT(AAMIS_RAD_MAX, 150.0f);
 
 /**
  * Width of a grid cell in [m].
  *
  * @unit meters
  * @min 0
- * @ground AA241x Mission
+ * @group AA241x Mission
  */
 PARAM_DEFINE_FLOAT(AAMIS_CELL_W, 16.0f);
 
@@ -90,7 +90,7 @@ PARAM_DEFINE_FLOAT(AAMIS_TPIC, 3.0f);
  * Minimum camera field of view diameter in [m].
  *
  * @unit meter
- * @ground AA241x Mission
+ * @group AA241x Mission
  */
 PARAM_DEFINE_FLOAT(AAMIS_FOV_MIN, 30.0f);
 
@@ -98,9 +98,18 @@ PARAM_DEFINE_FLOAT(AAMIS_FOV_MIN, 30.0f);
  * Maximum camera field of view diameter in [m].
  *
  * @unit meter
- * @ground AA241x Mission
+ * @group AA241x Mission
  */
 PARAM_DEFINE_FLOAT(AAMIS_FOV_MAX, 60.0f);
+
+/**
+ * Grams of water per drop.
+ *
+ * @unit grams/drop
+ * @min 0
+ * @group AA241x Mission
+ */
+PARAM_DEFINE_FLOAT(AAMIS_WGHT_DRP, 5.0f);
 
 /**
  * Index (0 based) of the mission to be executed.

@@ -13,9 +13,10 @@
 #include "../uORB.h"
 
 struct aa241x_water_drop_s {
-	uint64_t mission_time;		/**< the current mission time in microseconds */
-	int i_new;					/**< i grid coordinate of the water drop location */
-	int j_new;					/**< j grid coordinate of the water drop location */
+	uint64_t time_us;	/**< the current unix time in microseconds */
+	bool success;		/**< if true, successfully dropped water */
+	int i;				/**< i grid coordinate of the water drop location */
+	int j;				/**< j grid coordinate of the water drop location */
 };
 
 /* register this as object request broker structure */

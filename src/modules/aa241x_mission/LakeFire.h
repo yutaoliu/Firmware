@@ -51,7 +51,19 @@ public:
 	 */
 	bool	task_running() { return _task_running; }
 
+	/**
+	 * Trigger the virtual camera to take a picture and report the information.
+	 *
+	 * @return struct containing the success and information from the camera.
+	 */
 	picture_result_s	take_picture();
+
+	/**
+	 * Trigger the virtual water dropping.
+	 *
+	 * @return struct containing the success and details of the water drop.
+	 */
+	aa241x_water_drop_s	drop_water();
 
 private:
 
@@ -89,6 +101,8 @@ private:
 		float min_fov;
 		float max_fov;
 		int index;
+		float water_weight;
+		float weight_per_drop;
 		float ctr_lat;
 		float ctr_lon;
 		float ctr_alt;
@@ -107,6 +121,8 @@ private:
 		param_t min_fov;
 		param_t max_fov;
 		param_t index;
+		param_t water_weight;
+		param_t weight_per_drop;
 		param_t ctr_lat;
 		param_t ctr_lon;
 		param_t ctr_alt;
@@ -121,6 +137,8 @@ private:
 	float		_score;					/**< the current mission score */
 
 	hrt_abstime _last_picture;			/**< timestamp of when the last picture was taken */
+
+	int			_water_drops_remaining;	/**< the number of water shots remaining */
 
 	enum WIND_DIRECTION {
 		WIND_OTHER = -1,
