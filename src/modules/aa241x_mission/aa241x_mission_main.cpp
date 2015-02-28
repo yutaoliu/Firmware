@@ -20,7 +20,7 @@
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-
+#include <uORB/uORB.h>
 #include <drivers/device/device.h>
 #include <drivers/drv_hrt.h>
 #include <arch/board/board.h>
@@ -71,14 +71,17 @@ LakeFire::LakeFire() :
 	_local_pos = {};
 	_vehicle_status = {};
 
-	_parameter_handles.min_alt = param_find("AAMIS_MIN_ALT");
-	_parameter_handles.max_alt = param_find("AAMIS_MAX_ALT");
-	_parameter_handles.auto_alt = param_find("AAMIS_AUTO_ALT");
+	_parameter_handles.min_alt = param_find("AAMIS_ALT_MIN");
+	_parameter_handles.max_alt = param_find("AAMIS_ALT_MAX");
+	_parameter_handles.auto_alt = param_find("AAMIS_ALT_AUTO");
+	_parameter_handles.cell_width = param_find("AAMIS_CELL_W");
 	_parameter_handles.duration = param_find("AAMIS_DURATION");
-	_parameter_handles.max_radius = param_find("AAMIS_MAX_RAD");
+	_parameter_handles.max_radius = param_find("AAMIS_RAD_MAX");
 	_parameter_handles.timestep = param_find("AAMIS_TSTEP");
 	_parameter_handles.std = param_find("AAMIS_STD");
 	_parameter_handles.t_pic = param_find("AAMIS_TPIC");
+	_parameter_handles.min_fov = param_find("AAMIS_FOV_MIN");
+	_parameter_handles.max_fov = param_find("AAMIS_FOV_MAX");
 	_parameter_handles.index = param_find("AAMIS_INDEX");
 	_parameter_handles.ctr_lat = param_find("PE_CTR_LAT");
 	_parameter_handles.ctr_lon = param_find("PE_CTR_LON");
@@ -113,22 +116,121 @@ LakeFire::~LakeFire() {
 }
 
 
-void
+picture_result_s
 LakeFire::take_picture()
 {
+	picture_result_s pic_result = {};
+
+	pic_result.center_n = _local_pos.x;
+	pic_result.center_e = _local_pos.y;
+	pic_result.center_d = _local_pos.z;
+
 	hrt_abstime curr_time = hrt_absolute_time();
+	pic_result.time_us = curr_time;
 	float time_diff = (curr_time - _last_picture)/1000000.0f;
 
 	if (time_diff <= _parameters.t_pic) {
 		/* do not take a picture */
-		return;
+		pic_result.pic_taken = false;
+		return pic_result;
 	}
 
-	// TODO: convert from x,y to i,j coords and determine the fov
+	pic_result.pic_taken = true;
 
+	float pic_d = get_fov_d(-pic_result.center_d);
+	pic_result.pic_d = pic_d;
 
+	/* populate the i, j and state vectors */
+	get_fire_info(&pic_result);
+
+	/* publish this picture result */
+	publish_picture_result(pic_result);
+
+	return pic_result;
+}
+
+float
+LakeFire::get_fov_d(const float &alt)
+{
+	return _parameters.min_fov + (alt - _parameters.min_alt)*(_parameters.max_fov - _parameters.min_fov)/(_parameters.max_alt - _parameters.min_alt);
+}
+
+int
+LakeFire::n2i(const float &n)
+{
+	int i = GRID_CENTER - (int) roundf(n/_parameters.cell_width);
+
+	if (i < 0) i = 0;
+	if (i >= GRID_WIDTH) i = GRID_WIDTH - 1;
+
+	return i;
+}
+
+int
+LakeFire::e2j(const float &e)
+{
+	int j = GRID_CENTER - (int) roundf(e/_parameters.cell_width);
+
+	if (j < 0) j = 0;
+	if (j >= GRID_WIDTH) j = GRID_WIDTH - 1;
+
+	return j;
+}
+
+math::Vector<2>
+LakeFire::ij2ne(const float &i, const float &j)
+{
+	math::Vector<2> ne;
+
+	ne(0) = (GRID_CENTER - i)*_parameters.cell_width;
+	ne(1) = (j - GRID_CENTER)*_parameters.cell_width;
+
+	return ne;
 
 }
+
+void
+LakeFire::get_fire_info(picture_result_s *pic_result)
+{
+	/* explicit clean up (should not be necessary) */
+	pic_result->i.clear();
+	pic_result->j.clear();
+	pic_result->num_cells = 0;
+
+	float pic_r = pic_result->pic_d/2.0f;
+	float center_n = pic_result->center_n;
+	float center_e = pic_result->center_e;
+
+	int i_min = n2i(center_n + pic_r);
+	int i_max = n2i(center_n - pic_r);
+
+	int j_min = e2j(center_e - pic_r);
+	int j_max = e2j(center_e + pic_r);
+
+	float d2 = (pic_result->pic_d)^2;
+
+	math::Vector<2> center;
+	center(0) = center_n;
+	center(1) = center_e;
+
+	for (int i = i_min; i < i_max; i++) {
+		for (int j = j_min; j <= j_max; j++) {
+
+			/* check to ensure center of cell is within fov */
+			if ((ij2ne(i,j) - center).length_squared() <= d2) {
+				pic_result->i.push_back(i);
+				pic_result->j.push_back(j);
+				pic_result->num_cells++;
+
+				pic_result->state.push_back(_grid[i][j]);
+			}
+
+		}
+	}
+
+	return;
+}
+
 
 
 
@@ -138,6 +240,7 @@ LakeFire::parameters_update()
 	param_get(_parameter_handles.min_alt, &(_parameters.min_alt));
 	param_get(_parameter_handles.max_alt, &(_parameters.max_alt));
 	param_get(_parameter_handles.auto_alt, &(_parameters.auto_alt));
+	param_get(_parameter_handles.cell_width, &(_parameters.cell_width));
 	param_get(_parameter_handles.duration, &(_parameters.duration));
 	param_get(_parameter_handles.max_radius, &(_parameters.max_radius));
 	param_get(_parameter_handles.timestep, &(_parameters.timestep));
@@ -230,6 +333,17 @@ LakeFire::publish_new_fire(const std::vector<int> &i_new, const std::vector<int>
 		orb_publish(ORB_ID(aa241x_new_fire), _new_fire_pub, &new_fire);
 	} else {
 		_new_fire_pub = orb_advertise(ORB_ID(aa241x_new_fire), &new_fire);
+	}
+}
+
+void
+LakeFire::publish_picture_result(const picture_result_s &pic_result)
+{
+	/* publish the picture result */
+	if (_pic_result_pub > 0) {
+		orb_publish(ORB_ID(aa241x_picture_result), _pic_result_pub, &pic_result);
+	} else {
+		_pic_result_pub = orb_advertise(ORB_ID(aa241x_picture_result), &pic_result);
 	}
 }
 
@@ -418,7 +532,6 @@ LakeFire::calculate_score()
 
 	_score = (1.0f - (float) count / (float) worst_case_score[_parameters.index])*100.0f;
 }
-
 
 void
 LakeFire::task_main_trampoline(int argc, char **argv)

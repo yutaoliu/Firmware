@@ -18,6 +18,10 @@
 #include <uORB/topics/aa241x_mission_status.h>
 #include <uORB/topics/aa241x_new_fire.h>
 #include <uORB/topics/aa241x_water_drop.h>
+#include <uORB/topics/aa241x_picture_result.h>
+
+#define GRID_WIDTH 21
+#define GRID_CENTER 11
 
 class LakeFire
 {
@@ -44,9 +48,9 @@ public:
 	 *
 	 * @return	true if the mainloop is running
 	 */
-	bool		task_running() { return _task_running; }
+	bool	task_running() { return _task_running; }
 
-	void		take_picture();
+	picture_result_s	take_picture();
 
 private:
 
@@ -69,16 +73,20 @@ private:
 
 	orb_advert_t	_mission_status_pub;
 	orb_advert_t	_new_fire_pub;
+	orb_advert_t	_pic_result_pub;
 
 	struct {
 		float min_alt;
 		float max_alt;
 		float auto_alt;
+		float cell_width;
 		float duration;
 		float max_radius;
 		float timestep;
 		float std;
 		float t_pic;
+		float min_fov;
+		float max_fov;
 		int index;
 		float ctr_lat;
 		float ctr_lon;
@@ -89,11 +97,14 @@ private:
 		param_t min_alt;
 		param_t max_alt;
 		param_t auto_alt;
+		param_t cell_width;
 		param_t duration;
 		param_t max_radius;
 		param_t timestep;
 		param_t std;
 		param_t t_pic;
+		param_t min_fov;
+		param_t max_fov;
 		param_t index;
 		param_t ctr_lat;
 		param_t ctr_lon;
@@ -129,7 +140,34 @@ private:
 	};
 
 
-	int8_t	_grid[21][21];			/**< the grid that represents the lake */
+	int8_t	_grid[GRID_WIDTH][GRID_WIDTH];			/**< the grid that represents the lake */
+
+
+	/**
+	 * Get the diameter of the fov for a give altitude.
+	 */
+	float	get_fov_d(const float &alt);
+
+	/**
+	 * Convert from North position to i coordinate in grid.
+	 */
+	int		n2i(const float &n);
+
+	/**
+	 * Convert from East position to j coordinate in grid.
+	 */
+	int		e2j(const float &e);
+
+	/**
+	 * Convert from (i,j) grid coordinate to N,E coordinate of the center of the grid.
+	 */
+	math::Vector<2>		ij2ne(const float &i, const float &j);
+
+	/**
+	 * Determine which grid cells are in view and populate the information
+	 * into the picture_result struct.
+	 */
+	void	get_fire_info(picture_result_s *pic_result);
 
 	/**
 	 * Update our local parameter cache.
@@ -167,6 +205,11 @@ private:
 	void	publish_new_fire(const std::vector<int> &i_new, const std::vector<int> &j_new);
 
 	/**
+	 * Publish the picture result data when a picture is taken.
+	 */
+	void	publish_picture_result(const picture_result_s &pic_result);
+
+	/**
 	 * Gaussian random number generator.
 	 *
 	 * Uses the Box-Muller transform
@@ -193,11 +236,6 @@ private:
 	 * Calculate the current score.
 	 */
 	void 	calculate_score();
-
-	/**
-	 * Get the diameter of the fov for a give altitude.
-	 */
-	float	get_fov_d(const float &alt);
 
 
 
