@@ -68,6 +68,15 @@ PARAM_DEFINE_FLOAT(AAMIS_TSTEP, 5.0f);
 PARAM_DEFINE_FLOAT(AAMIS_STD, 0.25f);
 
 /**
+ * Minimum time in [sec] required between successive pictures.
+ *
+ * @min 0
+ * @unit seconds
+ * @group AA241x Mission
+ */
+PARAM_DEFINE_FLOAT(AAMIS_TPIC, 3.0f);
+
+/**
  * Index (0 based) of the mission to be executed.
  *
  * @min 0

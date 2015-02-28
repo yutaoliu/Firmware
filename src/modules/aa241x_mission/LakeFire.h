@@ -46,6 +46,8 @@ public:
 	 */
 	bool		task_running() { return _task_running; }
 
+	void		take_picture();
+
 private:
 
 	bool	_task_should_exit;		/**< if true, aa241x mission should exit */
@@ -76,6 +78,7 @@ private:
 		float max_radius;
 		float timestep;
 		float std;
+		float t_pic;
 		int index;
 		float ctr_lat;
 		float ctr_lon;
@@ -90,6 +93,7 @@ private:
 		param_t max_radius;
 		param_t timestep;
 		param_t std;
+		param_t t_pic;
 		param_t index;
 		param_t ctr_lat;
 		param_t ctr_lon;
@@ -103,6 +107,8 @@ private:
 	bool		_early_termination;		/**< if true terminating mission early, but still need to finish running fire */
 	bool		_mission_failed;		/**< if true terminating mission entirely with a score of 0 */
 	float		_score;					/**< the current mission score */
+
+	hrt_abstime _last_picture;			/**< timestamp of when the last picture was taken */
 
 	enum WIND_DIRECTION {
 		WIND_OTHER = -1,
@@ -187,6 +193,13 @@ private:
 	 * Calculate the current score.
 	 */
 	void 	calculate_score();
+
+	/**
+	 * Get the diameter of the fov for a give altitude.
+	 */
+	float	get_fov_d(const float &alt);
+
+
 
 	/**
 	 * Shim for calling task_main from task_create.

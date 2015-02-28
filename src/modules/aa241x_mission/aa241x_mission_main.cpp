@@ -62,6 +62,7 @@ LakeFire::LakeFire() :
 	_early_termination(false),
 	_mission_failed(true),
 	_score(0.0f),
+	_last_picture(0),
 	_wind_direction(WIND_OTHER),
 	_grid{{0}}
 {
@@ -77,6 +78,7 @@ LakeFire::LakeFire() :
 	_parameter_handles.max_radius = param_find("AAMIS_MAX_RAD");
 	_parameter_handles.timestep = param_find("AAMIS_TSTEP");
 	_parameter_handles.std = param_find("AAMIS_STD");
+	_parameter_handles.t_pic = param_find("AAMIS_TPIC");
 	_parameter_handles.index = param_find("AAMIS_INDEX");
 	_parameter_handles.ctr_lat = param_find("PE_CTR_LAT");
 	_parameter_handles.ctr_lon = param_find("PE_CTR_LON");
@@ -110,6 +112,26 @@ LakeFire::~LakeFire() {
 	aa241x_mission::g_aa241x_mission = nullptr;
 }
 
+
+void
+LakeFire::take_picture()
+{
+	hrt_abstime curr_time = hrt_absolute_time();
+	float time_diff = (curr_time - _last_picture)/1000000.0f;
+
+	if (time_diff <= _parameters.t_pic) {
+		/* do not take a picture */
+		return;
+	}
+
+	// TODO: convert from x,y to i,j coords and determine the fov
+
+
+
+}
+
+
+
 int
 LakeFire::parameters_update()
 {
@@ -120,6 +142,7 @@ LakeFire::parameters_update()
 	param_get(_parameter_handles.max_radius, &(_parameters.max_radius));
 	param_get(_parameter_handles.timestep, &(_parameters.timestep));
 	param_get(_parameter_handles.std, &(_parameters.std));
+	param_get(_parameter_handles.t_pic, &(_parameters.t_pic));
 	param_get(_parameter_handles.index, &(_parameters.index));
 	param_get(_parameter_handles.ctr_lat, &(_parameters.ctr_lat));
 	param_get(_parameter_handles.ctr_lon, &(_parameters.ctr_lon));
