@@ -10,38 +10,48 @@
 #include <systemlib/param/param.h>
 
 /**
- * Minimum allowed altitude during mission in [ft] above Lake Lag.
+ * Minimum allowed altitude during mission in [m] above Lake Lag.
  * Also acts at the mission start threshold altitude.
  *
- * @unit feet
+ * @unit meter
  * @group AA241x Mission
  */
-PARAM_DEFINE_FLOAT(AAMIS_MIN_ALT, 100.0f);
+PARAM_DEFINE_FLOAT(AAMIS_ALT_MIN, 30.48f);
 
 /**
- * Maximum allowed altitude during mission  in [ft] above Lake Lag.
+ * Maximum allowed altitude during mission  in [m] above Lake Lag.
  *
- * @unit feet
+ * @unit meter
  * @group AA241x Mission
  */
-PARAM_DEFINE_FLOAT(AAMIS_MAX_ALT, 400.0f);
+PARAM_DEFINE_FLOAT(AAMIS_ALT_MAX, 121.92f);
 
 /**
- * Maximum allowed radial distance in [ft] from the center of the lake.
+ * Maximum allowed radial distance in [m] from the center of the lake.
  *
- * @unit ft
+ * @unit meter
  * @group AA241x Mission
  */
-PARAM_DEFINE_FLOAT(AAMIS_MAX_RAD, 300.0f);
+PARAM_DEFINE_FLOAT(AAMIS_RAD_MAX, 300.0f);
 
 /**
- * Altitude in [ft] by which autopilot needs to be engaged in order
+ * Width of a grid cell in [m].
+ *
+ * @unit meters
+ * @min 0
+ * @ground AA241x Mission
+ */
+PARAM_DEFINE_FLOAT(AAMIS_CELL_W, 16.0f);
+
+
+/**
+ * Altitude in [m] by which autopilot needs to be engaged in order
  * to be eligible for a mission start.
  *
- * @unit feet
+ * @unit meter
  * @group AA241x Mission
  */
-PARAM_DEFINE_FLOAT(AAMIS_AUTO_ALT, 50.0f);
+PARAM_DEFINE_FLOAT(AAMIS_ALT_AUTO, 15.24f);
 
 /**
  * Total duration in [mins] that the fire will spread for once
@@ -75,6 +85,22 @@ PARAM_DEFINE_FLOAT(AAMIS_STD, 0.25f);
  * @group AA241x Mission
  */
 PARAM_DEFINE_FLOAT(AAMIS_TPIC, 3.0f);
+
+/**
+ * Minimum camera field of view diameter in [m].
+ *
+ * @unit meter
+ * @ground AA241x Mission
+ */
+PARAM_DEFINE_FLOAT(AAMIS_FOV_MIN, 30.0f);
+
+/**
+ * Maximum camera field of view diameter in [m].
+ *
+ * @unit meter
+ * @ground AA241x Mission
+ */
+PARAM_DEFINE_FLOAT(AAMIS_FOV_MAX, 60.0f);
 
 /**
  * Index (0 based) of the mission to be executed.
