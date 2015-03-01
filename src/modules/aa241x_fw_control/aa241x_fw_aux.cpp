@@ -4,7 +4,13 @@
  *  Created on: Feb 9, 2015
  *      Author: Adrien
  */
+
+#include <uORB/topics/vehicle_attitude_setpoint.h>
+#include <uORB/topics/aa241x_picture_request.h>
+#include <uORB/topics/aa241x_water_drop_request.h>
+
 #include "aa241x_fw_aux.h"
+#include "../aa241x_mission/aa241x_mission_namespace.h"
 
 // set these variables for help in debugging (these will be sent to the ground station)
 float roll_desired = 0.0f;
@@ -14,10 +20,9 @@ float throttle_desired = 0.0f;
 
 
 // Tait-Bryan Euler angles in radian
-// TODO: figure out range on these... (-pi to pi or something different)
-float roll = 0.0f;
-float pitch = 0.0f;
-float yaw = 0.0f;
+float roll = 0.0f;		/**< range from -pi .. pi */
+float pitch = 0.0f;		/**< range from -pi/2 .. pi/2 */
+float yaw = 0.0f;		/**< range from -pi .. pi */
 
 // angular rates, Tait-Bryan NED [rad/s]
 float roll_rate = 0.0f;
@@ -89,13 +94,99 @@ uint64_t utc_timestamp = 0; // GPS UTC timestamp in microseconds
 struct aa_params aa_parameters = {};		// struct containing all of the user editable parameters (via ground station)
 
 
+
+orb_advert_t	_attitude_sp_pub = -1;
+orb_advert_t	_picture_request_pub = -1;
+orb_advert_t	_water_drop_request_pub = -1;
+
+
 /* functions */
 
-snapshot_s take_picture() {
-	snapshot_s snapshot = {};
-	snapshot.pic_taken = false;
+picture_result_s take_picture()
+{
+	/*
+	if (aa241x_mission::g_aa241x_mission) {
+		return aa241x_mission::g_aa241x_mission->take_picture();
+	} else {
+		picture_result_s pic_result;
+		pic_result.pic_taken = false;
+		return pic_result;
+	}
+	*/
 
-	// TODO: do this with mission class
-
-	return snapshot;
+	picture_result_s pic_result;
+	pic_result.pic_taken = false;
+	return pic_result;
 }
+
+
+
+water_drop_result_s drop_water()
+{
+	/*
+	if (aa241x_mission::g_aa241x_mission) {
+		return aa241x_mission::g_aa241x_mission->drop_water();
+	} else {
+		water_drop_result_s water_drop;
+		water_drop.success = false;
+		return water_drop;
+	}
+	*/
+
+	water_drop_result_s water_drop;
+	water_drop.success = false;
+	return water_drop;
+}
+
+
+void take_picture_publish()
+{
+	picture_request_s pic_request;
+	pic_request.time_us = hrt_absolute_time();
+	pic_request.pos_N = position_N;
+	pic_request.pos_E = position_E;
+	pic_request.pos_D = position_D;
+
+	/* publish the picture request */
+	if (_picture_request_pub > 0) {
+		orb_publish(ORB_ID(aa241x_picture_request), _picture_request_pub, &pic_request);
+	} else {
+		_picture_request_pub = orb_advertise(ORB_ID(aa241x_picture_request), &pic_request);
+	}
+}
+
+
+void drop_water_publish()
+{
+	water_drop_request_s water_drop_request;
+	water_drop_request.time_us = hrt_absolute_time();
+	water_drop_request.pos_N = position_N;
+	water_drop_request.pos_E = position_E;
+	water_drop_request.pos_D = position_D;
+
+	/* publish the picture request */
+	if (_picture_request_pub > 0) {
+		orb_publish(ORB_ID(aa241x_water_drop_request), _water_drop_request_pub, &water_drop_request);
+	} else {
+		_water_drop_request_pub = orb_advertise(ORB_ID(aa241x_water_drop_request), &water_drop_request);
+	}
+}
+
+
+void publish_desired_attitude(const float &roll_d, const float &pitch_d, const float &yaw_d, const float &throttle_d)
+{
+	vehicle_attitude_setpoint_s att_sp;
+	att_sp.roll_body = roll_d;
+	att_sp.pitch_body = pitch_d;
+	att_sp.yaw_body = yaw_d;
+	att_sp.thrust = throttle_d;
+
+	/* publish the desired attitude */
+	if (_attitude_sp_pub > 0) {
+		orb_publish(ORB_ID(aa241x_mission_status), _attitude_sp_pub, &att_sp);
+	} else {
+		_attitude_sp_pub = orb_advertise(ORB_ID(aa241x_mission_status), &att_sp);
+	}
+}
+
+

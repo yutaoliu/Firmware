@@ -121,8 +121,6 @@ public:
 	 */
 	bool		task_running() { return _task_running; }
 
-	int			take_picture();
-
 private:
 
 	bool	_task_should_exit;		/**< if true, attitude control task should exit */
@@ -372,12 +370,6 @@ FixedwingControl::~FixedwingControl()
 	}
 
 	att_control::g_control = nullptr;
-}
-
-int
-FixedwingControl::take_picture()
-{
-	return 0;
 }
 
 int

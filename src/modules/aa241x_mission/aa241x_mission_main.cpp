@@ -54,8 +54,12 @@ LakeFire::LakeFire() :
 	_local_pos_sub(-1),
 	_vehicle_status_sub(-1),
 	_params_sub(-1),
+	_pic_request_sub(-1),
+	_water_drop_request_sub(-1),
 	_mission_status_pub(-1),
 	_new_fire_pub(-1),
+	_pic_result_pub(-1),
+	_water_drop_result_pub(-1),
 	_mission_start_time(-1),
 	_last_propagation_time(-1),
 	_in_mission(false),
@@ -71,6 +75,8 @@ LakeFire::LakeFire() :
 	_global_pos = {};
 	_local_pos = {};
 	_vehicle_status = {};
+	_pic_request = {};
+	_water_drop_request = {};
 
 	_parameter_handles.min_alt = param_find("AAMIS_ALT_MIN");
 	_parameter_handles.max_alt = param_find("AAMIS_ALT_MAX");
@@ -126,11 +132,11 @@ LakeFire::take_picture()
 {
 	picture_result_s pic_result = {};
 
-	pic_result.center_n = _local_pos.x;
-	pic_result.center_e = _local_pos.y;
-	pic_result.center_d = _local_pos.z;
+	pic_result.center_n = _pic_request.pos_N; // _local_pos.x;
+	pic_result.center_e = _pic_request.pos_E; // _local_pos.y;
+	pic_result.center_d = _pic_request.pos_D; // _local_pos.z;
 
-	hrt_abstime curr_time = hrt_absolute_time();
+	hrt_abstime curr_time = _pic_request.time_us; // hrt_absolute_time();
 	pic_result.time_us = curr_time;
 	float time_diff = (curr_time - _last_picture)/1000000.0f;
 
@@ -158,22 +164,19 @@ LakeFire::take_picture()
 	/* populate the i, j and state vectors */
 	get_fire_info(&pic_result);
 
-	/* publish this picture result */
-	publish_picture_result(pic_result);
-
 	return pic_result;
 }
 
-aa241x_water_drop_s
+water_drop_result_s
 LakeFire::drop_water()
 {
-	aa241x_water_drop_s water_drop;
+	water_drop_result_s water_drop;
 
-	water_drop.time_us = hrt_absolute_time();
+	water_drop.time_us = _water_drop_request.time_us; // hrt_absolute_time();
 
-	float n = _local_pos.x;
-	float e = _local_pos.y;
-	float d = _local_pos.z;
+	float n = _pic_request.pos_N; // _local_pos.x;
+	float e = _pic_request.pos_E; // _local_pos.y;
+	float d = _pic_request.pos_D; // _local_pos.z;
 
 	/* mission logic checks */
 	if (!_in_mission || _water_drops_remaining <= 0) {
@@ -197,6 +200,9 @@ LakeFire::drop_water()
 	water_drop.success = true;
 	water_drop.i = i;
 	water_drop.j = j;
+
+	/* publish the info */
+	publish_water_drop(water_drop);
 
 	return water_drop;
 }
@@ -357,6 +363,42 @@ LakeFire::vehicle_status_update()
 }
 
 void
+LakeFire::handle_picture_request()
+{
+	/* copy the picture request */
+	orb_copy(ORB_ID(aa241x_picture_request), _pic_request_sub, &_pic_request);
+
+	/* do the taking of the picture */
+	picture_result_s pic_result = take_picture();
+
+	/* only publish the result if the picture was successful,
+	 * this ensures that there is no erasing of a picture result before
+	 * it can be used in the case of someone spaming the take picture function */
+	// TODO: maybe always publish the result...
+	if (pic_result.pic_taken) {
+		publish_picture_result(pic_result);
+	}
+}
+
+void
+LakeFire::handle_water_drop_request()
+{
+	/* copy the water drop request */
+	orb_copy(ORB_ID(aa241x_water_drop_request), _water_drop_request_sub, &_water_drop_request);
+
+	/* do the dropping of water */
+	water_drop_result_s water_drop_res = drop_water();
+
+	/* only publish the result if the was drop was successful,
+	 * this ensures that there is no erasing of a water drop result before
+	 * it can be used */
+	// TODO: maybe always publish the result...
+	if (water_drop_res.success) {
+		publish_water_drop(water_drop_res);
+	}
+}
+
+void
 LakeFire::publish_mission_status()
 {
 	aa241x_mission_status_s mis_stat;
@@ -397,6 +439,17 @@ LakeFire::publish_picture_result(const picture_result_s &pic_result)
 		orb_publish(ORB_ID(aa241x_picture_result), _pic_result_pub, &pic_result);
 	} else {
 		_pic_result_pub = orb_advertise(ORB_ID(aa241x_picture_result), &pic_result);
+	}
+}
+
+void
+LakeFire::publish_water_drop(const water_drop_result_s &water_drop_result)
+{
+	/* publish the picture result */
+	if (_water_drop_result_pub > 0) {
+		orb_publish(ORB_ID(aa241x_water_drop_result), _water_drop_result_pub, &water_drop_result);
+	} else {
+		_water_drop_result_pub = orb_advertise(ORB_ID(aa241x_water_drop_result), &water_drop_result);
 	}
 }
 
@@ -674,7 +727,7 @@ LakeFire::task_main()
 	vehicle_status_update();
 
 	/* wakeup source(s) */
-	struct pollfd fds[5];
+	struct pollfd fds[7];
 
 	/* Setup of loop */
 	fds[0].fd = _params_sub;
@@ -687,6 +740,10 @@ LakeFire::task_main()
 	fds[3].events = POLLIN;
 	fds[4].fd = _vehicle_status_sub;
 	fds[4].events = POLLIN;
+	fds[5].fd = _pic_request_sub;
+	fds[5].events = POLLIN;
+	fds[6].fd = _water_drop_request_sub;
+	fds[6].events = POLLIN;
 
 	_task_running = true;
 
@@ -734,6 +791,16 @@ LakeFire::task_main()
 		/* vehicle status updated */
 		if (fds[4].revents & POLLIN) {
 			vehicle_status_update();
+		}
+
+		/* picture request */
+		if (fds[4].revents & POLLIN) {
+			handle_picture_request();
+		}
+
+		/* water drop request */
+		if (fds[4].revents & POLLIN) {
+			handle_water_drop_request();
 		}
 
 		/* check auto start requirements */

@@ -18,8 +18,10 @@
 #include <uORB/topics/vehicle_status.h>
 #include <uORB/topics/aa241x_mission_status.h>
 #include <uORB/topics/aa241x_new_fire.h>
-#include <uORB/topics/aa241x_water_drop.h>
+#include <uORB/topics/aa241x_water_drop_result.h>
+#include <uORB/topics/aa241x_water_drop_request.h>
 #include <uORB/topics/aa241x_picture_result.h>
+#include <uORB/topics/aa241x_picture_request.h>
 
 #define GRID_WIDTH 21		/**< the number of cells wide and tall the grid is */
 #define GRID_CENTER 10		/**< the index of the center row and column */
@@ -63,7 +65,7 @@ public:
 	 *
 	 * @return struct containing the success and details of the water drop.
 	 */
-	aa241x_water_drop_s	drop_water();
+	water_drop_result_s	drop_water();
 
 private:
 
@@ -77,16 +79,21 @@ private:
 	int		_local_pos_sub;			/**< local position subscription */
 	int		_vehicle_status_sub;	/**< vehicle status (navigation mode) subscription */
 	int		_params_sub;			/**< parameters update subscription */
+	int		_pic_request_sub;		/**< requests for taking a picture */
+	int		_water_drop_request_sub; /**< requests for triggering water drop */
 
 	// structures for subscribed data
 	struct vehicle_control_mode_s		_vcontrol_mode;		/**< vehicle control mode */
 	struct vehicle_global_position_s	_global_pos;		/**< global position */
 	struct vehicle_local_position_s		_local_pos;			/**< local position */
 	struct vehicle_status_s				_vehicle_status;	/**< vehicle status */
+	struct picture_request_s			_pic_request;		/**< picture taking request */
+	struct water_drop_request_s			_water_drop_request; /**< water drop request */
 
 	orb_advert_t	_mission_status_pub;
 	orb_advert_t	_new_fire_pub;
 	orb_advert_t	_pic_result_pub;
+	orb_advert_t	_water_drop_result_pub;
 
 	struct {
 		float min_alt;
@@ -214,6 +221,16 @@ private:
 	void	vehicle_status_update();
 
 	/**
+	 * Handle the picture request, taking picture if necessary and publishing response.
+	 */
+	void	handle_picture_request();
+
+	/**
+	 * Handle the water dropping request, dropping water as needed and publishing response.
+	 */
+	void	handle_water_drop_request();
+
+	/**
 	 * Publish the current mission status information.
 	 */
 	void 	publish_mission_status();
@@ -227,6 +244,11 @@ private:
 	 * Publish the picture result data when a picture is taken.
 	 */
 	void	publish_picture_result(const picture_result_s &pic_result);
+
+	/**
+	 * Publish the water drop data when a drop is requested.
+	 */
+	void	publish_water_drop(const water_drop_result_s &water_drop);
 
 	/**
 	 * Gaussian random number generator.

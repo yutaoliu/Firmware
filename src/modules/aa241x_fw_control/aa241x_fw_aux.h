@@ -14,6 +14,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <vector>
+#include <uORB/uORB.h>
+#include <uORB/topics/aa241x_picture_result.h>
+#include <uORB/topics/aa241x_water_drop_result.h>
+
 #include "aa241x_fw_control_params.h"
 #include "../aa241x_mission/aa241x_mission_namespace.h"
 
@@ -92,28 +96,55 @@ extern float pitch_trim;
 extern float yaw_trim;
 
 // time information
-extern uint64_t timestamp; 	// timestamp of microseconds since boot
+extern uint64_t timestamp; 	// unix timestamp in microseconds
 extern uint64_t utc_timestamp; // GPS UTC timestamp in microseconds
-
 
 
 // user config parameters structure
 extern struct aa_params aa_parameters;		// struct containing all of the user editable parameters (via ground station)
 
 
-struct snapshot_s {
-	bool pic_taken;			/**< if true, a picture was successfully taken */
-	uint64_t time_us;		/**< timestamp in microseconds since boot at which the picture was taken */
-	float center_n;			/**< North coordinate (North distance from center in [m]) of the center of the picture */
-	float center_e;			/**< East coordinate (East distance from center in [m]) of the center of the picture */
-	float pic_d;			/**< diameter in [m] of the picture taken */
-	int num_cells;			/**< number of grid cells in view (length of vectors i, j, and state) */
-	std::vector<int> i;		/**< list of i grid coordinates in view */
-	std::vector<int> j;		/**< list of j grid coordinates in view */
-	std::vector<int> state; /**< state of each grid coordinate in view (-1 = water, 0 = nothing, 1 = on fire) */
-};
 
-snapshot_s take_picture();
+/* functions */
+
+/**
+ * Function to take a picture from the current location of the UAV.
+ * Make sure to check the boolean as to whether or not the picture was actually taken.
+ * The rest of the struct fields will only have valid data if picture was taken.
+ *
+ * @return  struct containing the picture result.
+ * See /src/modules/uORB/topics/aa241x_picture_result.h for details on struct fields
+ */
+picture_result_s take_picture();
+
+
+/**
+ * Function to drop water from the current location of the UAV.
+ * Make sure to check the boolean as to whether or not the water was actually dropped.
+ * The rest of the struct fields will only have valid data if water was dropped.
+ *
+ * @return  struct containing the water drop result.
+ * See /src/modules/uORB/topics/aa241x_water_drop.h for details on struct fields
+ */
+water_drop_result_s drop_water();
+
+
+
+void	take_picture_publish();
+
+
+void	drop_water_publish();
+
+
+
+
+/**
+ * Send desired attitude (target roll, pitch, yaw and throttle) to the ground station and to logging.
+ *
+ * This is great for debugging, and I highly recommend you do use this function to log the desired attitude
+ * values.
+ */
+void	publish_desired_attitude(const float &roll, const float &pitch, const float &yaw, const float &throttle);
 
 
 
