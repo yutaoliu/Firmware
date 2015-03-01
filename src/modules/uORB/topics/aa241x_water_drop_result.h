@@ -12,7 +12,7 @@
 #include <stdbool.h>
 #include "../uORB.h"
 
-struct aa241x_water_drop_s {
+struct water_drop_result_s {
 	uint64_t time_us;	/**< the current unix time in microseconds */
 	bool success;		/**< if true, successfully dropped water */
 	int i;				/**< i grid coordinate of the water drop location */
@@ -20,7 +20,7 @@ struct aa241x_water_drop_s {
 };
 
 /* register this as object request broker structure */
-ORB_DECLARE(aa241x_water_drop);
+ORB_DECLARE(aa241x_water_drop_result);
 
 
 #endif /* TOPIC_AA241X_WATER_DROP_H_ */
