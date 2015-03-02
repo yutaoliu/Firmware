@@ -250,9 +250,11 @@ LakeFire::ij2ne(const float &i, const float &j)
 void
 LakeFire::get_fire_info(picture_result_s *pic_result)
 {
+	std::vector<int> i_view;
+	std::vector<int> j_view;
+	std::vector<int> state;
+
 	/* explicit clean up (should not be necessary) */
-	pic_result->i.clear();
-	pic_result->j.clear();
 	pic_result->num_cells = 0;
 
 	float pic_r = pic_result->pic_d/2.0f;
@@ -278,15 +280,18 @@ LakeFire::get_fire_info(picture_result_s *pic_result)
 
 			/* check to ensure center of cell is within fov */
 			if ((ij2ne(i,j) - center).length_squared() <= d2) {
-				pic_result->i.push_back(i);
-				pic_result->j.push_back(j);
-				pic_result->num_cells++;
-
-				pic_result->state.push_back(_grid[i][j]);
+				i_view.push_back(i);
+				j_view.push_back(j);
+				state.push_back(_grid[i][j]);
 			}
 
 		}
 	}
+
+	pic_result->num_cells = i_view.size();
+	pic_result->i = &i_view[0];
+	pic_result->j = &j_view[0];
+	pic_result->state = &state[0];
 
 	return;
 }
@@ -418,10 +423,14 @@ LakeFire::publish_mission_status()
 void
 LakeFire::publish_new_fire(const std::vector<int> &i_new, const std::vector<int> &j_new)
 {
+	std::vector<int> i_fire = i_new;
+	std::vector<int> j_fire = j_new;
+
 	aa241x_new_fire_s new_fire;
 	new_fire.mission_time = _last_propagation_time;
-	new_fire.i_new = i_new;
-	new_fire.j_new = j_new;
+	new_fire.num_new = i_fire.size();
+	new_fire.i_new = &i_fire[0];
+	new_fire.j_new = &j_fire[0];
 
 	/* publish the new fire cells */
 	if (_new_fire_pub > 0) {

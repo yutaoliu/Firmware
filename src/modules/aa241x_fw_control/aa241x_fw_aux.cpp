@@ -104,7 +104,7 @@ orb_advert_t	_water_drop_request_pub = -1;
 
 picture_result_s take_picture()
 {
-	/*
+
 	if (aa241x_mission::g_aa241x_mission) {
 		return aa241x_mission::g_aa241x_mission->take_picture();
 	} else {
@@ -112,11 +112,12 @@ picture_result_s take_picture()
 		pic_result.pic_taken = false;
 		return pic_result;
 	}
-	*/
 
+	/*
 	picture_result_s pic_result;
 	pic_result.pic_taken = false;
 	return pic_result;
+	*/
 }
 
 
