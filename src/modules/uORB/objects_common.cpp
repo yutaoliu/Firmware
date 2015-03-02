@@ -258,7 +258,7 @@ ORB_DEFINE(aa241x_mission_status, struct aa241x_mission_status_s);
 ORB_DEFINE(aa241x_new_fire, struct aa241x_new_fire_s);
 
 #include "topics/aa241x_water_drop_result.h"
-ORB_DEFINE(aa241x_water_drop, struct water_drop_result_s);
+ORB_DEFINE(aa241x_water_drop_result, struct water_drop_result_s);
 
 #include "topics/aa241x_picture_result.h"
 ORB_DEFINE(aa241x_picture_result, struct picture_result_s);
