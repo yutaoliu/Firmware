@@ -435,6 +435,55 @@ struct log_VTOL_s {
 	float airspeed_tot;
 };
 
+
+/* --- AA241x MISSION STATUS --- */
+#define LOG_AMIS_MSG 64
+struct log_AMIS_s {
+	uint8_t in_mission;
+	uint8_t can_start;
+	float mission_time;
+	float score;
+};
+
+/* --- AA241x NEW FIRE --- */
+#define LOG_FIRE_MSG 65
+struct log_FIRE_s {
+	uint64_t time_us;
+	uint8_t msg_number;
+	uint8_t i[7];
+	uint8_t j[7];
+};
+
+/* --- AA241x PICTURE RESULT OVERVIEW --- */
+#define LOG_PICR_MSG 66
+struct log_PICR_s {
+	uint8_t pic_taken;
+	uint64_t time_us;
+	float center_n;
+	float center_e;
+	float center_d;
+	float pic_d;
+	uint8_t num_cells;
+};
+
+/* --- AA241x PICTURE RESULT DETAILS --- */
+#define LOG_PICD_MSG 67
+struct log_PICD_s {
+	uint8_t msg_number;
+	uint8_t i[5];
+	uint8_t j[5];
+	int8_t state[5];
+};
+
+/* --- AA241x WATER DROP --- */
+#define LOG_WDRP_MSG 68
+struct log_WDRP_s {
+	uint8_t success;
+	uint64_t time_us;
+	uint8_t i;
+	uint8_t j;
+};
+
 /********** SYSTEM MESSAGES, ID > 0x80 **********/
 
 /* --- TIME - TIME STAMP --- */
@@ -504,6 +553,13 @@ static const struct log_format_s log_formats[] = {
 	LOG_FORMAT(TECS, "fffffffffffffB",	"ASP,AF,FSP,F,FF,AsSP,AsF,AsDSP,AsD,TERSP,TER,EDRSP,EDR,M"),
 	LOG_FORMAT(WIND, "ffff",	"X,Y,CovX,CovY"),
 	LOG_FORMAT(ENCD, "qfqf",	"cnt0,vel0,cnt1,vel1"),
+
+	/* AA241x logging */
+	LOG_FORMAT(AMIS, "BBff", "InMission,CanStart,MisTime,Score"),
+	LOG_FORMAT(FIRE, "QBBBBBBBBBBBBBBB", "T,n,i1,i2,i3,i4,i5,i6,i7,j1,j2,j3,j4,j5,j6,j7"),
+	LOG_FORMAT(PICR, "BQffffB", "Success,T,CntrN,CntrE,CntrD,PicD,nCell"),
+	LOG_FORMAT(PICD, "BBBBBBBBBBBbbbbb", "n,i1,i2,i3,i4,i5,j1,j2,j3,j4,j5,s1,s2,s3,s4,s5"),
+	LOG_FORMAT(WDRP, "BQBB", "Success,T,i,j"),
 
 	/* system-level messages, ID >= 0x80 */
 	/* FMT: don't write format of format message, it's useless */

@@ -100,6 +100,13 @@
 #include <uORB/topics/encoders.h>
 #include <uORB/topics/vtol_vehicle_status.h>
 
+/* AA241x includes */
+// #include <vector>
+#include <uORB/topics/aa241x_mission_status.h>
+#include <uORB/topics/aa241x_new_fire.h>
+#include <uORB/topics/aa241x_picture_result.h>
+#include <uORB/topics/aa241x_water_drop_result.h>
+
 #include <systemlib/systemlib.h>
 #include <systemlib/param/param.h>
 #include <systemlib/perf_counter.h>
@@ -1006,6 +1013,11 @@ int sdlog2_thread_main(int argc, char *argv[])
 		struct wind_estimate_s wind_estimate;
 		struct encoders_s encoders;
 		struct vtol_vehicle_status_s vtol_status;
+		/* AA241x */
+		struct aa241x_mission_status_s mis_status;
+		struct aa241x_new_fire_s new_fire;
+		struct picture_result_s pic_result;
+		struct water_drop_result_s water_drop_result;
 	} buf;
 
 	memset(&buf, 0, sizeof(buf));
@@ -1050,6 +1062,12 @@ int sdlog2_thread_main(int argc, char *argv[])
 			struct log_TECS_s log_TECS;
 			struct log_WIND_s log_WIND;
 			struct log_ENCD_s log_ENCD;
+			/* AA241x */
+			struct log_AMIS_s log_AMIS;
+			struct log_FIRE_s log_FIRE;
+			struct log_PICR_s log_PICR;
+			struct log_PICD_s log_PICD;
+			struct log_WDRP_s log_WDRP;
 		} body;
 	} log_msg = {
 		LOG_PACKET_HEADER_INIT(0)
@@ -1090,6 +1108,11 @@ int sdlog2_thread_main(int argc, char *argv[])
 		int servorail_status_sub;
 		int wind_sub;
 		int encoders_sub;
+		/* AA241x */
+		int mis_sub;
+		int fire_sub;
+		int pic_result_sub;
+		int water_drop_result_sub;
 	} subs;
 
 	subs.cmd_sub = orb_subscribe(ORB_ID(vehicle_command));
@@ -1127,6 +1150,14 @@ int sdlog2_thread_main(int argc, char *argv[])
 	subs.encoders_sub = orb_subscribe(ORB_ID(encoders));
 
 	/* add new topics HERE */
+
+	/* AA241x topics */
+	subs.mis_sub = orb_subscribe(ORB_ID(aa241x_mission_status));
+	subs.fire_sub = orb_subscribe(ORB_ID(aa241x_new_fire));
+	subs.pic_result_sub = orb_subscribe(ORB_ID(aa241x_picture_result));
+	subs.water_drop_result_sub = orb_subscribe(ORB_ID(aa241x_water_drop_result));
+
+	orb_set_interval(subs.mis_sub, 1000); // rate limit the mission subscription to only listen to the updates once a second
 
 
 	for (int i = 0; i < TELEMETRY_STATUS_ORB_ID_NUM; i++) {
@@ -1778,6 +1809,101 @@ int sdlog2_thread_main(int argc, char *argv[])
 			log_msg.body.log_ENCD.cnt1 = buf.encoders.counts[1];
 			log_msg.body.log_ENCD.vel1 = buf.encoders.velocity[1];
 			LOGBUFFER_WRITE_AND_COUNT(ENCD);
+		}
+
+		/* AA241x messages */
+
+		/* --- MISSION STATUS --- */
+		if (copy_if_updated(ORB_ID(aa241x_mission_status), subs.mis_sub, &buf.mis_status)) {
+			log_msg.msg_type = LOG_AMIS_MSG;
+			log_msg.body.log_AMIS.in_mission = buf.mis_status.in_mission;
+			log_msg.body.log_AMIS.can_start = buf.mis_status.can_start;
+			log_msg.body.log_AMIS.mission_time = buf.mis_status.mission_time;
+			log_msg.body.log_AMIS.score = buf.mis_status.score;
+			LOGBUFFER_WRITE_AND_COUNT(AMIS);
+		}
+
+		/* --- NEW FIRE --- */
+		if (copy_if_updated(ORB_ID(aa241x_new_fire), subs.fire_sub, &buf.new_fire)) {
+
+			/* may need to split up the message (depending on how many new fire cells) */
+			uint8_t msg_num = 0;
+			uint8_t size = buf.new_fire.num_new;
+			uint8_t i_max = 0;
+			uint8_t remaining = size;
+
+			while (remaining > 0) {
+
+				log_msg.msg_type = LOG_FIRE_MSG;
+				log_msg.body.log_FIRE.time_us = buf.new_fire.mission_time;
+				log_msg.body.log_FIRE.msg_number = msg_num;
+
+				if (remaining > 7) {
+					i_max = 7;
+				} else {
+					i_max = remaining;
+				}
+
+				for (int i = 0; i < i_max; i++) {
+					log_msg.body.log_FIRE.i[i] = buf.new_fire.i_new[i];
+					log_msg.body.log_FIRE.j[i] = buf.new_fire.j_new[i];
+				}
+				LOGBUFFER_WRITE_AND_COUNT(FIRE);
+
+				remaining = size - i_max;
+				msg_num++;
+			}
+		}
+
+		/* --- PICTURE RESULT --- */
+		if (copy_if_updated(ORB_ID(aa241x_new_fire), subs.fire_sub, &buf.pic_result)) {
+			log_msg.msg_type = LOG_PICR_MSG;
+			log_msg.body.log_PICR.pic_taken = buf.pic_result.pic_taken;
+			log_msg.body.log_PICR.time_us = buf.pic_result.time_us;
+			log_msg.body.log_PICR.center_n = buf.pic_result.center_n;
+			log_msg.body.log_PICR.center_e = buf.pic_result.center_e;
+			log_msg.body.log_PICR.center_d = buf.pic_result.center_d;
+			log_msg.body.log_PICR.pic_d = buf.pic_result.pic_d;
+			log_msg.body.log_PICR.num_cells = buf.pic_result.num_cells;
+			LOGBUFFER_WRITE_AND_COUNT(PICR);
+
+			// may need to split up the message (depending on how many cells in view)
+			uint8_t msg_num = 0;
+			uint8_t size = buf.pic_result.num_cells;
+			uint8_t i_max = 0;
+			uint8_t remaining = size;
+
+			while (remaining > 0) {
+
+				log_msg.msg_type = LOG_PICD_MSG;
+				log_msg.body.log_PICD.msg_number = msg_num;
+
+				if (remaining > 5) {
+					i_max = 5;
+				} else {
+					i_max = remaining;
+				}
+
+				for (int i = 0; i < i_max; i++) {
+					log_msg.body.log_PICD.i[i] = buf.pic_result.i[i];
+					log_msg.body.log_PICD.j[i] = buf.pic_result.j[i];
+					log_msg.body.log_PICD.state[i] = buf.pic_result.state[i];
+				}
+				LOGBUFFER_WRITE_AND_COUNT(PICD);
+
+				remaining = size - i_max;
+				msg_num++;
+			}
+		}
+
+		/* --- WATER DROP RESULT --- */
+		if (copy_if_updated(ORB_ID(aa241x_water_drop_result), subs.water_drop_result_sub, &buf.water_drop_result)) {
+			log_msg.msg_type = LOG_WDRP_MSG;
+			log_msg.body.log_WDRP.time_us = buf.water_drop_result.time_us;
+			log_msg.body.log_WDRP.success = buf.water_drop_result.success;
+			log_msg.body.log_WDRP.i = buf.water_drop_result.i;
+			log_msg.body.log_WDRP.j = buf.water_drop_result.j;
+			LOGBUFFER_WRITE_AND_COUNT(WDRP);
 		}
 
 		/* signal the other thread new data, but not yet unlock */
