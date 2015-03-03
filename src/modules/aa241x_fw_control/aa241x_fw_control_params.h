@@ -48,13 +48,39 @@
 extern "C" {
 #endif
 
+
+/**
+ * Struct of all of the custom parameters.
+ *
+ * Please make sure to add a variable for each of your newly defined
+ * parameters here.
+ */
 struct aa_params {
 	float water_weight;
 
+	float example_param;
+
+	// TODO: add custom parameter variable names here......
+
 };
 
+
+/**
+ * Struct of handles to all of the custom parameters.
+ *
+ *  Please make sure to add a variable for each of your newly
+ *  defined parameters here.
+ *
+ *  NOTE: these variable names can be the same as the ones above
+ *  (makes life easier if they are)
+ */
 struct aa_param_handles {
 	param_t water_weight;
+
+	param_t example_param;
+
+	// TODO: add custom parameter variable names here.......
+
 };
 
 /**
