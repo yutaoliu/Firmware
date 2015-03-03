@@ -268,3 +268,9 @@ ORB_DEFINE(aa241x_picture_request, struct picture_request_s);
 
 #include "topics/aa241x_water_drop_request.h"
 ORB_DEFINE(aa241x_water_drop_request, struct water_drop_request_s);
+
+#include "topics/aa241x_low_data.h"
+ORB_DEFINE(aa241x_low_data, struct aa241x_low_data_s);
+
+#include "topics/aa241x_high_data.h"
+ORB_DEFINE(aa241x_high_data, struct aa241x_high_data_s);
