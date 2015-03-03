@@ -28,7 +28,6 @@
 
 #include "LakeFire.h"
 #include "fires.h"
-#include "aa241x_mission_namespace.h"
 
 
 /**
@@ -646,8 +645,8 @@ LakeFire::calculate_score()
 void
 LakeFire::task_main_trampoline(int argc, char **argv)
 {
-	// aa241x_mission::g_aa241x_mission->task_main();
-	aa241x_mission::g_aa241x_mission->testing(); // DEBUG
+	aa241x_mission::g_aa241x_mission->task_main();
+	// aa241x_mission::g_aa241x_mission->testing(); // DEBUG
 }
 
 void
@@ -723,6 +722,8 @@ LakeFire::task_main()
 	_local_pos_sub = orb_subscribe(ORB_ID(vehicle_local_position));
 	_vehicle_status_sub = orb_subscribe(ORB_ID(vehicle_status));
 	_params_sub = orb_subscribe(ORB_ID(parameter_update));
+	_water_drop_request_sub = orb_subscribe(ORB_ID(aa241x_water_drop_request));
+	_pic_request_sub = orb_subscribe(ORB_ID(aa241x_picture_request));
 
 	/* rate limit vehicle status updates to 5Hz */
 	orb_set_interval(_vcontrol_mode_sub, 200);
