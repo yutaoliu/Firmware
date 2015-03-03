@@ -1020,8 +1020,8 @@ int sdlog2_thread_main(int argc, char *argv[])
 		struct aa241x_new_fire_s new_fire;
 		struct picture_result_s pic_result;
 		struct water_drop_result_s water_drop_result;
-		struct high_data_s high_data;
-		struct low_data_s low_data;
+		struct aa241x_high_data_s high_data;
+		struct aa241x_low_data_s low_data;
 	} buf;
 
 	memset(&buf, 0, sizeof(buf));
