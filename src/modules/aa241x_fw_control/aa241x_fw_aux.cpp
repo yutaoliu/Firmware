@@ -8,9 +8,9 @@
 #include <uORB/topics/vehicle_attitude_setpoint.h>
 #include <uORB/topics/aa241x_picture_request.h>
 #include <uORB/topics/aa241x_water_drop_request.h>
+#include <drivers/drv_hrt.h>
 
 #include "aa241x_fw_aux.h"
-#include "../aa241x_mission/aa241x_mission_namespace.h"
 
 // set these variables for help in debugging (these will be sent to the ground station)
 float roll_desired = 0.0f;
@@ -57,14 +57,14 @@ float ground_course = 0.0f; 	// this is course over ground (direction of velocit
 float air_speed = 0.0f;		// speed relative to air in [m/s] (measured by pitot tube)
 
 // status check
-bool gps_ok = 0.0f; 			// boolean as to whether or not the gps data coming in is valid
+bool gps_ok = false; 				// boolean as to whether or not the gps data coming in is valid
+bool local_pos_ne_valid = false;	// boolean as to whether or not the horizontal local position values are valid
+bool local_pos_d_valid = false;		// boolean as to whether or not the vertical local position value is valid
+
 
 // battery info
 float battery_voltage = 0.0f;			// current voltage across the battery 	[V]
 float battery_current = 0.0f;			// current current being consumed		[A]
-float battery_energy_consumed = 0.0f;	// battery energy consumed since last boot [J] = [VAs]
-float mission_energy_consumed = 0.0f;	// battery energy consumed since the start of the mission [J]
-
 
 // RC info
 // output for each of the controls ranging from -1..1 except for throttle which ranges from 0..1
@@ -89,10 +89,18 @@ float yaw_trim = 0.0f;
 uint64_t timestamp = 0; 	// timestamp of microseconds since boot
 uint64_t utc_timestamp = 0; // GPS UTC timestamp in microseconds
 
+// picture result
+bool new_pic = false;
+picture_result_s pic_result = {};
+
+// data from low priority thread
+struct aa241x_low_data_s low_data = {};
+
 
 // user config parameters structure
 struct aa_params aa_parameters = {};		// struct containing all of the user editable parameters (via ground station)
 
+struct mis_params mission_parameters = {};
 
 
 orb_advert_t	_attitude_sp_pub = -1;
@@ -102,45 +110,7 @@ orb_advert_t	_water_drop_request_pub = -1;
 
 /* functions */
 
-picture_result_s take_picture()
-{
-
-	if (aa241x_mission::g_aa241x_mission) {
-		return aa241x_mission::g_aa241x_mission->take_picture();
-	} else {
-		picture_result_s pic_result;
-		pic_result.pic_taken = false;
-		return pic_result;
-	}
-
-	/*
-	picture_result_s pic_result;
-	pic_result.pic_taken = false;
-	return pic_result;
-	*/
-}
-
-
-
-water_drop_result_s drop_water()
-{
-	/*
-	if (aa241x_mission::g_aa241x_mission) {
-		return aa241x_mission::g_aa241x_mission->drop_water();
-	} else {
-		water_drop_result_s water_drop;
-		water_drop.success = false;
-		return water_drop;
-	}
-	*/
-
-	water_drop_result_s water_drop;
-	water_drop.success = false;
-	return water_drop;
-}
-
-
-void take_picture_publish()
+void take_picture()
 {
 	picture_request_s pic_request;
 	pic_request.time_us = hrt_absolute_time();
@@ -157,7 +127,7 @@ void take_picture_publish()
 }
 
 
-void drop_water_publish()
+void drop_water()
 {
 	water_drop_request_s water_drop_request;
 	water_drop_request.time_us = hrt_absolute_time();
@@ -173,7 +143,7 @@ void drop_water_publish()
 	}
 }
 
-
+/*
 void publish_desired_attitude(const float &roll_d, const float &pitch_d, const float &yaw_d, const float &throttle_d)
 {
 	vehicle_attitude_setpoint_s att_sp;
@@ -182,12 +152,39 @@ void publish_desired_attitude(const float &roll_d, const float &pitch_d, const f
 	att_sp.yaw_body = yaw_d;
 	att_sp.thrust = throttle_d;
 
-	/* publish the desired attitude */
+	// publish the desired attitude
 	if (_attitude_sp_pub > 0) {
 		orb_publish(ORB_ID(aa241x_mission_status), _attitude_sp_pub, &att_sp);
 	} else {
 		_attitude_sp_pub = orb_advertise(ORB_ID(aa241x_mission_status), &att_sp);
 	}
 }
+*/
+
+
+/*
+picture_result_s take_picture()
+{
+
+	if (aa241x_mission::g_aa241x_mission) {
+		return aa241x_mission::g_aa241x_mission->take_picture();
+	} else {
+		picture_result_s pic_result;
+		pic_result.pic_taken = false;
+		return pic_result;
+	}
+}
+
+water_drop_result_s drop_water()
+{
+
+	if (aa241x_mission::g_aa241x_mission) {
+		return aa241x_mission::g_aa241x_mission->drop_water();
+	} else {
+		water_drop_result_s water_drop;
+		water_drop.success = false;
+		return water_drop;
+	}
+} */
 
 

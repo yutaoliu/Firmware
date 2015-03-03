@@ -12,10 +12,17 @@
 
 void flight_control() {
 
+
+	if (new_pic) {
+
+		// TODO: run picture result logic here......
+
+		// set new_pic to false, as just processed this pic result
+		new_pic = false;
+	}
+
+
 	// TODO: write all of your flight control here...
-
-
-
 
 
 

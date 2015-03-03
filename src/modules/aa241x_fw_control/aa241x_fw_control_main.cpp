@@ -59,6 +59,9 @@
 #include <drivers/drv_accel.h>
 #include <arch/board/board.h>
 #include <uORB/uORB.h>
+#include <uORB/topics/aa241x_mission_status.h>
+#include <uORB/topics/aa241x_picture_result.h>
+#include <uORB/topics/aa241x_water_drop_result.h>
 #include <uORB/topics/airspeed.h>
 #include <uORB/topics/vehicle_attitude_setpoint.h>
 #include <uORB/topics/manual_control_setpoint.h>
@@ -143,6 +146,11 @@ private:
 	int		_sensor_combined_sub;	/**< sensor data subscription */
 	int		_battery_status_sub;	/**< battery status subscription */
 
+	int		_pic_result_sub;		/**< picture result subscription */
+	int		_water_drop_result_sub;	/**< water drop result subscription NOT SURE NEEDED HERE */
+	int		_mission_status_sub;	/**< aa241x mission status subscription */
+	int		_low_data_sub;			/**< low priority loop data subscription */
+
 	// the data that will be published from this controller
 	orb_advert_t	_rate_sp_pub;			/**< rate setpoint publication */
 	orb_advert_t	_attitude_sp_pub;		/**< attitude setpoint point */
@@ -155,7 +163,7 @@ private:
 	// structures of data that comes in from the uORB subscriptions
 	struct vehicle_attitude_s			_att;				/**< vehicle attitude */
 	struct accel_report					_accel;				/**< body frame accelerations */
-	struct vehicle_rates_setpoint_s		_rates_sp;			/**< attitude rates setpoint TODO: potentially remove */
+	struct vehicle_rates_setpoint_s		_rates_sp;			/**< attitude rates setpoint */
 	struct vehicle_attitude_setpoint_s	_att_sp;			/**< attitude setpoint (for debugging help */
 	struct manual_control_setpoint_s	_manual;			/**< r/c channel data */
 	struct airspeed_s					_airspeed;			/**< airspeed */
@@ -166,6 +174,11 @@ private:
 	struct vehicle_status_s				_vehicle_status;	/**< vehicle status */
 	struct sensor_combined_s			_sensor_combined;	/**< raw / minimal filtered sensor data (for some accelerations) */
 	struct battery_status_s				_battery_status;	/**< battery status */
+
+	struct picture_result_s				_pic_result;		/**< picture result MAY JUST USER AUX FILE ONE */
+	struct water_drop_result_s			_water_drop_result;	/**< water drop result MAY NOT BE NEEDED HERE */
+	struct aa241x_mission_status_s		_mis_status;		/**< current mission status */
+	// low data struct is in attached aux header file
 
 	// some flags
 	bool		_setpoint_valid;		/**< flag if the position control setpoint is valid */
@@ -181,9 +194,29 @@ private:
 
 	// handles for general RC parameters
 	struct {
+		/* rc parameters */
 		param_t trim_roll;
 		param_t trim_pitch;
 		param_t trim_yaw;
+
+		/* mission parameters */
+		param_t min_alt;
+		param_t max_alt;
+		param_t auto_alt;
+		param_t cell_width;
+		param_t duration;
+		param_t max_radius;
+		param_t timestep;
+		param_t std;
+		param_t t_pic;
+		param_t min_fov;
+		param_t max_fov;
+		param_t index;
+		param_t water_weight;
+		param_t weight_per_drop;
+		param_t ctr_lat;
+		param_t ctr_lon;
+		param_t ctr_alt;
 	}		_parameter_handles;		/**< handles for interesting parameters */
 
 
@@ -248,6 +281,26 @@ private:
 	 * Check for battery status updates.
 	 */
 	void	battery_status_poll();
+
+	/**
+	 * Check for a picture result.
+	 */
+	void	picture_result_poll();
+
+	/**
+	 * Check for a water drop result.
+	 */
+	void	water_drop_result_poll();
+
+	/**
+	 * Check for a mission status update.
+	 */
+	void	mission_status_poll();
+
+	/**
+	 * Check for an update of the low priority loop data.
+	 */
+	void	low_data_poll();
 
 	/**
 	 * Set all the aux variables needed for control law.
@@ -336,6 +389,23 @@ FixedwingControl::FixedwingControl() :
 	_parameter_handles.trim_pitch = param_find("TRIM_PITCH");
 	_parameter_handles.trim_yaw = param_find("TRIM_YAW");
 
+	_parameter_handles.min_alt = param_find("AAMIS_ALT_MIN");
+	_parameter_handles.max_alt = param_find("AAMIS_ALT_MAX");
+	_parameter_handles.auto_alt = param_find("AAMIS_ALT_AUTO");
+	_parameter_handles.cell_width = param_find("AAMIS_CELL_W");
+	_parameter_handles.duration = param_find("AAMIS_DURATION");
+	_parameter_handles.max_radius = param_find("AAMIS_RAD_MAX");
+	_parameter_handles.timestep = param_find("AAMIS_TSTEP");
+	_parameter_handles.std = param_find("AAMIS_STD");
+	_parameter_handles.t_pic = param_find("AAMIS_TPIC");
+	_parameter_handles.min_fov = param_find("AAMIS_FOV_MIN");
+	_parameter_handles.max_fov = param_find("AAMIS_FOV_MAX");
+	_parameter_handles.index = param_find("AAMIS_INDEX");
+	_parameter_handles.water_weight = param_find("AAMIS_WGHT_DROP");
+	_parameter_handles.ctr_lat = param_find("PE_CTR_LAT");
+	_parameter_handles.ctr_lon = param_find("PE_CTR_LON");
+	_parameter_handles.ctr_alt = param_find("PE_CTR_ALT");
+
 	// initialize the aa241x control parameters
 	aa_parameters_init(&_aa_parameter_handles);
 
@@ -375,12 +445,27 @@ FixedwingControl::~FixedwingControl()
 int
 FixedwingControl::parameters_update()
 {
-	// TODO: add custom paramters for updating here
 
 	// update the remote control parameters
 	param_get(_parameter_handles.trim_roll, &(_parameters.trim_roll));
 	param_get(_parameter_handles.trim_pitch, &(_parameters.trim_pitch));
 	param_get(_parameter_handles.trim_yaw, &(_parameters.trim_yaw));
+
+	// update the mission parameters
+	param_get(_parameter_handles.min_alt, &(mission_parameters.min_alt));
+	param_get(_parameter_handles.max_alt, &(mission_parameters.max_alt));
+	param_get(_parameter_handles.auto_alt, &(mission_parameters.auto_alt));
+	param_get(_parameter_handles.cell_width, &(mission_parameters.cell_width));
+	param_get(_parameter_handles.duration, &(mission_parameters.duration));
+	param_get(_parameter_handles.max_radius, &(mission_parameters.max_radius));
+	param_get(_parameter_handles.timestep, &(mission_parameters.timestep));
+	param_get(_parameter_handles.std, &(mission_parameters.std));
+	param_get(_parameter_handles.t_pic, &(mission_parameters.t_pic));
+	param_get(_parameter_handles.index, &(mission_parameters.index));
+	param_get(_parameter_handles.weight_per_drop, &(mission_parameters.weight_per_drop));
+	param_get(_parameter_handles.ctr_lat, &(mission_parameters.ctr_lat));
+	param_get(_parameter_handles.ctr_lon, &(mission_parameters.ctr_lon));
+	param_get(_parameter_handles.ctr_alt, &(mission_parameters.ctr_alt));
 
 	// update the aa241x control parameters
 	aa_parameters_update(&_aa_parameter_handles, &aa_parameters);
@@ -504,6 +589,57 @@ FixedwingControl::battery_status_poll()
 	}
 }
 
+void
+FixedwingControl::picture_result_poll()
+{
+	/* check if there is a new picture result */
+	bool pic_result_updated;
+	orb_check(_pic_result_sub, &pic_result_updated);
+
+	if (pic_result_updated) {
+		orb_copy(ORB_ID(aa241x_picture_result), _pic_result_sub, &_pic_result);
+
+		/* set the data to be used by students */
+		new_pic = true;
+		pic_result = _pic_result;
+	}
+}
+
+void
+FixedwingControl::water_drop_result_poll()
+{
+	/* check if there is a new water drop result */
+	bool water_drop_result_updated;
+	orb_check(_water_drop_result_sub, &water_drop_result_updated);
+
+	if (water_drop_result_updated) {
+		orb_copy(ORB_ID(battery_status), _water_drop_result_sub, &_water_drop_result);
+	}
+}
+
+void
+FixedwingControl::mission_status_poll()
+{
+	/* check if there is a new mission status */
+	bool mission_status_updated;
+	orb_check(_mission_status_sub, &mission_status_updated);
+
+	if (mission_status_updated) {
+		orb_copy(ORB_ID(battery_status), _mission_status_sub, &_mis_status);
+	}
+}
+
+void
+FixedwingControl::low_data_poll()
+{
+	/* check if there is a new low priority loop data */
+	bool low_data_updated;
+	orb_check(_low_data_sub, &low_data_updated);
+
+	if (low_data_updated) {
+		orb_copy(ORB_ID(aa241x_low_data), _low_data_sub, &low_data);
+	}
+}
 
 void
 FixedwingControl::set_aux_values()
@@ -556,9 +692,8 @@ FixedwingControl::set_aux_values()
 	if (_local_pos.z_valid) {
 		position_D = _local_pos.z;
 	}
-
-	// TODO: set the reference point of the local position information to be the center of the lake
-
+	local_pos_ne_valid = _local_pos.xy_valid;
+	local_pos_d_valid = _local_pos.z_valid;
 
 	// ground course and speed
 	// TODO: maybe use local position....
@@ -566,20 +701,17 @@ FixedwingControl::set_aux_values()
 	ground_course = _global_pos.yaw; 	// this is course over ground (direction of velocity relative to North in [rad])
 
 	// airspeed [m/s]
-	air_speed = _airspeed.true_airspeed_m_s;		// speed relative to air in [m/s] (measured by pitot tube)
+	air_speed = _airspeed.true_airspeed_m_s;	// speed relative to air in [m/s] (measured by pitot tube)
 
 	// status check
-	//TODO: gps_ok; 			// boolean as to whether or not the gps data coming in is valid
+	gps_ok = _vehicle_status.gps_failure; 		// boolean as to whether or not the gps data coming in is valid
 
 	// battery info
 	battery_voltage = _battery_status.voltage_filtered_v;
 	battery_current = _battery_status.current_a;
-	//TODO: battery_energy_consumed;	// battery energy consumed since last boot [J] = [VAs]
-	//TODO: mission_energy_consumed;	// battery energy consumed since the start of the mission [J]
-
 
 	// manual control inputs
-	// input for each of the controls from the remote control, ranging from TODO: figure out range
+	// input for each of the controls from the remote control
 	man_roll_in = _manual.y;
 	man_pitch_in = _manual.x;
 	man_yaw_in = _manual.r;
@@ -683,7 +815,7 @@ FixedwingControl::task_main()
 	vehicle_accel_poll();
 	vehicle_control_mode_poll();
 	vehicle_manual_poll();
-	global_pos_poll();	// TODO: might remove this....
+	global_pos_poll();
 	local_pos_poll();
 	vehicle_status_poll();
 	sensor_combined_poll();
@@ -759,8 +891,6 @@ FixedwingControl::task_main()
 
 				// set all the variables needed for the control law
 				set_aux_values();
-
-				// TODO: add function for students to fill out
 
 				// TODO: potentially add stabilize and other modes back in....
 				flight_control();
