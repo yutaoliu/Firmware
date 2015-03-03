@@ -356,6 +356,10 @@ FixedwingControl::FixedwingControl() :
 	_vehicle_status_sub(-1),
 	_sensor_combined_sub(-1),
 	_battery_status_sub(-1),
+	_pic_result_sub(-1),
+	_water_drop_result_sub(-1),
+	_mission_status_sub(-1),
+	_low_data_sub(-1),
 
 /* publications */
 	_rate_sp_pub(-1),
@@ -383,6 +387,10 @@ FixedwingControl::FixedwingControl() :
 	_vehicle_status = {};
 	_sensor_combined = {};
 	_battery_status = {};
+
+	_pic_result = {};
+	_water_drop_result = {};
+	_mis_status = {};
 
 	// initialize the global remote parameters
 	_parameter_handles.trim_roll = param_find("TRIM_ROLL");
@@ -803,6 +811,11 @@ FixedwingControl::task_main()
 	_sensor_combined_sub = orb_subscribe(ORB_ID(sensor_combined));
 	_battery_status_sub = orb_subscribe(ORB_ID(battery_status));
 
+	_pic_result_sub = orb_subscribe(ORB_ID(aa241x_picture_result));
+	_water_drop_result_sub = orb_subscribe(ORB_ID(aa241x_water_drop_result));
+	_mission_status_sub = orb_subscribe(ORB_ID(aa241x_mission_status));
+	_low_data_sub = orb_subscribe(ORB_ID(aa241x_low_data));
+
 	/* rate limit vehicle status updates to 5Hz */
 	orb_set_interval(_vcontrol_mode_sub, 200);
 	/* rate limit attitude control to 50 Hz (with some margin, so 17 ms) */
@@ -885,6 +898,12 @@ FixedwingControl::task_main()
 			vehicle_status_poll();
 			sensor_combined_poll();
 			battery_status_poll();
+
+			// update aa241x data structs as needed
+			picture_result_poll();
+			water_drop_result_poll();
+			mission_status_poll();
+			low_data_poll();
 
 
 			if (_vcontrol_mode.flag_control_auto_enabled) {
