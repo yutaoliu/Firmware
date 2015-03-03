@@ -91,7 +91,7 @@ MODULES		+= modules/mc_pos_control
 MODULES 	+= modules/vtol_att_control
 #
 # AA241x modules
-# MODULES		+= modules/aa241x_mission
+MODULES		+= modules/aa241x_mission
 MODULES		+= modules/aa241x_fw_control
 
 # MODULES		+= modules/aa241x_low
