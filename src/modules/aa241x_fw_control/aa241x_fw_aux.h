@@ -17,6 +17,7 @@
 #include <uORB/uORB.h>
 #include <uORB/topics/aa241x_picture_result.h>
 #include <uORB/topics/aa241x_low_data.h>
+#include <uORB/topics/aa241x_high_data.h>
 
 #include "aa241x_fw_control_params.h"
 
@@ -100,9 +101,9 @@ extern uint64_t utc_timestamp; // GPS UTC timestamp in microseconds
 extern bool new_pic;
 extern picture_result_s pic_result;
 
-// data sent from low priority thread
+// communication data
 extern aa241x_low_data_s low_data;
-
+extern aa241x_high_data_s high_data;
 
 // user config parameters structure
 extern struct aa_params aa_parameters;		// struct containing all of the user editable parameters (via ground station)

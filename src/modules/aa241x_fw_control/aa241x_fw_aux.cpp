@@ -95,6 +95,7 @@ picture_result_s pic_result = {};
 
 // data from low priority thread
 struct aa241x_low_data_s low_data = {};
+struct aa241x_high_data_s high_data = {};
 
 
 // user config parameters structure

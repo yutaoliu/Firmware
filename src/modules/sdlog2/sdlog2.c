@@ -106,6 +106,8 @@
 #include <uORB/topics/aa241x_new_fire.h>
 #include <uORB/topics/aa241x_picture_result.h>
 #include <uORB/topics/aa241x_water_drop_result.h>
+#include <uORB/topics/aa241x_high_data.h>
+#include <uORB/topics/aa241x_low_data.h>
 
 #include <systemlib/systemlib.h>
 #include <systemlib/param/param.h>
@@ -1018,6 +1020,8 @@ int sdlog2_thread_main(int argc, char *argv[])
 		struct aa241x_new_fire_s new_fire;
 		struct picture_result_s pic_result;
 		struct water_drop_result_s water_drop_result;
+		struct high_data_s high_data;
+		struct low_data_s low_data;
 	} buf;
 
 	memset(&buf, 0, sizeof(buf));
@@ -1068,6 +1072,8 @@ int sdlog2_thread_main(int argc, char *argv[])
 			struct log_PICR_s log_PICR;
 			struct log_PICD_s log_PICD;
 			struct log_WDRP_s log_WDRP;
+			struct log_HIGH_s log_HIGH;
+			struct log_LOW_s log_LOW;
 		} body;
 	} log_msg = {
 		LOG_PACKET_HEADER_INIT(0)
@@ -1113,6 +1119,8 @@ int sdlog2_thread_main(int argc, char *argv[])
 		int fire_sub;
 		int pic_result_sub;
 		int water_drop_result_sub;
+		int high_data_sub;
+		int low_data_sub;
 	} subs;
 
 	subs.cmd_sub = orb_subscribe(ORB_ID(vehicle_command));
@@ -1156,6 +1164,8 @@ int sdlog2_thread_main(int argc, char *argv[])
 	subs.fire_sub = orb_subscribe(ORB_ID(aa241x_new_fire));
 	subs.pic_result_sub = orb_subscribe(ORB_ID(aa241x_picture_result));
 	subs.water_drop_result_sub = orb_subscribe(ORB_ID(aa241x_water_drop_result));
+	subs.high_data_sub = orb_subscribe(ORB_ID(aa241x_high_data));
+	subs.low_data_sub = orb_subscribe(ORB_ID(aa241x_low_data));
 
 	orb_set_interval(subs.mis_sub, 1000); // rate limit the mission subscription to only listen to the updates once a second
 
@@ -1904,6 +1914,60 @@ int sdlog2_thread_main(int argc, char *argv[])
 			log_msg.body.log_WDRP.i = buf.water_drop_result.i;
 			log_msg.body.log_WDRP.j = buf.water_drop_result.j;
 			LOGBUFFER_WRITE_AND_COUNT(WDRP);
+		}
+
+		/* --- WATER DROP RESULT --- */
+		if (copy_if_updated(ORB_ID(aa241x_water_drop_result), subs.water_drop_result_sub, &buf.water_drop_result)) {
+			log_msg.msg_type = LOG_WDRP_MSG;
+			log_msg.body.log_WDRP.time_us = buf.water_drop_result.time_us;
+			log_msg.body.log_WDRP.success = buf.water_drop_result.success;
+			log_msg.body.log_WDRP.i = buf.water_drop_result.i;
+			log_msg.body.log_WDRP.j = buf.water_drop_result.j;
+			LOGBUFFER_WRITE_AND_COUNT(WDRP);
+		}
+
+		/* --- HIGH DATA --- */
+		if (copy_if_updated(ORB_ID(aa241x_high_data), subs.high_data_sub, &buf.high_data)) {
+			log_msg.msg_type = LOG_HIGH_MSG;
+			log_msg.body.log_HIGH.field1 = (float) buf.high_data.HIGH_FIELD1;
+			log_msg.body.log_HIGH.field2 = (float) buf.high_data.HIGH_FIELD2;
+			log_msg.body.log_HIGH.field3 = (float) buf.high_data.HIGH_FIELD3;
+			log_msg.body.log_HIGH.field4 = (float) buf.high_data.HIGH_FIELD4;
+			log_msg.body.log_HIGH.field5 = (float) buf.high_data.HIGH_FIELD5;
+			log_msg.body.log_HIGH.field6 = (float) buf.high_data.HIGH_FIELD6;
+			log_msg.body.log_HIGH.field7 = (float) buf.high_data.HIGH_FIELD7;
+			log_msg.body.log_HIGH.field8 = (float) buf.high_data.HIGH_FIELD8;
+			log_msg.body.log_HIGH.field9 = (float) buf.high_data.HIGH_FIELD9;
+			log_msg.body.log_HIGH.field10 = (float) buf.high_data.HIGH_FIELD10;
+			log_msg.body.log_HIGH.field11 = (float) buf.high_data.HIGH_FIELD11;
+			log_msg.body.log_HIGH.field12 = (float) buf.high_data.HIGH_FIELD12;
+			log_msg.body.log_HIGH.field13 = (float) buf.high_data.HIGH_FIELD13;
+			log_msg.body.log_HIGH.field14 = (float) buf.high_data.HIGH_FIELD14;
+			log_msg.body.log_HIGH.field15 = (float) buf.high_data.HIGH_FIELD15;
+			log_msg.body.log_HIGH.field16 = (float) buf.high_data.HIGH_FIELD16;
+			LOGBUFFER_WRITE_AND_COUNT(HIGH);
+		}
+
+		/* --- HIGH DATA --- */
+		if (copy_if_updated(ORB_ID(aa241x_low_data), subs.low_data_sub, &buf.low_data)) {
+			log_msg.msg_type = LOG_LOW_MSG;
+			log_msg.body.log_LOW.field1 = (float) buf.low_data.LOW_FIELD1;
+			log_msg.body.log_LOW.field2 = (float) buf.low_data.LOW_FIELD2;
+			log_msg.body.log_LOW.field3 = (float) buf.low_data.LOW_FIELD3;
+			log_msg.body.log_LOW.field4 = (float) buf.low_data.LOW_FIELD4;
+			log_msg.body.log_LOW.field5 = (float) buf.low_data.LOW_FIELD5;
+			log_msg.body.log_LOW.field6 = (float) buf.low_data.LOW_FIELD6;
+			log_msg.body.log_LOW.field7 = (float) buf.low_data.LOW_FIELD7;
+			log_msg.body.log_LOW.field8 = (float) buf.low_data.LOW_FIELD8;
+			log_msg.body.log_LOW.field9 = (float) buf.low_data.LOW_FIELD9;
+			log_msg.body.log_LOW.field10 = (float) buf.low_data.LOW_FIELD10;
+			log_msg.body.log_LOW.field11 = (float) buf.low_data.LOW_FIELD11;
+			log_msg.body.log_LOW.field12 = (float) buf.low_data.LOW_FIELD12;
+			log_msg.body.log_LOW.field13 = (float) buf.low_data.LOW_FIELD13;
+			log_msg.body.log_LOW.field14 = (float) buf.low_data.LOW_FIELD14;
+			log_msg.body.log_LOW.field15 = (float) buf.low_data.LOW_FIELD15;
+			log_msg.body.log_LOW.field16 = (float) buf.low_data.LOW_FIELD16;
+			LOGBUFFER_WRITE_AND_COUNT(LOW);
 		}
 
 		/* signal the other thread new data, but not yet unlock */

@@ -44,6 +44,8 @@
 #define SDLOG2_MESSAGES_H_
 
 #include "sdlog2_format.h"
+#include "../aa241x_fw_control/aa241x_high_data_struct.h"
+#include "../aa241x_low/aa241x_low_data_struct.h"
 
 /* define message formats */
 
@@ -484,6 +486,49 @@ struct log_WDRP_s {
 	uint8_t j;
 };
 
+/* --- AA241x HIGH DATA --- */
+#define LOG_HIGH_MSG 69
+struct log_HIGH_s {
+	float field1;
+	float field2;
+	float field3;
+	float field4;
+	float field5;
+	float field6;
+	float field7;
+	float field8;
+	float field9;
+	float field10;
+	float field11;
+	float field12;
+	float field13;
+	float field14;
+	float field15;
+	float field16;
+};
+
+
+/* --- AA241x LOW DATA --- */
+#define LOG_LOW_MSG 70
+struct log_LOW_s {
+	float field1;
+	float field2;
+	float field3;
+	float field4;
+	float field5;
+	float field6;
+	float field7;
+	float field8;
+	float field9;
+	float field10;
+	float field11;
+	float field12;
+	float field13;
+	float field14;
+	float field15;
+	float field16;
+};
+
 /********** SYSTEM MESSAGES, ID > 0x80 **********/
 
 /* --- TIME - TIME STAMP --- */
@@ -560,6 +605,8 @@ static const struct log_format_s log_formats[] = {
 	LOG_FORMAT(PICR, "BQffffB", "Success,T,CntrN,CntrE,CntrD,PicD,nCell"),
 	LOG_FORMAT(PICD, "BBBBBBBBBBBbbbbb", "n,i1,i2,i3,i4,i5,j1,j2,j3,j4,j5,s1,s2,s3,s4,s5"),
 	LOG_FORMAT(WDRP, "BQBB", "Success,T,i,j"),
+	LOG_FORMAT(HIGH, "ffffffffffffffff", HIGH_DATA_LABELS),
+	LOG_FORMAT(LOW, "ffffffffffffffff", LOW_DATA_LABELS),
 
 	/* system-level messages, ID >= 0x80 */
 	/* FMT: don't write format of format message, it's useless */

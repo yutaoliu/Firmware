@@ -62,6 +62,8 @@
 #include <uORB/topics/aa241x_mission_status.h>
 #include <uORB/topics/aa241x_picture_result.h>
 #include <uORB/topics/aa241x_water_drop_result.h>
+#include <uORB/topics/aa241x_low_data.h>
+#include <uORB/topics/aa241x_high_data.h>
 #include <uORB/topics/airspeed.h>
 #include <uORB/topics/vehicle_attitude_setpoint.h>
 #include <uORB/topics/manual_control_setpoint.h>
@@ -155,6 +157,7 @@ private:
 	orb_advert_t	_rate_sp_pub;			/**< rate setpoint publication */
 	orb_advert_t	_attitude_sp_pub;		/**< attitude setpoint point */
 	orb_advert_t	_actuators_0_pub;		/**< actuator control group 0 setpoint */
+	orb_advert_t	_high_data_pub;			/**< data fields to be shared with low priority module */
 
 	orb_id_t _rates_sp_id;	// pointer to correct rates setpoint uORB metadata structure
 	orb_id_t _actuators_id;	// pointer to correct actuator controls0 uORB metadata structure
@@ -303,6 +306,11 @@ private:
 	void	low_data_poll();
 
 	/**
+	 * Publish the data fields from this module (high priority thread).
+	 */
+	void	publish_high_data();
+
+	/**
 	 * Set all the aux variables needed for control law.
 	 */
 	void 	set_aux_values();
@@ -365,6 +373,7 @@ FixedwingControl::FixedwingControl() :
 	_rate_sp_pub(-1),
 	_attitude_sp_pub(-1),
 	_actuators_0_pub(-1),
+	_high_data_pub(-1),
 
 	_rates_sp_id(0),
 	_actuators_id(0),
@@ -650,6 +659,18 @@ FixedwingControl::low_data_poll()
 }
 
 void
+FixedwingControl::publish_high_data()
+{
+	/* publish the high priority loop data */
+	if (_high_data_pub > 0) {
+		orb_publish(ORB_ID(aa241x_high_data), _high_data_pub, &high_data);
+	} else {
+		_high_data_pub = orb_advertise(ORB_ID(aa241x_high_data), &high_data);
+	}
+}
+
+
+void
 FixedwingControl::set_aux_values()
 {
 
@@ -912,7 +933,11 @@ FixedwingControl::task_main()
 				set_aux_values();
 
 				// TODO: potentially add stabilize and other modes back in....
+				/* run the custom control law */
 				flight_control();
+
+				/* publish the shared data */
+				publish_high_data();
 
 				// set the user desired servo positions (that were set in the flight control function)
 				set_actuators();
