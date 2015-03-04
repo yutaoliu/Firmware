@@ -94,8 +94,9 @@ extern float pitch_trim;
 extern float yaw_trim;
 
 // time information
-extern uint64_t timestamp; 	// unix timestamp in microseconds
-extern uint64_t utc_timestamp; // GPS UTC timestamp in microseconds
+extern uint64_t timestamp; 					// unix timestamp in microseconds of the beginning of the current loop
+extern uint64_t utc_timestamp; 				// GPS UTC timestamp in microseconds
+extern uint64_t previous_loop_timestamp; 	// timestamp of start of previous loop
 
 // picture result
 extern bool new_pic;
@@ -130,6 +131,9 @@ struct mis_params {
 extern struct mis_params mission_parameters;			/**< local copies of mission parameters */
 
 
+// DEBUG
+extern hrt_abstime pic_taken_time;
+
 
 /* functions */
 
@@ -152,6 +156,15 @@ void	drop_water();
 
 
 
+/**
+ * Main function in which your code should be written.
+ *
+ * This is the only function that is executed at a set interval,
+ * feel free to add all the function you'd like, but make sure all
+ * the code you'd like executed on a loop is in this function.
+ */
+void flight_control();
+
 
 /**
  * Send desired attitude (target roll, pitch, yaw and throttle) to the ground station and to logging.
@@ -159,7 +172,7 @@ void	drop_water();
  * This is great for debugging, and I highly recommend you do use this function to log the desired attitude
  * values.
  */
-void	publish_desired_attitude(const float &roll, const float &pitch, const float &yaw, const float &throttle);
+// void	publish_desired_attitude(const float &roll, const float &pitch, const float &yaw, const float &throttle);
 
 
 

@@ -86,8 +86,9 @@ float pitch_trim = 0.0f;
 float yaw_trim = 0.0f;
 
 // time information
-uint64_t timestamp = 0; 	// timestamp of microseconds since boot
-uint64_t utc_timestamp = 0; // GPS UTC timestamp in microseconds
+uint64_t timestamp = 0; 				// timestamp of microseconds since boot (set at the beginning of loop)
+uint64_t utc_timestamp = 0; 			// GPS UTC timestamp in microseconds
+uint64_t previous_loop_timestamp = 0;	// timestamp of start of previous loop
 
 // picture result
 bool new_pic = false;
@@ -115,9 +116,9 @@ void take_picture()
 {
 	picture_request_s pic_request;
 	pic_request.time_us = hrt_absolute_time();
-	pic_request.pos_N = position_N;
-	pic_request.pos_E = position_E;
-	pic_request.pos_D = position_D;
+	pic_request.pos_N = 30.0f; // position_N;	// DEBUG
+	pic_request.pos_E = 10.0f; // position_E;	// DEBUG
+	pic_request.pos_D = 100.0f; // position_D;	// DEBUG
 
 	/* publish the picture request */
 	if (_picture_request_pub > 0) {

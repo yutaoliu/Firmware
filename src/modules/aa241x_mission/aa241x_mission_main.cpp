@@ -135,33 +135,44 @@ LakeFire::take_picture()
 	pic_result.center_e = _pic_request.pos_E; // _local_pos.y;
 	pic_result.center_d = _pic_request.pos_D; // _local_pos.z;
 
+	printf("center coords: %f, %f, %f\n", (double) pic_result.center_n, (double) pic_result.center_e, (double) pic_result.center_d);
+
 	hrt_abstime curr_time = _pic_request.time_us; // hrt_absolute_time();
 	pic_result.time_us = curr_time;
 	float time_diff = (curr_time - _last_picture)/1000000.0f;
+	printf("receive lag of: %fus\n", (double) (hrt_absolute_time() - curr_time));
+	printf("time diff of: %fs\n", (double) (curr_time - _last_picture)/1000000.0);
 
 	/* check mission logic */
 	if (!_in_mission || time_diff <= _parameters.t_pic) {
 		/* do not take a picture */
+		printf("denying picture due to time\n");	// DEBUG
 		pic_result.pic_taken = false;
 		return pic_result;
 	}
 
 	/* check position */
+	/*	// DEBUG
 	float d = pic_result.center_d;
 	float n = pic_result.center_n;
 	float e = pic_result.center_e;
 	if (-d < _parameters.min_alt || -d > _parameters.max_alt || (n*n + e*e) >= _parameters.max_radius*_parameters.max_radius) {
 		pic_result.pic_taken = false;
 		return pic_result;
-	}
+	} */
 
 	pic_result.pic_taken = true;
 
 	float pic_d = get_fov_d(-pic_result.center_d);
 	pic_result.pic_d = pic_d;
 
+	printf("pic diameter: %f\n", (double) pic_d);
+
 	/* populate the i, j and state vectors */
 	get_fire_info(&pic_result);
+
+	/* set the last picture time to this time */
+	_last_picture = curr_time;
 
 	return pic_result;
 }
@@ -272,6 +283,9 @@ LakeFire::get_fire_info(picture_result_s *pic_result)
 	center(0) = center_n;
 	center(1) = center_e;
 
+	printf("i range: %i -> %i\n", i_min, i_max);
+	printf("j range: %i -> %i\n", j_min, j_max);
+
 	for (int i = i_min; i < i_max; i++) {
 		for (int j = j_min; j <= j_max; j++) {
 
@@ -369,6 +383,13 @@ LakeFire::vehicle_status_update()
 void
 LakeFire::handle_picture_request()
 {
+	bool vehicle_status_updated;
+	orb_check(_pic_request_sub, &vehicle_status_updated);
+
+	if (!vehicle_status_updated) {
+		return;
+	}
+	printf("received picture request\n");	// DEBUG
 	/* copy the picture request */
 	orb_copy(ORB_ID(aa241x_picture_request), _pic_request_sub, &_pic_request);
 
@@ -380,6 +401,7 @@ LakeFire::handle_picture_request()
 	 * it can be used in the case of someone spaming the take picture function */
 	// TODO: maybe always publish the result...
 	if (pic_result.pic_taken) {
+		printf("publishing picture result\n");	// DEBUG
 		publish_picture_result(pic_result);
 	}
 }
@@ -761,8 +783,8 @@ LakeFire::sim_testing()
 
 	print_grid();
 
-	hrt_abstime before_prop = hrt_absolute_time();
-	hrt_abstime after_prop = hrt_absolute_time();
+	// hrt_abstime before_prop = hrt_absolute_time();
+	// hrt_abstime after_prop = hrt_absolute_time();
 
 	while (!_task_should_exit) {
 
@@ -812,12 +834,13 @@ LakeFire::sim_testing()
 		}
 
 		/* picture request */
-		if (fds[4].revents & POLLIN) {
+		if (fds[5].revents & POLLIN) {
 			handle_picture_request();
 		}
+		// handle_picture_request();
 
 		/* water drop request */
-		if (fds[4].revents & POLLIN) {
+		if (fds[6].revents & POLLIN) {
 			handle_water_drop_request();
 		}
 
@@ -843,7 +866,7 @@ LakeFire::sim_testing()
 				/* propagate the fire for this next timestep */
 				propagate_fire();
 
-				print_grid();
+				// print_grid();
 
 				/* calculate the new score */
 				calculate_score();
@@ -956,12 +979,12 @@ LakeFire::task_main()
 		}
 
 		/* picture request */
-		if (fds[4].revents & POLLIN) {
+		if (fds[5].revents & POLLIN) {
 			handle_picture_request();
 		}
 
 		/* water drop request */
-		if (fds[4].revents & POLLIN) {
+		if (fds[6].revents & POLLIN) {
 			handle_water_drop_request();
 		}
 
