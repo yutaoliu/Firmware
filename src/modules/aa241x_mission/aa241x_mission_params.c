@@ -60,7 +60,7 @@ PARAM_DEFINE_FLOAT(AAMIS_ALT_AUTO, 15.24f);
  * @unit minutes
  * @group AA241x Mission
  */
-PARAM_DEFINE_FLOAT(AAMIS_DURATION, 1.0f);
+PARAM_DEFINE_FLOAT(AAMIS_DURATION, 2.0f);
 
 /**
  * Timestep in [sec] for each propagation of the fire.

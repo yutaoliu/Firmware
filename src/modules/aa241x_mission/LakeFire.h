@@ -287,6 +287,8 @@ private:
 
 	void testing();
 
+	void sim_testing();
+
 	void print_grid();
 
 	/**
