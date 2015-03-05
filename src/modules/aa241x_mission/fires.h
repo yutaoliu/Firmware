@@ -14,8 +14,8 @@ const int NUM_STARTS = 2;
 
 int8_t fire_wind_dir[NUM_FIRES] = {0};
 
-int8_t i_start[NUM_FIRES][NUM_STARTS] = {{11, -1}};
-int8_t j_start[NUM_FIRES][NUM_STARTS] = {{11, -1}};
+int8_t i_start[NUM_FIRES][NUM_STARTS] = {{8, -1}};
+int8_t j_start[NUM_FIRES][NUM_STARTS] = {{8, -1}};
 
 unsigned int seed_start[NUM_FIRES] = {100};
 
