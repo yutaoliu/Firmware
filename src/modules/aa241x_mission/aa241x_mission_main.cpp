@@ -90,7 +90,7 @@ LakeFire::LakeFire() :
 	_parameter_handles.max_fov = param_find("AAMIS_FOV_MAX");
 	_parameter_handles.index = param_find("AAMIS_INDEX");
 	_parameter_handles.water_weight = param_find("AA_WATER_WGHT");
-	_parameter_handles.water_weight = param_find("AAMIS_WGHT_DROP");
+	_parameter_handles.weight_per_drop = param_find("AAMIS_WGHT_DRP");
 	_parameter_handles.ctr_lat = param_find("PE_CTR_LAT");
 	_parameter_handles.ctr_lon = param_find("PE_CTR_LON");
 	_parameter_handles.ctr_alt = param_find("PE_CTR_ALT");
@@ -135,7 +135,7 @@ LakeFire::take_picture()
 	pic_result.center_e = _pic_request.pos_E; // _local_pos.y;
 	pic_result.center_d = _pic_request.pos_D; // _local_pos.z;
 
-	printf("center coords: %f, %f, %f\n", (double) pic_result.center_n, (double) pic_result.center_e, (double) pic_result.center_d);
+	printf("center coords: %0.5f, %0.5f, %0.5f\n", (double) pic_result.center_n, (double) pic_result.center_e, (double) pic_result.center_d);
 
 	hrt_abstime curr_time = _pic_request.time_us; // hrt_absolute_time();
 	pic_result.time_us = curr_time;
@@ -166,7 +166,7 @@ LakeFire::take_picture()
 	float pic_d = get_fov_d(-pic_result.center_d);
 	pic_result.pic_d = pic_d;
 
-	printf("pic diameter: %f\n", (double) pic_d);
+	printf("pic diameter: %0.5f\n", (double) pic_d);
 
 	/* populate the i, j and state vectors */
 	get_fire_info(&pic_result);
@@ -220,7 +220,26 @@ LakeFire::drop_water()
 float
 LakeFire::get_fov_d(const float &alt)
 {
-	return _parameters.min_fov + (alt - _parameters.min_alt)*(_parameters.max_fov - _parameters.min_fov)/(_parameters.max_alt - _parameters.min_alt);
+	printf("alt: %0.5f\n", (double) alt);
+
+	/*
+	float curr_alt_diff = (alt - _parameters.min_alt);
+	float fov_diff = (_parameters.max_fov - _parameters.min_fov);
+	float alt_diff = (_parameters.max_alt - _parameters.min_alt);
+
+
+	printf("current alt difference: %0.5f\n", (double) curr_alt_diff);
+	printf("fov difference: %0.5f\n", (double) fov_diff);
+	printf("alt difference: %0.5f\n", (double) alt_diff);
+	*/
+
+	// float fov_d = _parameters.min_fov + curr_alt_diff*fov_diff/alt_diff;
+	float fov_d = _parameters.min_fov + (alt - _parameters.min_alt)*(_parameters.max_fov - _parameters.min_fov)/(_parameters.max_alt - _parameters.min_alt);
+
+	printf("fov d: %f\n", (double) fov_d);
+
+
+	return fov_d;
 }
 
 int
@@ -237,7 +256,7 @@ LakeFire::n2i(const float &n)
 int
 LakeFire::e2j(const float &e)
 {
-	int j = GRID_CENTER - (int) roundf(e/_parameters.cell_width);
+	int j = GRID_CENTER + (int) roundf(e/_parameters.cell_width);
 
 	if (j < 0) j = 0;
 	if (j >= GRID_WIDTH) j = GRID_WIDTH - 1;
@@ -260,9 +279,10 @@ LakeFire::ij2ne(const float &i, const float &j)
 void
 LakeFire::get_fire_info(picture_result_s *pic_result)
 {
-	std::vector<int> i_view;
-	std::vector<int> j_view;
-	std::vector<int> state;
+
+	int i_view[MAX_POSSIBLE_VIEW];
+	int j_view[MAX_POSSIBLE_VIEW];
+	int state[MAX_POSSIBLE_VIEW];
 
 	/* explicit clean up (should not be necessary) */
 	pic_result->num_cells = 0;
@@ -277,7 +297,9 @@ LakeFire::get_fire_info(picture_result_s *pic_result)
 	int j_min = e2j(center_e - pic_r);
 	int j_max = e2j(center_e + pic_r);
 
-	float d2 = (pic_result->pic_d) * (pic_result->pic_d);
+	float d2 = (1.0f/4.0f) * (pic_result->pic_d) * (pic_result->pic_d);
+
+	printf("square distance = %0.5f\n", (double) d2);
 
 	math::Vector<2> center;
 	center(0) = center_n;
@@ -286,25 +308,30 @@ LakeFire::get_fire_info(picture_result_s *pic_result)
 	printf("i range: %i -> %i\n", i_min, i_max);
 	printf("j range: %i -> %i\n", j_min, j_max);
 
-	for (int i = i_min; i < i_max; i++) {
+	int loc = 0;
+	for (int i = i_min; i <= i_max; i++) {
 		for (int j = j_min; j <= j_max; j++) {
 
 			// TODO: need to check to make sure these are a valid (i,j) pair
+			float dist2 = (ij2ne(i,j) - center).length_squared();
+
+			printf("(%i, %i) dist2 from center = %0.5f\n", i, j, (double) dist2);
 
 			/* check to ensure center of cell is within fov */
-			if ((ij2ne(i,j) - center).length_squared() <= d2) {
-				i_view.push_back(i);
-				j_view.push_back(j);
-				state.push_back(_grid[i][j]);
+			if (dist2 <= d2) {
+				i_view[loc] = i;
+				j_view[loc] = j;
+				state[loc] = _grid[i][j];
+				loc++;
 			}
 
 		}
 	}
 
-	pic_result->num_cells = i_view.size();
-	pic_result->i = &i_view[0];
-	pic_result->j = &j_view[0];
-	pic_result->state = &state[0];
+	pic_result->num_cells = loc;
+	memcpy(&pic_result->i, &i_view, sizeof(i_view));
+	memcpy(&pic_result->j, &j_view, sizeof(j_view));
+	memcpy(&pic_result->state, &state, sizeof(state));
 
 	return;
 }
@@ -314,6 +341,8 @@ LakeFire::parameters_update()
 {
 	param_get(_parameter_handles.min_alt, &(_parameters.min_alt));
 	param_get(_parameter_handles.max_alt, &(_parameters.max_alt));
+	param_get(_parameter_handles.min_fov, &(_parameters.min_fov));
+	param_get(_parameter_handles.max_fov, &(_parameters.max_fov));
 	param_get(_parameter_handles.auto_alt, &(_parameters.auto_alt));
 	param_get(_parameter_handles.cell_width, &(_parameters.cell_width));
 	param_get(_parameter_handles.duration, &(_parameters.duration));
@@ -596,8 +625,8 @@ LakeFire::propagate_fire()
 
 	int count = 0;
 
-	for (int i = 0; i < 21; i++) {
-		for (int j = 0; j < 21; j++) {
+	for (int i = 0; i < GRID_WIDTH; i++) {
+		for (int j = 0; j < GRID_WIDTH; j++) {
 
 			/* make sure this cell isn't a new fire cell */
 			if (std::find(i_new.begin(), i_new.end(), i) != i_new.end() && std::find(j_new.begin(), j_new.end(), i) != j_new.end()) {
@@ -606,7 +635,7 @@ LakeFire::propagate_fire()
 
 			/* check for fire in cell, continue if no fire in cell */
 			cell_val = _grid[i][j];
-			if (cell_val < ON_FIRE) continue;
+			if (cell_val != ON_FIRE) continue;
 			count++;
 
 			prop_dir = roundf(generate_normal_random(_wind_direction));
@@ -623,7 +652,7 @@ LakeFire::propagate_fire()
 			// printf("(%i,%i) : %i  ->  (%i,%i)\n", i, j, (int) prop_dir, i_prop, j_prop);  // DEBUG
 
 			/* check to make sure new fire cell is a valid location */
-			if (i_prop >= 21 || i_prop < 0 || j_prop >= 21 || j_prop < 0) continue;
+			if (i_prop >= GRID_WIDTH || i_prop < 0 || j_prop >= GRID_WIDTH || j_prop < 0) continue;
 
 			/* check for new fire cell value */
 			cell_val = _grid[i_prop][j_prop];
@@ -650,12 +679,12 @@ LakeFire::calculate_score()
 	int count = 0;
 	int8_t cell_val;
 
-	for (int i = 0; i < 21; i++) {
-		for (int j = 0; j < 21; j++) {
+	for (int i = 0; i < GRID_WIDTH; i++) {
+		for (int j = 0; j < GRID_WIDTH; j++) {
 
 			/* check for fire in cell */
 			cell_val = _grid[i][j];
-			if (cell_val < ON_FIRE) {
+			if (cell_val == ON_FIRE) {
 				count++;
 			}
 		}
@@ -675,8 +704,8 @@ LakeFire::task_main_trampoline(int argc, char **argv)
 void
 LakeFire::print_grid() {
 	printf("\n");
-	for (int i = 0; i < 21; i++) {
-		for (int j = 0;j < 21; j++) {
+	for (int i = 0; i < GRID_WIDTH; i++) {
+		for (int j = 0;j < GRID_WIDTH; j++) {
 			printf("%d ", _grid[i][j]);
 		}
 		printf("\n");
@@ -686,6 +715,47 @@ LakeFire::print_grid() {
 
 void
 LakeFire::testing()
+{
+	parameters_update();
+
+	printf("min alt: %0.5f\n", (double) _parameters.min_alt);
+	printf("max alt: %0.5f\n", (double) _parameters.max_alt);
+	printf("min fov: %0.5f\n", (double) _parameters.min_fov);
+	printf("max fov: %0.5f\n", (double) _parameters.max_fov);
+	printf("alt auto: %0.5f\n", (double) _parameters.auto_alt);
+
+	printf("cell width: %0.5f\n", (double) _parameters.cell_width);
+	printf("duration: %0.5f\n", (double) _parameters.duration);
+	printf("max radius: %0.5f\n", (double) _parameters.max_radius);
+	printf("timestep: %0.5f\n", (double) _parameters.timestep);
+	printf("std: %0.5f\n", (double) _parameters.std);
+	printf("t pic: %0.5f\n", (double) _parameters.t_pic);
+	printf("index: %i\n", _parameters.index);
+	printf("h2o wght: %0.5f\n", (double) _parameters.water_weight);
+	printf("wght / drop: %0.5f\n", (double) _parameters.weight_per_drop);
+
+	printf("ctr lat: %0.5f\n", (double) _parameters.ctr_lat);
+	printf("ctr lon: %0.5f\n", (double) _parameters.ctr_lon);
+	printf("ctr alt: %0.5f\n", (double) _parameters.ctr_alt);
+
+	float fov = 0.0f;
+	for (int i=31; i<122; i += 5) {
+		fov = get_fov_d((float) i);
+
+
+		printf("%f -> %0.5f\n", (double) i, (double) fov);
+	}
+
+
+	warnx("exiting.\n");
+
+	_control_task = -1;
+	_task_running = false;
+	_exit(0);
+}
+
+void
+LakeFire::prop_testing()
 {
 	const int nrolls=10000;  // number of experiments
 	const int nstars=100;    // maximum number of stars to distribute

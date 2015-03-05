@@ -116,9 +116,9 @@ void take_picture()
 {
 	picture_request_s pic_request;
 	pic_request.time_us = hrt_absolute_time();
-	pic_request.pos_N = 30.0f; // position_N;	// DEBUG
+	pic_request.pos_N = 31.0f; // position_N;	// DEBUG
 	pic_request.pos_E = 10.0f; // position_E;	// DEBUG
-	pic_request.pos_D = 100.0f; // position_D;	// DEBUG
+	pic_request.pos_D = -100.0f; // position_D;	// DEBUG
 
 	/* publish the picture request */
 	if (_picture_request_pub > 0) {

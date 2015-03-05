@@ -13,6 +13,8 @@
 #include <stdlib.h>
 #include "../uORB.h"
 
+#define MAX_POSSIBLE_VIEW 9
+
 struct picture_result_s {
 	bool pic_taken;			/**< if true, a picture was successfully taken */
 	uint64_t time_us;		/**< unix timestamp in microseconds at which the picture was taken */
@@ -21,9 +23,16 @@ struct picture_result_s {
 	float center_d;			/**< Down coordinate (negative vertical distance from bottom) of the center of the picture */
 	float pic_d;			/**< diameter in [m] of the picture taken */
 	int num_cells;			/**< number of grid cells in view (length of vectors i, j, and state) */
+
+	int i[MAX_POSSIBLE_VIEW];
+	int j[MAX_POSSIBLE_VIEW];
+	int state[MAX_POSSIBLE_VIEW];
+
+	/*
 	int *i;
 	int *j;
 	int *state;
+	*/
 
 	// std::vector<int> i;		/**< list of i grid coordinates in view */
 	// std::vector<int> j;		/**< list of j grid coordinates in view */
