@@ -135,38 +135,30 @@ LakeFire::take_picture()
 	pic_result.center_e = _pic_request.pos_E; // _local_pos.y;
 	pic_result.center_d = _pic_request.pos_D; // _local_pos.z;
 
-	printf("center coords: %0.5f, %0.5f, %0.5f\n", (double) pic_result.center_n, (double) pic_result.center_e, (double) pic_result.center_d);
-
 	hrt_abstime curr_time = _pic_request.time_us; // hrt_absolute_time();
 	pic_result.time_us = curr_time;
 	float time_diff = (curr_time - _last_picture)/1000000.0f;
-	printf("receive lag of: %fus\n", (double) (hrt_absolute_time() - curr_time));
-	printf("time diff of: %fs\n", (double) (curr_time - _last_picture)/1000000.0);
 
 	/* check mission logic */
 	if (!_in_mission || time_diff <= _parameters.t_pic) {
 		/* do not take a picture */
-		printf("denying picture due to time\n");	// DEBUG
 		pic_result.pic_taken = false;
 		return pic_result;
 	}
 
 	/* check position */
-	/*	// DEBUG
 	float d = pic_result.center_d;
 	float n = pic_result.center_n;
 	float e = pic_result.center_e;
 	if (-d < _parameters.min_alt || -d > _parameters.max_alt || (n*n + e*e) >= _parameters.max_radius*_parameters.max_radius) {
 		pic_result.pic_taken = false;
 		return pic_result;
-	} */
+	}
 
 	pic_result.pic_taken = true;
 
 	float pic_d = get_fov_d(-pic_result.center_d);
 	pic_result.pic_d = pic_d;
-
-	printf("pic diameter: %0.5f\n", (double) pic_d);
 
 	/* populate the i, j and state vectors */
 	get_fire_info(&pic_result);
@@ -183,10 +175,9 @@ LakeFire::drop_water()
 	water_drop_result_s water_drop;
 
 	water_drop.time_us = _water_drop_request.time_us; // hrt_absolute_time();
-
-	float n = _pic_request.pos_N; // _local_pos.x;
-	float e = _pic_request.pos_E; // _local_pos.y;
-	float d = _pic_request.pos_D; // _local_pos.z;
+	float n = _water_drop_request.pos_N; // _local_pos.x;
+	float e = _water_drop_request.pos_E; // _local_pos.y;
+	float d = _water_drop_request.pos_D; // _local_pos.z;
 
 	/* mission logic checks */
 	if (!_in_mission || _water_drops_remaining <= 0) {
@@ -211,6 +202,9 @@ LakeFire::drop_water()
 	water_drop.i = i;
 	water_drop.j = j;
 
+	/* reduce the number of water drops remaining */
+	_water_drops_remaining--;
+
 	/* publish the info */
 	publish_water_drop(water_drop);
 
@@ -220,26 +214,7 @@ LakeFire::drop_water()
 float
 LakeFire::get_fov_d(const float &alt)
 {
-	printf("alt: %0.5f\n", (double) alt);
-
-	/*
-	float curr_alt_diff = (alt - _parameters.min_alt);
-	float fov_diff = (_parameters.max_fov - _parameters.min_fov);
-	float alt_diff = (_parameters.max_alt - _parameters.min_alt);
-
-
-	printf("current alt difference: %0.5f\n", (double) curr_alt_diff);
-	printf("fov difference: %0.5f\n", (double) fov_diff);
-	printf("alt difference: %0.5f\n", (double) alt_diff);
-	*/
-
-	// float fov_d = _parameters.min_fov + curr_alt_diff*fov_diff/alt_diff;
-	float fov_d = _parameters.min_fov + (alt - _parameters.min_alt)*(_parameters.max_fov - _parameters.min_fov)/(_parameters.max_alt - _parameters.min_alt);
-
-	printf("fov d: %f\n", (double) fov_d);
-
-
-	return fov_d;
+	return _parameters.min_fov + (alt - _parameters.min_alt)*(_parameters.max_fov - _parameters.min_fov)/(_parameters.max_alt - _parameters.min_alt);
 }
 
 int
@@ -299,26 +274,16 @@ LakeFire::get_fire_info(picture_result_s *pic_result)
 
 	float d2 = (1.0f/4.0f) * (pic_result->pic_d) * (pic_result->pic_d);
 
-	printf("square distance = %0.5f\n", (double) d2);
-
 	math::Vector<2> center;
 	center(0) = center_n;
 	center(1) = center_e;
-
-	printf("i range: %i -> %i\n", i_min, i_max);
-	printf("j range: %i -> %i\n", j_min, j_max);
 
 	int loc = 0;
 	for (int i = i_min; i <= i_max; i++) {
 		for (int j = j_min; j <= j_max; j++) {
 
-			// TODO: need to check to make sure these are a valid (i,j) pair
-			float dist2 = (ij2ne(i,j) - center).length_squared();
-
-			printf("(%i, %i) dist2 from center = %0.5f\n", i, j, (double) dist2);
-
 			/* check to ensure center of cell is within fov */
-			if (dist2 <= d2) {
+			if ((ij2ne(i,j) - center).length_squared() <= d2) {
 				i_view[loc] = i;
 				j_view[loc] = j;
 				state[loc] = _grid[i][j];
@@ -412,13 +377,6 @@ LakeFire::vehicle_status_update()
 void
 LakeFire::handle_picture_request()
 {
-	bool vehicle_status_updated;
-	orb_check(_pic_request_sub, &vehicle_status_updated);
-
-	if (!vehicle_status_updated) {
-		return;
-	}
-	printf("received picture request\n");	// DEBUG
 	/* copy the picture request */
 	orb_copy(ORB_ID(aa241x_picture_request), _pic_request_sub, &_pic_request);
 
@@ -430,7 +388,6 @@ LakeFire::handle_picture_request()
 	 * it can be used in the case of someone spaming the take picture function */
 	// TODO: maybe always publish the result...
 	if (pic_result.pic_taken) {
-		printf("publishing picture result\n");	// DEBUG
 		publish_picture_result(pic_result);
 	}
 }
@@ -649,8 +606,6 @@ LakeFire::propagate_fire()
 
 			get_prop_coords(&i_prop, &j_prop, (int) prop_dir);
 
-			// printf("(%i,%i) : %i  ->  (%i,%i)\n", i, j, (int) prop_dir, i_prop, j_prop);  // DEBUG
-
 			/* check to make sure new fire cell is a valid location */
 			if (i_prop >= GRID_WIDTH || i_prop < 0 || j_prop >= GRID_WIDTH || j_prop < 0) continue;
 
@@ -664,8 +619,6 @@ LakeFire::propagate_fire()
 			}
 		}
 	}
-
-	// printf("on fire propagated: %i\n", count);  // DEBUG
 
 	/* clear vectors after having published the info */
 	i_new.clear();
@@ -936,7 +889,7 @@ LakeFire::sim_testing()
 				/* propagate the fire for this next timestep */
 				propagate_fire();
 
-				// print_grid();
+				print_grid();	// DEBUG
 
 				/* calculate the new score */
 				calculate_score();

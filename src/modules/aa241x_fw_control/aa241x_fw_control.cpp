@@ -28,6 +28,10 @@ void flight_control() {
 			printf("(%i,%i) -> %i\n", pic_result.i[i], pic_result.j[i], pic_result.state[i]);
 		}
 
+		// just going to want to drop water
+		printf("sending water drop request\n");
+		drop_water();
+
 		// TODO: run picture result logic here......
 
 		// set new_pic to false, as just processed this pic result
@@ -53,13 +57,15 @@ void flight_control() {
 	if ((hrt_absolute_time() - last_pic_request_time)/1000000.0f > 3.0f) {
 		printf("sending pic request\n");
 		take_picture();
+
 		pic_taken_time = hrt_absolute_time();
 		last_pic_request_time = hrt_absolute_time();
+		/*
 		int fuck = 0;
 		while (!new_pic) {
 			// just wait
 
-			/* check if there is a new picture result */
+			// check if there is a new picture result
 			bool pic_result_updated;
 			if (pic_res_sub <= 0) {
 				pic_res_sub = orb_subscribe(ORB_ID(aa241x_picture_result));
@@ -69,7 +75,7 @@ void flight_control() {
 			if (pic_result_updated) {
 				orb_copy(ORB_ID(aa241x_picture_result), pic_res_sub, &pic_result);
 
-				/* set the data to be used by students */
+				// set the data to be used by students
 				new_pic = true;
 			}
 			fuck++;
@@ -79,6 +85,7 @@ void flight_control() {
 			printf(".");
 		}
 		printf("pic lag: %fus\n", (double) (hrt_absolute_time() - pic_taken_time));
+		*/
 
 	}
 }

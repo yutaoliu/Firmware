@@ -116,9 +116,9 @@ void take_picture()
 {
 	picture_request_s pic_request;
 	pic_request.time_us = hrt_absolute_time();
-	pic_request.pos_N = 31.0f; // position_N;	// DEBUG
-	pic_request.pos_E = 10.0f; // position_E;	// DEBUG
-	pic_request.pos_D = -100.0f; // position_D;	// DEBUG
+	pic_request.pos_N = position_N;
+	pic_request.pos_E = position_E;
+	pic_request.pos_D = position_D;
 
 	/* publish the picture request */
 	if (_picture_request_pub > 0) {
@@ -138,7 +138,7 @@ void drop_water()
 	water_drop_request.pos_D = position_D;
 
 	/* publish the picture request */
-	if (_picture_request_pub > 0) {
+	if (_water_drop_request_pub > 0) {
 		orb_publish(ORB_ID(aa241x_water_drop_request), _water_drop_request_pub, &water_drop_request);
 	} else {
 		_water_drop_request_pub = orb_advertise(ORB_ID(aa241x_water_drop_request), &water_drop_request);
