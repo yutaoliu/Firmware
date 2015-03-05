@@ -23,8 +23,8 @@
 #include <uORB/topics/aa241x_picture_result.h>
 #include <uORB/topics/aa241x_picture_request.h>
 
-#define GRID_WIDTH 21		/**< the number of cells wide and tall the grid is */
-#define GRID_CENTER 10		/**< the index of the center row and column */
+#define GRID_WIDTH 17		/**< the number of cells wide and tall the grid is */
+#define GRID_CENTER 8		/**< the index of the center row and column */
 
 class LakeFire
 {
@@ -160,9 +160,9 @@ private:
 	} _wind_direction;					/**< the direction of the wind */
 
 	enum FIRE_STATE {
-		WATER = -1,
-		OPEN_LAND,
-		ON_FIRE
+		OPEN_LAND = 0,
+		ON_FIRE,
+		WATER
 	};
 
 
@@ -286,6 +286,8 @@ private:
 	static void	task_main_trampoline(int argc, char *argv[]);
 
 	void testing();
+
+	void prop_testing();
 
 	void sim_testing();
 
