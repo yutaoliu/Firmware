@@ -34,7 +34,10 @@
 /*
  * @file aa241x_fw_control_params.c
  *
- * Definition of parameters for fixedwing example
+ * Definition of custom parameters for fixedwing controllers
+ * being written for AA241x.
+ *
+ *  @author Adrien Perkins		<adrienp@stanford.edu>
  */
 
 #include "aa241x_fw_control_params.h"
