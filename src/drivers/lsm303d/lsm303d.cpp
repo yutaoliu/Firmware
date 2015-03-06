@@ -609,7 +609,7 @@ LSM303D::~LSM303D()
 		delete _mag_reports;
 
 	if (_accel_class_instance != -1)
-		unregister_class_devname(ACCEL_DEVICE_PATH, _accel_class_instance);
+		unregister_class_devname(ACCEL_BASE_DEVICE_PATH, _accel_class_instance);
 
 	delete _mag;
 
@@ -668,7 +668,7 @@ LSM303D::init()
 	}
 
 
-	_accel_class_instance = register_class_devname(ACCEL_DEVICE_PATH);
+	_accel_class_instance = register_class_devname(ACCEL_BASE_DEVICE_PATH);
 
 	/* advertise sensor topic, measure manually to initialize valid report */
 	struct accel_report arp;
@@ -920,7 +920,7 @@ LSM303D::ioctl(struct file *filp, int cmd, unsigned long arg)
 	}
 
 	case ACCELIOCGLOWPASS:
-		return _accel_filter_x.get_cutoff_freq();
+		return static_cast<int>(_accel_filter_x.get_cutoff_freq());
 
 	case ACCELIOCSSCALE: {
 		/* copy scale, but only if off by a few percent */
@@ -1067,7 +1067,10 @@ LSM303D::mag_ioctl(struct file *filp, int cmd, unsigned long arg)
 		return mag_self_test();
 
 	case MAGIOCGEXTERNAL:
-		/* no external mag board yet */
+		/* Even if this sensor is on the "external" SPI bus
+		 * it is still fixed to the autopilot assembly,
+		 * so always return 0.
+		 */
 		return 0;
 
 	default:
@@ -1589,6 +1592,7 @@ LSM303D::mag_measure()
 #pragma pack(pop)
 
 	mag_report mag_report;
+	memset(&mag_report, 0, sizeof(mag_report));
 
 	/* start the performance counter */
 	perf_begin(_mag_sample_perf);
@@ -1624,6 +1628,7 @@ LSM303D::mag_measure()
 	mag_report.z = ((mag_report.z_raw * _mag_range_scale) - _mag_scale.z_offset) * _mag_scale.z_scale;
 	mag_report.scaling = _mag_range_scale;
 	mag_report.range_ga = (float)_mag_range_ga;
+	mag_report.error_count = perf_event_count(_bad_registers) + perf_event_count(_bad_values);
 
 	// apply user specified rotation
 	rotate_3f(_rotation, mag_report.x, mag_report.y, mag_report.z);
@@ -1745,7 +1750,7 @@ LSM303D_mag::LSM303D_mag(LSM303D *parent) :
 LSM303D_mag::~LSM303D_mag()
 {
 	if (_mag_class_instance != -1)
-		unregister_class_devname(MAG_DEVICE_PATH, _mag_class_instance);
+		unregister_class_devname(MAG_BASE_DEVICE_PATH, _mag_class_instance);
 }
 
 int
@@ -1757,7 +1762,7 @@ LSM303D_mag::init()
 	if (ret != OK)
 		goto out;
 
-	_mag_class_instance = register_class_devname(MAG_DEVICE_PATH);
+	_mag_class_instance = register_class_devname(MAG_BASE_DEVICE_PATH);
 
 out:
 	return ret;

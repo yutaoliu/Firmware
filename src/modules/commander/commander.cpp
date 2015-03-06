@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (C) 2013-2014 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2013-2015 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -36,7 +36,7 @@
  * Main fail-safe handling.
  *
  * @author Petri Tanskanen <petri.tanskanen@inf.ethz.ch>
- * @author Lorenz Meier <lm@inf.ethz.ch>
+ * @author Lorenz Meier <lorenz@px4.io>
  * @author Thomas Gubler <thomasgubler@student.ethz.ch>
  * @author Julian Oes <julian@oes.ch>
  * @author Anton Babushkin <anton.babushkin@me.com>
@@ -318,6 +318,29 @@ int commander_main(int argc, char *argv[])
 		exit(0);
 	}
 
+	if (!strcmp(argv[1], "calibrate")) {
+		if (argc > 2) {
+			int calib_ret = OK;
+			if (!strcmp(argv[2], "mag")) {
+				calib_ret = do_mag_calibration(mavlink_fd);
+			} else if (!strcmp(argv[2], "accel")) {
+				calib_ret = do_accel_calibration(mavlink_fd);
+			} else if (!strcmp(argv[2], "gyro")) {
+				calib_ret = do_gyro_calibration(mavlink_fd);
+			} else {
+				warnx("argument %s unsupported.", argv[2]);
+			}
+
+			if (calib_ret) {
+				errx(1, "calibration failed, exiting.");
+			} else {
+				exit(0);
+			}
+		} else {
+			warnx("missing argument");
+		}
+	}
+
 	if (!strcmp(argv[1], "check")) {
 		int mavlink_fd_local = open(MAVLINK_LOG_DEVICE, 0);
 		int checkres = prearm_check(&status, mavlink_fd_local);
@@ -350,7 +373,7 @@ void usage(const char *reason)
 		fprintf(stderr, "%s\n", reason);
 	}
 
-	fprintf(stderr, "usage: daemon {start|stop|status} [-p <additional params>]\n\n");
+	fprintf(stderr, "usage: commander {start|stop|status|calibrate|check|arm|disarm}\n\n");
 	exit(1);
 }
 
@@ -1365,29 +1388,23 @@ int commander_thread_main(int argc, char *argv[])
 			orb_copy(ORB_ID(vehicle_local_position), local_position_sub, &local_position);
 		}
 
-		/* update condition_global_position_valid */
-		/* hysteresis for EPH/EPV */
-		bool eph_good;
-
-		if (status.condition_global_position_valid) {
-			if (global_position.eph > eph_threshold * 2.5f) {
-				eph_good = false;
-
-			} else {
-				eph_good = true;
-			}
-
-		} else {
-			if (global_position.eph < eph_threshold) {
-				eph_good = true;
-
-			} else {
-				eph_good = false;
+		//update condition_global_position_valid
+		//Global positions are only published by the estimators if they are valid
+		if(hrt_absolute_time() - global_position.timestamp > POSITION_TIMEOUT) {
+			//We have had no good fix for POSITION_TIMEOUT amount of time
+			if(status.condition_global_position_valid) {
+				set_tune_override(TONE_GPS_WARNING_TUNE);
+				status_changed = true;
+				status.condition_global_position_valid = false;		
 			}
 		}
-
-		check_valid(global_position.timestamp, POSITION_TIMEOUT, eph_good, &(status.condition_global_position_valid),
-			    &status_changed);
+		else if(global_position.timestamp != 0) {
+			//Got good global position estimate
+			if(!status.condition_global_position_valid) {
+				status_changed = true;
+				status.condition_global_position_valid = true;				
+			}
+		}
 
 		/* update condition_local_position_valid and condition_local_altitude_valid */
 		/* hysteresis for EPH */
@@ -2096,7 +2113,7 @@ control_status_leds(vehicle_status_s *status_local, const actuator_armed_s *actu
 				/* vehicle_status_s::VEHICLE_BATTERY_WARNING_CRITICAL handled as vehicle_status_s::ARMING_STATE_ARMED_ERROR / vehicle_status_s::ARMING_STATE_STANDBY_ERROR */
 
 			} else {
-				if (status_local->condition_local_position_valid) {
+				if (status_local->condition_global_position_valid) {
 					rgbled_set_color(RGBLED_COLOR_GREEN);
 
 				} else {

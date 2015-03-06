@@ -382,10 +382,7 @@ int create_log_dir()
 		strftime(log_dir + n, sizeof(log_dir) - n, "%Y-%m-%d", &tt);
 		mkdir_ret = mkdir(log_dir, S_IRWXU | S_IRWXG | S_IRWXO);
 
-		if (mkdir_ret == OK) {
-			warnx("log dir created: %s", log_dir);
-
-		} else if (errno != EEXIST) {
+		if ((mkdir_ret != OK) && (errno != EEXIST)) {
 			warn("failed creating new dir: %s", log_dir);
 			return -1;
 		}
@@ -1577,6 +1574,12 @@ int sdlog2_thread_main(int argc, char *argv[])
 			log_msg.body.log_LPSP.y = buf.local_pos_sp.y;
 			log_msg.body.log_LPSP.z = buf.local_pos_sp.z;
 			log_msg.body.log_LPSP.yaw = buf.local_pos_sp.yaw;
+			log_msg.body.log_LPSP.vx = buf.local_pos_sp.vx;
+			log_msg.body.log_LPSP.vy = buf.local_pos_sp.vy;
+			log_msg.body.log_LPSP.vz = buf.local_pos_sp.vz;
+			log_msg.body.log_LPSP.acc_x = buf.local_pos_sp.acc_x;
+			log_msg.body.log_LPSP.acc_y = buf.local_pos_sp.acc_y;
+			log_msg.body.log_LPSP.acc_z = buf.local_pos_sp.acc_z;
 			LOGBUFFER_WRITE_AND_COUNT(LPSP);
 		}
 

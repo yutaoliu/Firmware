@@ -622,17 +622,22 @@ PX4IO::init()
 		return ret;
 
 	/* get some parameters */
-	unsigned protocol = io_reg_get(PX4IO_PAGE_CONFIG, PX4IO_P_CONFIG_PROTOCOL_VERSION);
+	unsigned protocol;
+	hrt_abstime start_try_time = hrt_absolute_time();
 
+	do {
+		usleep(2000);
+		protocol = io_reg_get(PX4IO_PAGE_CONFIG, PX4IO_P_CONFIG_PROTOCOL_VERSION);
+	} while (protocol == _io_reg_get_error && (hrt_elapsed_time(&start_try_time) < 700U * 1000U));
+
+	/* if the error still persists after timing out, we give up */
 	if (protocol == _io_reg_get_error) {
-		log("failed to communicate with IO");
-		mavlink_log_emergency(_mavlink_fd, "[IO] failed to communicate with IO, abort.");
+		mavlink_and_console_log_emergency(_mavlink_fd, "Failed to communicate with IO, abort.");
 		return -1;
 	}
 
 	if (protocol != PX4IO_PROTOCOL_VERSION) {
-		log("protocol/firmware mismatch");
-		mavlink_log_emergency(_mavlink_fd, "[IO] protocol/firmware mismatch, abort.");
+		mavlink_and_console_log_emergency(_mavlink_fd, "IO protocol/firmware mismatch, abort.");
 		return -1;
 	}
 
@@ -681,8 +686,7 @@ PX4IO::init()
 		/* get a status update from IO */
 		io_get_status();
 
-		mavlink_log_emergency(_mavlink_fd, "[IO] RECOVERING FROM FMU IN-AIR RESTART");
-		log("INAIR RESTART RECOVERY (needs commander app running)");
+		mavlink_and_console_log_emergency(_mavlink_fd, "RECOVERING FROM FMU IN-AIR RESTART");
 
 		/* WARNING: COMMANDER app/vehicle status must be initialized.
 		 * If this fails (or the app is not started), worst-case IO
@@ -711,7 +715,7 @@ PX4IO::init()
 
 			/* abort after 5s */
 			if ((hrt_absolute_time() - try_start_time) / 1000 > 3000) {
-				log("failed to recover from in-air restart (1), aborting IO driver init.");
+				mavlink_and_console_log_emergency(_mavlink_fd, "Failed to recover from in-air restart (1), abort");
 				return 1;
 			}
 
@@ -767,7 +771,7 @@ PX4IO::init()
 
 			/* abort after 5s */
 			if ((hrt_absolute_time() - try_start_time) / 1000 > 2000) {
-				log("failed to recover from in-air restart (2), aborting IO driver init.");
+				mavlink_and_console_log_emergency(_mavlink_fd, "Failed to recover from in-air restart (2), abort");
 				return 1;
 			}
 
@@ -809,8 +813,7 @@ PX4IO::init()
 			ret = io_set_rc_config();
 
 			if (ret != OK) {
-				log("failed to update RC input config");
-				mavlink_log_info(_mavlink_fd, "[IO] RC config upload fail");
+				mavlink_and_console_log_critical(_mavlink_fd, "IO RC config upload fail");
 				return ret;
 			}
 		}
@@ -827,7 +830,7 @@ PX4IO::init()
 	}
 
 	/* try to claim the generic PWM output device node as well - it's OK if we fail at this */
-	ret = register_driver(PWM_OUTPUT_DEVICE_PATH, &fops, 0666, (void *)this);
+	ret = register_driver(PWM_OUTPUT0_DEVICE_PATH, &fops, 0666, (void *)this);
 
 	if (ret == OK) {
 		log("default PWM output device");
@@ -846,8 +849,6 @@ PX4IO::init()
 		debug("task start failed: %d", errno);
 		return -errno;
 	}
-
-	mavlink_log_info(_mavlink_fd, "[IO] init ok");
 
 	return OK;
 }
@@ -888,7 +889,7 @@ PX4IO::task_main()
 	    (_t_vehicle_control_mode < 0) ||
 	    (_t_param < 0) ||
 	    (_t_vehicle_command < 0)) {
-		log("subscription(s) failed");
+		warnx("subscription(s) failed");
 		goto out;
 	}
 
@@ -926,7 +927,7 @@ PX4IO::task_main()
 
 		/* this would be bad... */
 		if (ret < 0) {
-			log("poll error %d", errno);
+			warnx("poll error %d", errno);
 			continue;
 		}
 
@@ -1028,7 +1029,7 @@ PX4IO::task_main()
 				int pret = io_reg_set(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_VBATT_SCALE, &scaling, 1);
 
 				if (pret != OK) {
-					log("vscale upload failed");
+					mavlink_and_console_log_critical(_mavlink_fd, "IO vscale upload failed");
 				}
 
 				/* send RC throttle failsafe value to IO */
@@ -1044,7 +1045,7 @@ PX4IO::task_main()
 						uint16_t failsafe_thr = failsafe_param_val;
 						pret = io_reg_set(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_RC_THR_FAILSAFE_US, &failsafe_thr, 1);
 						if (pret != OK) {
-							log("failsafe upload failed, FS: %d us", (int)failsafe_thr);
+							mavlink_and_console_log_critical(_mavlink_fd, "failsafe upload failed, FS: %d us", (int)failsafe_thr);
 						}
 					}
 				}
@@ -1079,7 +1080,7 @@ out:
 
 	/* clean up the alternate device node */
 	if (_primary_pwm_device)
-		unregister_driver(PWM_OUTPUT_DEVICE_PATH);
+		unregister_driver(PWM_OUTPUT0_DEVICE_PATH);
 
 	/* tell the dtor that we are exiting */
 	_task = -1;
@@ -1355,7 +1356,7 @@ PX4IO::io_set_rc_config()
 
 		/* check the IO initialisation flag */
 		if (!(io_reg_get(PX4IO_PAGE_STATUS, PX4IO_P_STATUS_FLAGS) & PX4IO_P_STATUS_FLAGS_INIT_OK)) {
-			log("config for RC%d rejected by IO", i + 1);
+			mavlink_and_console_log_critical(_mavlink_fd, "config for RC%d rejected by IO", i + 1);
 			break;
 		}
 
@@ -2822,12 +2823,12 @@ checkcrc(int argc, char *argv[])
 	  check IO CRC against CRC of a file
 	 */
 	if (argc < 2) {
-		printf("usage: px4io checkcrc filename\n");
+		warnx("usage: px4io checkcrc filename");
 		exit(1);
 	}
 	int fd = open(argv[1], O_RDONLY);
 	if (fd == -1) {
-		printf("open of %s failed - %d\n", argv[1], errno);
+		warnx("open of %s failed: %d", argv[1], errno);
 		exit(1);
 	}
 	const uint32_t app_size_max = 0xf000;
@@ -2855,10 +2856,10 @@ checkcrc(int argc, char *argv[])
 	}
 
 	if (ret != OK) {
-		printf("[PX4IO::checkcrc] check CRC failed - %d\n", ret);
+		warn("check CRC failed: %d", ret);
 		exit(1);
 	}
-	printf("[PX4IO::checkcrc] CRCs match\n");
+	warnx("CRCs match");
 	exit(0);
 }
 
@@ -3125,7 +3126,7 @@ px4io_main(int argc, char *argv[])
 	if (!strcmp(argv[1], "update")) {
 
 		if (g_dev != nullptr) {
-			printf("[px4io] loaded, detaching first\n");
+			warnx("loaded, detaching first");
 			/* stop the driver */
 			delete g_dev;
 			g_dev = nullptr;
@@ -3217,7 +3218,7 @@ px4io_main(int argc, char *argv[])
 		uint16_t arg = atol(argv[2]);
 		int ret = g_dev->ioctl(nullptr, PX4IO_REBOOT_BOOTLOADER, arg);
 		if (ret != OK) {
-			printf("reboot failed - %d\n", ret);
+			warnx("reboot failed - %d", ret);
 			exit(1);
 		}
 
@@ -3274,7 +3275,7 @@ px4io_main(int argc, char *argv[])
 	if (!strcmp(argv[1], "safety_off")) {
 		int ret = g_dev->ioctl(NULL, PWM_SERVO_SET_FORCE_SAFETY_OFF, 0);
 		if (ret != OK) {
-			printf("failed to disable safety\n");
+			warnx("failed to disable safety");
 			exit(1);
 		}
 		exit(0);
@@ -3283,7 +3284,7 @@ px4io_main(int argc, char *argv[])
 	if (!strcmp(argv[1], "safety_on")) {
 		int ret = g_dev->ioctl(NULL, PWM_SERVO_SET_FORCE_SAFETY_ON, 0);
 		if (ret != OK) {
-			printf("failed to enable safety\n");
+			warnx("failed to enable safety");
 			exit(1);
 		}
 		exit(0);
@@ -3311,7 +3312,7 @@ px4io_main(int argc, char *argv[])
 
 	if (!strcmp(argv[1], "status")) {
 
-		printf("[px4io] loaded\n");
+		warnx("loaded");
 		g_dev->print_status(true);
 
 		exit(0);
@@ -3319,12 +3320,12 @@ px4io_main(int argc, char *argv[])
 
 	if (!strcmp(argv[1], "debug")) {
 		if (argc <= 2) {
-			printf("usage: px4io debug LEVEL\n");
+			warnx("usage: px4io debug LEVEL");
 			exit(1);
 		}
 
 		if (g_dev == nullptr) {
-			printf("px4io is not started\n");
+			warnx("not started");
 			exit(1);
 		}
 
@@ -3335,11 +3336,11 @@ px4io_main(int argc, char *argv[])
 		int ret = g_dev->ioctl(nullptr, PX4IO_SET_DEBUG, level);
 
 		if (ret != 0) {
-			printf("SET_DEBUG failed - %d\n", ret);
+			warnx("SET_DEBUG failed: %d", ret);
 			exit(1);
 		}
 
-		printf("SET_DEBUG %u OK\n", (unsigned)level);
+		warnx("SET_DEBUG %u OK", (unsigned)level);
 		exit(0);
 	}
 
