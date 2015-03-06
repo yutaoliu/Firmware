@@ -56,7 +56,8 @@ extern float vel_D;
 // local position in NED frame [m] from center of lake lag
 extern float position_N;
 extern float position_E;
-extern float position_D; 		// note: this is down, so altitude above ground is a negative value
+extern float position_D_gps; 		// note: this is down, so altitude above ground is a negative value
+extern float position_D_baro; 		// note: this is down, so altitude above ground is a negative value
 
 // ground course and speed
 extern float ground_speed;		// speed relative to ground in [m/s]

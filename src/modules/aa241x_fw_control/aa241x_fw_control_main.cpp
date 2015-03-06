@@ -716,13 +716,14 @@ FixedwingControl::set_aux_values()
 	// local position in NED frame [m] from center of lake lag
 	position_N = 0.0f;
 	position_E = 0.0f;
-	position_D = 0.0f;
+	position_D_baro = 0.0f;
+	position_D_gps = _global_pos.alt + 40;
 	if (_local_pos.xy_valid) {		// only copy the data if it is valid
 		position_N = _local_pos.x;
 		position_E = _local_pos.y;
 	}
 	if (_local_pos.z_valid) {
-		position_D = _local_pos.z;
+		position_D_baro = _local_pos.z;
 	}
 	local_pos_ne_valid = _local_pos.xy_valid;
 	local_pos_d_valid = _local_pos.z_valid;

@@ -47,7 +47,8 @@ float vel_D = 0.0f;
 // local position in NED frame [m] from center of lake lag
 float position_N = 0.0f;
 float position_E = 0.0f;
-float position_D = 0.0f; 		// note: this is down, so altitude above ground is a negative value
+float position_D_gps = 0.0f; 		// note: this is down, so altitude above ground is a negative value
+float position_D_baro = 0.0f; 		// note: this is down, so altitude above ground is a negative value
 
 // ground course and speed
 float ground_speed = 0.0f;		// speed relative to ground in [m/s]
