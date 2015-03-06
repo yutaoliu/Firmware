@@ -43,7 +43,7 @@
 
 /* controller parameters, use max. 15 characters for param name!
  *
- * DO NOT DELETE AA_WATER_WGHT PARAMETER!!!!!!
+ * DO NOT DELETE AA_WATER_WGHT OR AA_MIS_INDEX PARAMETER!!!!!!
  */
 
 /**
@@ -54,6 +54,14 @@
  * @group AA241x Student Params
  */
 PARAM_DEFINE_FLOAT(AA_WATER_WGHT, 10.0f);
+
+/**
+ * Index (0 based) of the mission to be executed.
+ *
+ * @min 0
+ * @group AA241x Mission
+ */
+PARAM_DEFINE_INT32(AA_MIS_INDEX, 0);
 
 /**
  * This is an example parameter.  The name of the parameter in QGroundControl

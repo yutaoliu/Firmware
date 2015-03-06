@@ -88,12 +88,12 @@ LakeFire::LakeFire() :
 	_parameter_handles.t_pic = param_find("AAMIS_TPIC");
 	_parameter_handles.min_fov = param_find("AAMIS_FOV_MIN");
 	_parameter_handles.max_fov = param_find("AAMIS_FOV_MAX");
-	_parameter_handles.index = param_find("AAMIS_INDEX");
+	_parameter_handles.index = param_find("AA_MIS_INDEX");
 	_parameter_handles.water_weight = param_find("AA_WATER_WGHT");
 	_parameter_handles.weight_per_drop = param_find("AAMIS_WGHT_DRP");
-	_parameter_handles.ctr_lat = param_find("PE_CTR_LAT");
-	_parameter_handles.ctr_lon = param_find("PE_CTR_LON");
-	_parameter_handles.ctr_alt = param_find("PE_CTR_ALT");
+	_parameter_handles.ctr_lat = param_find("AAMIS_CTR_LAT");
+	_parameter_handles.ctr_lon = param_find("AAMIS_CTR_LON");
+	_parameter_handles.ctr_alt = param_find("AAMIS_CTR_ALT");
 
 	parameters_update();
 

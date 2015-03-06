@@ -112,9 +112,38 @@ PARAM_DEFINE_FLOAT(AAMIS_FOV_MAX, 60.0f);
 PARAM_DEFINE_FLOAT(AAMIS_WGHT_DRP, 5.0f);
 
 /**
- * Index (0 based) of the mission to be executed.
+ * Origin latitude for local position.
  *
- * @min 0
+ * Latitude in decimal degrees for the origin of the local position estimate.
+ * A value outside of the min/max will result in using the home location
+ * latitude.
+ *
+ * @min -90.0
+ * @max 90.0
  * @group AA241x Mission
  */
-PARAM_DEFINE_INT32(AAMIS_INDEX, 0);
+PARAM_DEFINE_FLOAT(AAMIS_CTR_LAT, 37.4224444f);
+
+/**
+ * Origin longitude for local position.
+ *
+ * Longitude in decimal degrees for the origin of the local position estimate.
+ * A value outside of the min/max will result in using the home location
+ * longitude.
+ *
+ * @min -180.0
+ * @max 180.0
+ * @group AA241x Mission
+ */
+PARAM_DEFINE_FLOAT(AAMIS_CTR_LON, -122.1760917f);
+
+/**
+ * Origin altitude for local position.
+ *
+ * Altitude in meters for the origin of the local position estimate.
+ * A negative value will result in using the home location altitude.
+ *
+ * @min 0.0
+ * @group AA241x Mission
+ */
+PARAM_DEFINE_FLOAT(AAMIS_CTR_ALT, 40.0f);
