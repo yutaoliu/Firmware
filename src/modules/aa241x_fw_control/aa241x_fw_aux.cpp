@@ -119,7 +119,7 @@ void take_picture()
 	pic_request.time_us = hrt_absolute_time();
 	pic_request.pos_N = position_N;
 	pic_request.pos_E = position_E;
-	pic_request.pos_D = position_D;
+	pic_request.pos_D = position_D_gps;
 
 	/* publish the picture request */
 	if (_picture_request_pub > 0) {
@@ -136,7 +136,7 @@ void drop_water()
 	water_drop_request.time_us = hrt_absolute_time();
 	water_drop_request.pos_N = position_N;
 	water_drop_request.pos_E = position_E;
-	water_drop_request.pos_D = position_D;
+	water_drop_request.pos_D = position_D_gps;
 
 	/* publish the picture request */
 	if (_water_drop_request_pub > 0) {

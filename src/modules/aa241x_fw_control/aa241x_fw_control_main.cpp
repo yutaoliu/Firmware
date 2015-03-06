@@ -186,6 +186,8 @@ private:
 	bool		_setpoint_valid;		/**< flag if the position control setpoint is valid */
 	bool		_debug;					/**< if set to true, print debug output */
 
+	map_projection_reference_s		_lake_lag_proj_ref;		/**< projection reference given by the center of the lake */
+
 
 	// general RC parameters
 	struct {
@@ -403,6 +405,8 @@ FixedwingControl::FixedwingControl() :
 	_pic_result = {};
 	_water_drop_result = {};
 	_mis_status = {};
+
+	_lake_lag_proj_ref = {};
 
 	// initialize the global remote parameters
 	_parameter_handles.trim_roll = param_find("TRIM_ROLL");
@@ -717,10 +721,10 @@ FixedwingControl::set_aux_values()
 	position_N = 0.0f;
 	position_E = 0.0f;
 	position_D_baro = 0.0f;
-	position_D_gps = _global_pos.alt + 40;
+	position_D_gps = _global_pos.alt + mission_parameters.ctr_alt;
 	if (_local_pos.xy_valid) {		// only copy the data if it is valid
-		position_N = _local_pos.x;
-		position_E = _local_pos.y;
+		// convert from gps to custom local
+		map_projection_project(&_lake_lag_proj_ref, _global_pos.lat, _global_pos.lon, &position_N, &position_E);
 	}
 	if (_local_pos.z_valid) {
 		position_D_baro = _local_pos.z;
@@ -858,6 +862,9 @@ FixedwingControl::sim_testing()
 	vehicle_status_poll();
 	sensor_combined_poll();
 	battery_status_poll();
+
+	/* initialize projection reference */
+	map_projection_init(&_lake_lag_proj_ref, (double) mission_parameters.ctr_lat, (double) mission_parameters.ctr_lon);
 
 	/* wakeup source(s) */
 	struct pollfd fds[2];
