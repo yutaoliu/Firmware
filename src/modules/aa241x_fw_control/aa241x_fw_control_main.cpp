@@ -64,6 +64,7 @@
 #include <uORB/topics/aa241x_water_drop_result.h>
 #include <uORB/topics/aa241x_low_data.h>
 #include <uORB/topics/aa241x_high_data.h>
+#include <uORB/topics/aa241x_local_data.h>
 #include <uORB/topics/airspeed.h>
 #include <uORB/topics/vehicle_attitude_setpoint.h>
 #include <uORB/topics/manual_control_setpoint.h>
@@ -157,6 +158,7 @@ private:
 	orb_advert_t	_attitude_sp_pub;		/**< attitude setpoint point */
 	orb_advert_t	_actuators_0_pub;		/**< actuator control group 0 setpoint */
 	orb_advert_t	_high_data_pub;			/**< data fields to be shared with low priority module */
+	orb_advert_t	_local_data_pub;		/**< custom calculated data fields */
 
 	orb_id_t _rates_sp_id;	// pointer to correct rates setpoint uORB metadata structure
 	orb_id_t _actuators_id;	// pointer to correct actuator controls0 uORB metadata structure
@@ -312,6 +314,11 @@ private:
 	void	publish_high_data();
 
 	/**
+	 * Publish the custom calculated data fields.
+	 */
+	void	publish_local_data();
+
+	/**
 	 * Set all the aux variables needed for control law.
 	 */
 	void 	set_aux_values();
@@ -379,6 +386,7 @@ FixedwingControl::FixedwingControl() :
 	_attitude_sp_pub(-1),
 	_actuators_0_pub(-1),
 	_high_data_pub(-1),
+	_local_data_pub(-1),
 
 	_rates_sp_id(0),
 	_actuators_id(0),
@@ -676,6 +684,27 @@ FixedwingControl::publish_high_data()
 	}
 }
 
+void
+FixedwingControl::publish_local_data()
+{
+	aa241x_local_data_s local_data;
+	local_data.N = position_N;
+	local_data.E = position_E;
+	local_data.D_baro = position_D_baro;
+	local_data.D_gps = position_D_gps;
+	local_data.body_u = speed_body_u;
+	local_data.body_v = speed_body_v;
+	local_data.body_w = speed_body_w;
+	local_data.ground_speed = ground_speed;
+
+	/* publish the high priority loop data */
+	if (_local_data_pub > 0) {
+		orb_publish(ORB_ID(aa241x_local_data), _local_data_pub, &local_data);
+	} else {
+		_local_data_pub = orb_advertise(ORB_ID(aa241x_local_data), &local_data);
+	}
+}
+
 
 void
 FixedwingControl::set_aux_values()
@@ -946,6 +975,9 @@ FixedwingControl::sim_testing()
 
 			/* publish the shared data */
 			publish_high_data();
+
+			/* publish the custom calculated data */
+			publish_local_data();
 
 			// set the user desired servo positions (that were set in the flight control function)
 			set_actuators();

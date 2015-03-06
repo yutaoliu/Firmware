@@ -55,6 +55,7 @@ LakeFire::LakeFire() :
 	_params_sub(-1),
 	_pic_request_sub(-1),
 	_water_drop_request_sub(-1),
+	_local_data_sub(-1),
 	_mission_status_pub(-1),
 	_new_fire_pub(-1),
 	_pic_result_pub(-1),
@@ -371,6 +372,18 @@ LakeFire::vehicle_status_update()
 
 	if (vehicle_status_updated) {
 		orb_copy(ORB_ID(vehicle_status), _vehicle_status_sub, &_vehicle_status);
+	}
+}
+
+void
+LakeFire::local_data_update()
+{
+	/* check if there is new status information */
+	bool local_data_updated;
+	orb_check(_local_data_sub, &local_data_updated);
+
+	if (local_data_updated) {
+		orb_copy(ORB_ID(vehicle_status), _local_data_sub, &_local_data);
 	}
 }
 
@@ -922,9 +935,11 @@ LakeFire::task_main()
 	_params_sub = orb_subscribe(ORB_ID(parameter_update));
 	_water_drop_request_sub = orb_subscribe(ORB_ID(aa241x_water_drop_request));
 	_pic_request_sub = orb_subscribe(ORB_ID(aa241x_picture_request));
+	_local_data_sub = orb_subscribe(ORB_ID(aa241x_local_data));
 
-	/* rate limit vehicle status updates to 5Hz */
+	/* rate limit vehicle status updates and local data updates to 5Hz */
 	orb_set_interval(_vcontrol_mode_sub, 200);
+	orb_set_interval(_local_data_sub, 200);
 
 	parameters_update();
 
@@ -933,9 +948,10 @@ LakeFire::task_main()
 	global_pos_update();
 	local_pos_update();
 	vehicle_status_update();
+	local_data_update();
 
 	/* wakeup source(s) */
-	struct pollfd fds[7];
+	struct pollfd fds[8];
 
 	/* Setup of loop */
 	fds[0].fd = _params_sub;
@@ -952,6 +968,8 @@ LakeFire::task_main()
 	fds[5].events = POLLIN;
 	fds[6].fd = _water_drop_request_sub;
 	fds[6].events = POLLIN;
+	fds[7].fd = _local_data_sub;
+	fds[7].events = POLLIN;
 
 	_task_running = true;
 
@@ -1011,10 +1029,15 @@ LakeFire::task_main()
 			handle_water_drop_request();
 		}
 
+		/* local data updated */
+		if (fds[7].revents & POLLIN) {
+			local_data_update();
+		}
+
 		/* check auto start requirements */
 		if (_can_start && !_in_mission) {
 
-			if (-_local_pos.z >= _parameters.auto_alt && !_vcontrol_mode.flag_control_auto_enabled) {
+			if (!_vehicle_status.gps_failure && -_local_data.D_gps >= _parameters.auto_alt && !_vcontrol_mode.flag_control_auto_enabled) {
 				// not allowed to start is above auto alt and not in auto mode
 				_can_start = false;
 			}
@@ -1023,7 +1046,7 @@ LakeFire::task_main()
 		/* check mission start requirements */
 		if (_can_start && !_in_mission) {
 
-			if (-_local_pos.z >= _parameters.min_alt && _vcontrol_mode.flag_control_auto_enabled) {
+			if (-_local_data.D_gps >= _parameters.min_alt && _vcontrol_mode.flag_control_auto_enabled) {
 				/* start the mission once have crossed over the minimum altitude */
 				_in_mission = true;
 				_mission_start_time = hrt_absolute_time();
@@ -1043,9 +1066,9 @@ LakeFire::task_main()
 			}
 
 			/* check strict requirements (max alt and radius) */
-			float r2 = _local_pos.x*_local_pos.x + _local_pos.y*_local_pos.y;
+			float r2 = _local_data.N*_local_data.N + _local_data.E*_local_data.E;
 			float max_r2 = _parameters.max_radius*_parameters.max_radius;
-			if (-_local_pos.z >= _parameters.max_alt || r2 > max_r2) {
+			if (-_local_data.D_gps >= _parameters.max_alt || r2 > max_r2) {
 				// end mission and set score to 0 if violate max altitude
 				_in_mission = false;
 				_mission_failed = true;
@@ -1053,7 +1076,7 @@ LakeFire::task_main()
 			}
 
 			/* check min altitude requirements */
-			if (-_local_pos.z <= _parameters.min_alt) {
+			if (-_local_data.D_gps <= _parameters.min_alt) {
 				// end mission, but let fire propagate for rest of time
 				_in_mission = false;
 				_early_termination = true;
@@ -1071,8 +1094,8 @@ LakeFire::task_main()
 			// TODO: if early termination, want to propagate the fire for the rest of the duration quickly
 			// to be able to give a score
 
-			/* check if timestep has advanced */
-			if ((current_time - _last_propagation_time) >= _parameters.timestep*1E6f) {
+			/* ensure we are still in mission and check if timestep has advanced */
+			if (_in_mission && (current_time - _last_propagation_time) >= _parameters.timestep*1E6f) {
 				_last_propagation_time = current_time;
 
 				/* propagate the fire for this next timestep */

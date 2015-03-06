@@ -22,6 +22,7 @@
 #include <uORB/topics/aa241x_water_drop_request.h>
 #include <uORB/topics/aa241x_picture_result.h>
 #include <uORB/topics/aa241x_picture_request.h>
+#include <uORB/topics/aa241x_local_data.h>
 
 #define GRID_WIDTH 17		/**< the number of cells wide and tall the grid is */
 #define GRID_CENTER 8		/**< the index of the center row and column */
@@ -81,6 +82,7 @@ private:
 	int		_params_sub;			/**< parameters update subscription */
 	int		_pic_request_sub;		/**< requests for taking a picture */
 	int		_water_drop_request_sub; /**< requests for triggering water drop */
+	int		_local_data_sub;		/**< custom data fields */
 
 	// structures for subscribed data
 	struct vehicle_control_mode_s		_vcontrol_mode;		/**< vehicle control mode */
@@ -89,6 +91,7 @@ private:
 	struct vehicle_status_s				_vehicle_status;	/**< vehicle status */
 	struct picture_request_s			_pic_request;		/**< picture taking request */
 	struct water_drop_request_s			_water_drop_request; /**< water drop request */
+	struct aa241x_local_data_s			_local_data;		/**< custom calc data */
 
 	orb_advert_t	_mission_status_pub;
 	orb_advert_t	_new_fire_pub;
@@ -219,6 +222,11 @@ private:
 	 * Check for vehicle status updates.
 	 */
 	void	vehicle_status_update();
+
+	/**
+	 * Check for custom calc updates.
+	 */
+	void	local_data_update();
 
 	/**
 	 * Handle the picture request, taking picture if necessary and publishing response.
