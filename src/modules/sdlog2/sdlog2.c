@@ -993,8 +993,8 @@ int sdlog2_thread_main(int argc, char *argv[])
 		struct vehicle_local_position_setpoint_s local_pos_sp;
 		struct vehicle_global_position_s global_pos;
 		struct position_setpoint_triplet_s triplet;
-		struct vehicle_vicon_position_s vicon_pos;
-		struct vision_position_estimate vision_pos;
+		//struct vehicle_vicon_position_s vicon_pos;		// AA241x REMOVED
+		//struct vision_position_estimate vision_pos;		// AA241x REMOVED
 		struct optical_flow_s flow;
 		struct rc_channels_s rc;
 		struct differential_pressure_s diff_pres;
@@ -1003,7 +1003,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 		struct vehicle_global_velocity_setpoint_s global_vel_sp;
 		struct battery_status_s battery;
 		struct telemetry_status_s telemetry;
-		struct range_finder_report range_finder;
+		//struct range_finder_report range_finder;			// AA241x REMOVED
 		struct estimator_status_report estimator_status;
 		struct tecs_status_s tecs_status;
 		struct system_power_s system_power;
@@ -1049,13 +1049,13 @@ int sdlog2_thread_main(int argc, char *argv[])
 			struct log_ESC_s log_ESC;
 			struct log_GVSP_s log_GVSP;
 			struct log_BATT_s log_BATT;
-			struct log_DIST_s log_DIST;
+			//struct log_DIST_s log_DIST;	// AA241x REMOVED
 			struct log_TEL_s log_TEL;
 			struct log_EST0_s log_EST0;
 			struct log_EST1_s log_EST1;
 			struct log_PWR_s log_PWR;
-			struct log_VICN_s log_VICN;
-			struct log_VISN_s log_VISN;
+			//struct log_VICN_s log_VICN;	// AA241x REMOVED
+			//struct log_VISN_s log_VISN;	// AA241x REMOVED
 			struct log_GS0A_s log_GS0A;
 			struct log_GS0B_s log_GS0B;
 			struct log_GS1A_s log_GS1A;
@@ -1095,8 +1095,8 @@ int sdlog2_thread_main(int argc, char *argv[])
 		int triplet_sub;
 		int gps_pos_sub;
 		int sat_info_sub;
-		int vicon_pos_sub;
-		int vision_pos_sub;
+		//int vicon_pos_sub;		// AA241x REMOVED
+		//int vision_pos_sub;		// AA241x REMOVED
 		int flow_sub;
 		int rc_sub;
 		int airspeed_sub;
@@ -1104,7 +1104,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 		int global_vel_sp_sub;
 		int battery_sub;
 		int telemetry_subs[TELEMETRY_STATUS_ORB_ID_NUM];
-		int range_finder_sub;
+		//int range_finder_sub;		// AA241x REMOVED
 		int estimator_status_sub;
 		int tecs_status_sub;
 		int system_power_sub;
@@ -1135,15 +1135,15 @@ int sdlog2_thread_main(int argc, char *argv[])
 	subs.local_pos_sp_sub = orb_subscribe(ORB_ID(vehicle_local_position_setpoint));
 	subs.global_pos_sub = orb_subscribe(ORB_ID(vehicle_global_position));
 	subs.triplet_sub = orb_subscribe(ORB_ID(position_setpoint_triplet));
-	subs.vicon_pos_sub = orb_subscribe(ORB_ID(vehicle_vicon_position));
-	subs.vision_pos_sub = orb_subscribe(ORB_ID(vision_position_estimate));
+	//subs.vicon_pos_sub = orb_subscribe(ORB_ID(vehicle_vicon_position));		// AA241x REMOVED
+	//subs.vision_pos_sub = orb_subscribe(ORB_ID(vision_position_estimate));	// AA241x REMOVED
 	subs.flow_sub = orb_subscribe(ORB_ID(optical_flow));
 	subs.rc_sub = orb_subscribe(ORB_ID(rc_channels));
 	subs.airspeed_sub = orb_subscribe(ORB_ID(airspeed));
 	subs.esc_sub = orb_subscribe(ORB_ID(esc_status));
 	subs.global_vel_sp_sub = orb_subscribe(ORB_ID(vehicle_global_velocity_setpoint));
 	subs.battery_sub = orb_subscribe(ORB_ID(battery_status));
-	subs.range_finder_sub = orb_subscribe(ORB_ID(sensor_range_finder));
+	//subs.range_finder_sub = orb_subscribe(ORB_ID(sensor_range_finder));		// AA241x REMOVED
 	subs.estimator_status_sub = orb_subscribe(ORB_ID(estimator_status));
 	subs.tecs_status_sub = orb_subscribe(ORB_ID(tecs_status));
 	subs.system_power_sub = orb_subscribe(ORB_ID(system_power));
@@ -1621,6 +1621,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 		}
 
 		/* --- VICON POSITION --- */
+		/*
 		if (copy_if_updated(ORB_ID(vehicle_vicon_position), subs.vicon_pos_sub, &buf.vicon_pos)) {
 			log_msg.msg_type = LOG_VICN_MSG;
 			log_msg.body.log_VICN.x = buf.vicon_pos.x;
@@ -1630,9 +1631,10 @@ int sdlog2_thread_main(int argc, char *argv[])
 			log_msg.body.log_VICN.roll = buf.vicon_pos.roll;
 			log_msg.body.log_VICN.yaw = buf.vicon_pos.yaw;
 			LOGBUFFER_WRITE_AND_COUNT(VICN);
-		}
+		} */
 
 		/* --- VISION POSITION --- */
+		/*
 		if (copy_if_updated(ORB_ID(vision_position_estimate), subs.vision_pos_sub, &buf.vision_pos)) {
 			log_msg.msg_type = LOG_VISN_MSG;
 			log_msg.body.log_VISN.x = buf.vision_pos.x;
@@ -1646,7 +1648,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 			log_msg.body.log_VISN.qz = buf.vision_pos.q[2];
 			log_msg.body.log_VISN.qw = buf.vision_pos.q[3];
 			LOGBUFFER_WRITE_AND_COUNT(VISN);
-		}
+		} */
 
 		/* --- FLOW --- */
 		if (copy_if_updated(ORB_ID(optical_flow), subs.flow_sub, &buf.flow)) {
@@ -1757,13 +1759,14 @@ int sdlog2_thread_main(int argc, char *argv[])
 		}
 
 		/* --- BOTTOM DISTANCE --- */
+		/*
 		if (copy_if_updated(ORB_ID(sensor_range_finder), subs.range_finder_sub, &buf.range_finder)) {
 			log_msg.msg_type = LOG_DIST_MSG;
 			log_msg.body.log_DIST.bottom = buf.range_finder.distance;
 			log_msg.body.log_DIST.bottom_rate = 0.0f;
 			log_msg.body.log_DIST.flags = (buf.range_finder.valid ? 1 : 0);
 			LOGBUFFER_WRITE_AND_COUNT(DIST);
-		}
+		} */
 
 		/* --- ESTIMATOR STATUS --- */
 		if (copy_if_updated(ORB_ID(estimator_status), subs.estimator_status_sub, &buf.estimator_status)) {
