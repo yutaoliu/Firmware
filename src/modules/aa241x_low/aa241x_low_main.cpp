@@ -32,9 +32,9 @@
  ****************************************************************************/
 
 /**
- * @file aa241x_low_main.cpp
+ * @file aa241x_fw_control_main.cpp
  *
- * Wrapper for low priority control code.
+ * Wrapper for low priority (slow) control law.
  *
  * @author Adrien Perkins	<adrienp@stanford.edu>
  *
@@ -54,6 +54,12 @@
 #include <drivers/drv_accel.h>
 #include <arch/board/board.h>
 #include <uORB/uORB.h>
+#include <uORB/topics/aa241x_mission_status.h>
+#include <uORB/topics/aa241x_picture_result.h>
+#include <uORB/topics/aa241x_water_drop_result.h>
+#include <uORB/topics/aa241x_low_data.h>
+#include <uORB/topics/aa241x_high_data.h>
+#include <uORB/topics/aa241x_local_data.h>
 #include <uORB/topics/airspeed.h>
 #include <uORB/topics/vehicle_attitude_setpoint.h>
 #include <uORB/topics/manual_control_setpoint.h>
@@ -78,8 +84,8 @@
 #include <platforms/px4_defines.h>
 
 
+// #include "aa241x_fw_control_params.h"
 #include "aa241x_low_aux.h"
-#include "aa241x_low.h"
 
 /**
  * Fixedwing attitude control app start / stop handling function
@@ -88,18 +94,18 @@
  */
 extern "C" __EXPORT int aa241x_low_main(int argc, char *argv[]);
 
-class LowPriorityLogic
+class LowPriorityLoop
 {
 public:
 	/**
 	 * Constructor
 	 */
-	LowPriorityLogic();
+	LowPriorityLoop();
 
 	/**
 	 * Destructor, also kills the main task.
 	 */
-	~LowPriorityLogic();
+	~LowPriorityLoop();
 
 	/**
 	 * Start the main task.
@@ -137,28 +143,37 @@ private:
 	int		_sensor_combined_sub;	/**< sensor data subscription */
 	int		_battery_status_sub;	/**< battery status subscription */
 
+	int		_pic_result_sub;		/**< picture result subscription */
+	int		_water_drop_result_sub;	/**< water drop result subscription NOT SURE NEEDED HERE */
+	int		_mission_status_sub;	/**< aa241x mission status subscription */
+	int		_high_data_sub;			/**< high priority loop data subscription */
+
 	// the data that will be published from this controller
-	orb_advert_t	_attitude_sp_pub;		/**< attitude setpoint point */
+	orb_advert_t	_low_data_pub;			/**< data fields to be shared with high priority module */
 
 
 	// structures of data that comes in from the uORB subscriptions
 	struct vehicle_attitude_s			_att;				/**< vehicle attitude */
 	struct accel_report					_accel;				/**< body frame accelerations */
-	struct vehicle_rates_setpoint_s		_rates_sp;			/**< attitude rates setpoint TODO: potentially remove */
-	struct vehicle_attitude_setpoint_s	_att_sp;			/**< attitude setpoint (for debugging help */
 	struct manual_control_setpoint_s	_manual;			/**< r/c channel data */
 	struct airspeed_s					_airspeed;			/**< airspeed */
 	struct vehicle_control_mode_s		_vcontrol_mode;		/**< vehicle control mode */
-	struct actuator_controls_s			_actuators;			/**< actuator control inputs */
 	struct vehicle_global_position_s	_global_pos;		/**< global position */
 	struct vehicle_local_position_s		_local_pos;			/**< local position */
 	struct vehicle_status_s				_vehicle_status;	/**< vehicle status */
 	struct sensor_combined_s			_sensor_combined;	/**< raw / minimal filtered sensor data (for some accelerations) */
 	struct battery_status_s				_battery_status;	/**< battery status */
 
+	struct picture_result_s				_pic_result;		/**< picture result MAY JUST USER AUX FILE ONE */
+	struct water_drop_result_s			_water_drop_result;	/**< water drop result MAY NOT BE NEEDED HERE */
+	struct aa241x_mission_status_s		_mis_status;		/**< current mission status */
+	// low data struct is in attached aux header file
+
 	// some flags
 	bool		_setpoint_valid;		/**< flag if the position control setpoint is valid */
 	bool		_debug;					/**< if set to true, print debug output */
+
+	map_projection_reference_s		_lake_lag_proj_ref;		/**< projection reference given by the center of the lake */
 
 
 	// general RC parameters
@@ -170,15 +185,35 @@ private:
 
 	// handles for general RC parameters
 	struct {
+		/* rc parameters */
 		param_t trim_roll;
 		param_t trim_pitch;
 		param_t trim_yaw;
+
+		/* mission parameters */
+		param_t min_alt;
+		param_t max_alt;
+		param_t auto_alt;
+		param_t cell_width;
+		param_t duration;
+		param_t max_radius;
+		param_t timestep;
+		param_t std;
+		param_t t_pic;
+		param_t min_fov;
+		param_t max_fov;
+		param_t index;
+		param_t water_weight;
+		param_t weight_per_drop;
+		param_t ctr_lat;
+		param_t ctr_lon;
+		param_t ctr_alt;
 	}		_parameter_handles;		/**< handles for interesting parameters */
 
 
 	// handles for custom parameters
 	// NOTE: the struct for the parameters themselves can be found in the aa241x_fw_aux file
-	struct aa_param_handles		_aa_parameter_handles;
+	// struct aa_param_handles		_aa_parameter_handles;
 
 
 	/**
@@ -190,63 +225,83 @@ private:
 	 * Update control outputs
 	 *
 	 */
-	void		control_update();
+	void	control_update();
 
 	/**
 	 * Check for changes in vehicle control mode.
 	 */
-	void		vehicle_control_mode_poll();
+	void	vehicle_control_mode_poll();
 
 	/**
 	 * Check for changes in manual inputs.
 	 */
-	void		vehicle_manual_poll();
+	void	vehicle_manual_poll();
 
 
 	/**
 	 * Check for airspeed updates.
 	 */
-	void		vehicle_airspeed_poll();
+	void	vehicle_airspeed_poll();
 
 	/**
 	 * Check for accel updates.
 	 */
-	void		vehicle_accel_poll();
+	void	vehicle_accel_poll();
 
 	/**
 	 * Check for global position updates.
 	 */
-	void		global_pos_poll();
+	void	global_pos_poll();
 
 	/**
 	 * Check for local position updates.
 	 */
-	void		local_pos_poll();
+	void	local_pos_poll();
 
 	/**
 	 * Check for vehicle status updates.
 	 */
-	void		vehicle_status_poll();
+	void	vehicle_status_poll();
 
 	/**
 	 * Check for combined sensor data updates.
 	 */
-	void		sensor_combined_poll();
+	void	sensor_combined_poll();
 
 	/**
 	 * Check for battery status updates.
 	 */
-	void		battery_status_poll();
+	void	battery_status_poll();
+
+	/**
+	 * Check for a picture result.
+	 */
+	void	picture_result_poll();
+
+	/**
+	 * Check for a water drop result.
+	 */
+	void	water_drop_result_poll();
+
+	/**
+	 * Check for a mission status update.
+	 */
+	void	mission_status_poll();
+
+	/**
+	 * Check for an update of the low priority loop data.
+	 */
+	void	high_data_poll();
+
+	/**
+	 * Publish the data fields from this module (high priority thread).
+	 */
+	void	publish_low_data();
 
 	/**
 	 * Set all the aux variables needed for control law.
 	 */
-	void 		set_aux_values();
-
-	/**
-	 * Set the actuator output values from the control law.
-	 */
-	void		set_actuators();
+	void 	set_aux_values();
 
 	/**
 	 * Shim for calling task_main from task_create.
@@ -256,12 +311,12 @@ private:
 	/**
 	 * Main attitude controller collection task.
 	 */
-	void		task_main();
+	void	task_main();
 
 };
 
-
-namespace aa241x_low
+/* define namespace to hold the controller */
+namespace low_control
 {
 
 // oddly, ERROR is not defined for c++
@@ -270,11 +325,11 @@ namespace aa241x_low
 #endif
 static const int ERROR = -1;
 
-LowPriorityLogic	*g_low = nullptr;
+LowPriorityLoop	*g_control = nullptr;
 }
 
 
-LowPriorityLogic::LowPriorityLogic() :
+LowPriorityLoop::LowPriorityLoop() :
 
 	_task_should_exit(false),
 	_task_running(false),
@@ -292,9 +347,13 @@ LowPriorityLogic::LowPriorityLogic() :
 	_vehicle_status_sub(-1),
 	_sensor_combined_sub(-1),
 	_battery_status_sub(-1),
+	_pic_result_sub(-1),
+	_water_drop_result_sub(-1),
+	_mission_status_sub(-1),
+	_high_data_sub(-1),
 
 /* publications */
-	_attitude_sp_pub(-1),
+	_low_data_pub(-1),
 
 /* states */
 	_setpoint_valid(false),
@@ -303,35 +362,55 @@ LowPriorityLogic::LowPriorityLogic() :
 	/* safely initialize structs */
 	_att = {};
 	_accel = {};
-	_rates_sp = {};
-	_att_sp = {};
 	_manual = {};
 	_airspeed = {};
 	_vcontrol_mode = {};
-	_actuators = {};
 	_global_pos = {};
 	_local_pos = {};
 	_vehicle_status = {};
 	_sensor_combined = {};
 	_battery_status = {};
 
+	_pic_result = {};
+	_water_drop_result = {};
+	_mis_status = {};
+
+	_lake_lag_proj_ref = {};
+
 	// initialize the global remote parameters
 	_parameter_handles.trim_roll = param_find("TRIM_ROLL");
 	_parameter_handles.trim_pitch = param_find("TRIM_PITCH");
 	_parameter_handles.trim_yaw = param_find("TRIM_YAW");
 
+	_parameter_handles.min_alt = param_find("AAMIS_ALT_MIN");
+	_parameter_handles.max_alt = param_find("AAMIS_ALT_MAX");
+	_parameter_handles.auto_alt = param_find("AAMIS_ALT_AUTO");
+	_parameter_handles.cell_width = param_find("AAMIS_CELL_W");
+	_parameter_handles.duration = param_find("AAMIS_DURATION");
+	_parameter_handles.max_radius = param_find("AAMIS_RAD_MAX");
+	_parameter_handles.timestep = param_find("AAMIS_TSTEP");
+	_parameter_handles.std = param_find("AAMIS_STD");
+	_parameter_handles.t_pic = param_find("AAMIS_TPIC");
+	_parameter_handles.min_fov = param_find("AAMIS_FOV_MIN");
+	_parameter_handles.max_fov = param_find("AAMIS_FOV_MAX");
+	_parameter_handles.index = param_find("AA_MIS_INDEX");
+	_parameter_handles.water_weight = param_find("AAMIS_WGHT_DROP");
+	_parameter_handles.ctr_lat = param_find("AAMIS_CTR_LAT");
+	_parameter_handles.ctr_lon = param_find("AAMIS_CTR_LON");
+	_parameter_handles.ctr_alt = param_find("AAMIS_CTR_ALT");
+
 	// initialize the aa241x control parameters
-	aa_parameters_init(&_aa_parameter_handles);
+	// aa_parameters_init(&_aa_parameter_handles);
 
 
 	// fetch initial remote parameters
 	parameters_update();
 
 	// fetch initial aa241x control parameters
-	aa_parameters_update(&_aa_parameter_handles, &aa_parameters);
+	// aa_parameters_update(&_aa_parameter_handles, &aa_parameters);
 }
 
-LowPriorityLogic::~LowPriorityLogic()
+LowPriorityLoop::~LowPriorityLoop()
 {
 	if (_control_task != -1) {
 
@@ -353,27 +432,42 @@ LowPriorityLogic::~LowPriorityLogic()
 		} while (_control_task != -1);
 	}
 
-	aa241x_low::g_low = nullptr;
+	low_control::g_control = nullptr;
 }
 
 int
-LowPriorityLogic::parameters_update()
+LowPriorityLoop::parameters_update()
 {
-	// TODO: add custom paramters for updating here
 
 	// update the remote control parameters
 	param_get(_parameter_handles.trim_roll, &(_parameters.trim_roll));
 	param_get(_parameter_handles.trim_pitch, &(_parameters.trim_pitch));
 	param_get(_parameter_handles.trim_yaw, &(_parameters.trim_yaw));
 
+	// update the mission parameters
+	param_get(_parameter_handles.min_alt, &(mission_parameters.min_alt));
+	param_get(_parameter_handles.max_alt, &(mission_parameters.max_alt));
+	param_get(_parameter_handles.auto_alt, &(mission_parameters.auto_alt));
+	param_get(_parameter_handles.cell_width, &(mission_parameters.cell_width));
+	param_get(_parameter_handles.duration, &(mission_parameters.duration));
+	param_get(_parameter_handles.max_radius, &(mission_parameters.max_radius));
+	param_get(_parameter_handles.timestep, &(mission_parameters.timestep));
+	param_get(_parameter_handles.std, &(mission_parameters.std));
+	param_get(_parameter_handles.t_pic, &(mission_parameters.t_pic));
+	param_get(_parameter_handles.index, &(mission_parameters.index));
+	param_get(_parameter_handles.weight_per_drop, &(mission_parameters.weight_per_drop));
+	param_get(_parameter_handles.ctr_lat, &(mission_parameters.ctr_lat));
+	param_get(_parameter_handles.ctr_lon, &(mission_parameters.ctr_lon));
+	param_get(_parameter_handles.ctr_alt, &(mission_parameters.ctr_alt));
+
 	// update the aa241x control parameters
-	aa_parameters_update(&_aa_parameter_handles, &aa_parameters);
+	// aa_parameters_update(&_aa_parameter_handles, &aa_parameters);
 
 	return OK;
 }
 
 void
-LowPriorityLogic::vehicle_control_mode_poll()
+LowPriorityLoop::vehicle_control_mode_poll()
 {
 	bool vcontrol_mode_updated;
 
@@ -386,7 +480,7 @@ LowPriorityLogic::vehicle_control_mode_poll()
 }
 
 void
-LowPriorityLogic::vehicle_manual_poll()
+LowPriorityLoop::vehicle_manual_poll()
 {
 	bool manual_updated;
 
@@ -399,7 +493,7 @@ LowPriorityLogic::vehicle_manual_poll()
 }
 
 void
-LowPriorityLogic::vehicle_airspeed_poll()
+LowPriorityLoop::vehicle_airspeed_poll()
 {
 	/* check if there is a new position */
 	bool airspeed_updated;
@@ -411,7 +505,7 @@ LowPriorityLogic::vehicle_airspeed_poll()
 }
 
 void
-LowPriorityLogic::vehicle_accel_poll()
+LowPriorityLoop::vehicle_accel_poll()
 {
 	/* check if there is a new position */
 	bool accel_updated;
@@ -423,7 +517,7 @@ LowPriorityLogic::vehicle_accel_poll()
 }
 
 void
-LowPriorityLogic::global_pos_poll()
+LowPriorityLoop::global_pos_poll()
 {
 	/* check if there is a new global position */
 	bool global_pos_updated;
@@ -435,7 +529,7 @@ LowPriorityLogic::global_pos_poll()
 }
 
 void
-LowPriorityLogic::local_pos_poll()
+LowPriorityLoop::local_pos_poll()
 {
 	/* check if there is a new local position */
 	bool local_pos_updated;
@@ -447,7 +541,7 @@ LowPriorityLogic::local_pos_poll()
 }
 
 void
-LowPriorityLogic::vehicle_status_poll()
+LowPriorityLoop::vehicle_status_poll()
 {
 	/* check if there is new status information */
 	bool vehicle_status_updated;
@@ -455,16 +549,11 @@ LowPriorityLogic::vehicle_status_poll()
 
 	if (vehicle_status_updated) {
 		orb_copy(ORB_ID(vehicle_status), _vehicle_status_sub, &_vehicle_status);
-		/* set correct uORB ID, depending on if vehicle is VTOL or not */
-		if (!_rates_sp_id) {
-			_rates_sp_id = ORB_ID(vehicle_rates_setpoint);
-			_actuators_id = ORB_ID(actuator_controls_0);
-		}
 	}
 }
 
 void
-LowPriorityLogic::sensor_combined_poll()
+LowPriorityLoop::sensor_combined_poll()
 {
 	/* check if there is new sensor combined data */
 	bool sensor_combined_updated;
@@ -477,7 +566,7 @@ LowPriorityLogic::sensor_combined_poll()
 
 
 void
-LowPriorityLogic::battery_status_poll()
+LowPriorityLoop::battery_status_poll()
 {
 	/* check if there is a new battery status */
 	bool battery_status_updated;
@@ -488,9 +577,72 @@ LowPriorityLogic::battery_status_poll()
 	}
 }
 
+void
+LowPriorityLoop::picture_result_poll()
+{
+	/* check if there is a new picture result */
+	bool pic_result_updated;
+	orb_check(_pic_result_sub, &pic_result_updated);
+
+	if (pic_result_updated) {
+		orb_copy(ORB_ID(aa241x_picture_result), _pic_result_sub, &_pic_result);
+
+		/* set the data to be used by students */
+		new_pic = true;
+		pic_result = _pic_result;
+	}
+}
 
 void
-LowPriorityLogic::set_aux_values()
+LowPriorityLoop::water_drop_result_poll()
+{
+	/* check if there is a new water drop result */
+	bool water_drop_result_updated;
+	orb_check(_water_drop_result_sub, &water_drop_result_updated);
+
+	if (water_drop_result_updated) {
+		orb_copy(ORB_ID(battery_status), _water_drop_result_sub, &_water_drop_result);
+	}
+}
+
+void
+LowPriorityLoop::mission_status_poll()
+{
+	/* check if there is a new mission status */
+	bool mission_status_updated;
+	orb_check(_mission_status_sub, &mission_status_updated);
+
+	if (mission_status_updated) {
+		orb_copy(ORB_ID(battery_status), _mission_status_sub, &_mis_status);
+	}
+}
+
+void
+LowPriorityLoop::high_data_poll()
+{
+	/* check if there is a new high priority loop data */
+	bool high_data_updated;
+	orb_check(_high_data_sub, &high_data_updated);
+
+	if (high_data_updated) {
+		orb_copy(ORB_ID(aa241x_high_data), _high_data_sub, &high_data);
+	}
+}
+
+void
+LowPriorityLoop::publish_low_data()
+{
+	/* publish the low priority loop data */
+	if (_low_data_pub > 0) {
+		orb_publish(ORB_ID(aa241x_low_data), _low_data_pub, &low_data);
+	} else {
+		_low_data_pub = orb_advertise(ORB_ID(aa241x_low_data), &low_data);
+	}
+}
+
+
+void
+LowPriorityLoop::set_aux_values()
 {
 
 	// set the euler angles and rates
@@ -532,17 +684,17 @@ LowPriorityLogic::set_aux_values()
 	// local position in NED frame [m] from center of lake lag
 	position_N = 0.0f;
 	position_E = 0.0f;
-	position_D = 0.0f;
+	position_D_baro = 0.0f;
+	position_D_gps = _global_pos.alt + mission_parameters.ctr_alt;
 	if (_local_pos.xy_valid) {		// only copy the data if it is valid
-		position_N = _local_pos.x;
-		position_E = _local_pos.y;
+		// convert from gps to custom local
+		map_projection_project(&_lake_lag_proj_ref, _global_pos.lat, _global_pos.lon, &position_N, &position_E);
 	}
 	if (_local_pos.z_valid) {
-		position_D = _local_pos.z;
+		position_D_baro = _local_pos.z;
 	}
-
-	// TODO: set the reference point of the local position information to be the center of the lake
-
+	local_pos_ne_valid = _local_pos.xy_valid;
+	local_pos_d_valid = _local_pos.z_valid;
 
 	// ground course and speed
 	// TODO: maybe use local position....
@@ -550,20 +702,17 @@ LowPriorityLogic::set_aux_values()
 	ground_course = _global_pos.yaw; 	// this is course over ground (direction of velocity relative to North in [rad])
 
 	// airspeed [m/s]
-	air_speed = _airspeed.true_airspeed_m_s;		// speed relative to air in [m/s] (measured by pitot tube)
+	air_speed = _airspeed.true_airspeed_m_s;	// speed relative to air in [m/s] (measured by pitot tube)
 
 	// status check
-	//TODO: gps_ok; 			// boolean as to whether or not the gps data coming in is valid
+	gps_ok = _vehicle_status.gps_failure; 		// boolean as to whether or not the gps data coming in is valid
 
 	// battery info
 	battery_voltage = _battery_status.voltage_filtered_v;
 	battery_current = _battery_status.current_a;
-	//TODO: battery_energy_consumed;	// battery energy consumed since last boot [J] = [VAs]
-	//TODO: mission_energy_consumed;	// battery energy consumed since the start of the mission [J]
-
 
 	// manual control inputs
-	// input for each of the controls from the remote control, ranging from TODO: figure out range
+	// input for each of the controls from the remote control
 	man_roll_in = _manual.y;
 	man_pitch_in = _manual.x;
 	man_yaw_in = _manual.r;
@@ -581,59 +730,13 @@ LowPriorityLogic::set_aux_values()
 }
 
 void
-LowPriorityLogic::set_actuators()
+LowPriorityLoop::task_main_trampoline(int argc, char *argv[])
 {
-	// do some safety checking to ensure that all the values are within the required bounds of -1..1 or 0..1
-	// check roll
-	if (roll_servo_out > 1) {
-		roll_servo_out = 1.0f;
-	}
-	if (roll_servo_out < -1) {
-		roll_servo_out = -1.0f;
-	}
-
-	// check pitch
-	if (pitch_servo_out > 1) {
-		pitch_servo_out = 1.0f;
-	}
-	if (pitch_servo_out < -1) {
-		pitch_servo_out = -1.0f;
-	}
-
-	// check yaw
-	if (yaw_servo_out > 1) {
-		yaw_servo_out = 1.0f;
-	}
-	if (yaw_servo_out < -1) {
-		yaw_servo_out = -1.0f;
-	}
-
-	// check throttle
-	if (throttle_servo_out > 1) {
-		throttle_servo_out = 1.0f;
-	}
-	if (throttle_servo_out < 0) {
-		throttle_servo_out = 0.0f;
-	}
-
-
-	// set the actuators
-	_actuators.control[0] = (isfinite(roll_servo_out)) ? roll_servo_out : roll_trim;
-	_actuators.control[1] = (isfinite(roll_servo_out)) ? pitch_servo_out : pitch_trim;
-	_actuators.control[2] = (isfinite(roll_servo_out)) ? yaw_servo_out : yaw_trim;
-	_actuators.control[3] = (isfinite(roll_servo_out)) ? throttle_servo_out : 0.0f;
-	_actuators.control[4] = _manual.flaps;
-}
-
-
-void
-LowPriorityLogic::task_main_trampoline(int argc, char *argv[])
-{
-	aa241x_low::g_low->task_main();
+	low_control::g_control->task_main();
 }
 
 void
-LowPriorityLogic::task_main()
+LowPriorityLoop::task_main()
 {
 
 	/* inform about start */
@@ -655,10 +758,15 @@ LowPriorityLogic::task_main()
 	_sensor_combined_sub = orb_subscribe(ORB_ID(sensor_combined));
 	_battery_status_sub = orb_subscribe(ORB_ID(battery_status));
 
-	/* rate limit vehicle status updates to 5Hz */
-	orb_set_interval(_vcontrol_mode_sub, 200);
-	/* rate limit attitude control to 50 Hz (with some margin, so 17 ms) */
-	orb_set_interval(_att_sub, 17);
+	_pic_result_sub = orb_subscribe(ORB_ID(aa241x_picture_result));
+	_water_drop_result_sub = orb_subscribe(ORB_ID(aa241x_water_drop_result));
+	_mission_status_sub = orb_subscribe(ORB_ID(aa241x_mission_status));
+	_high_data_sub = orb_subscribe(ORB_ID(aa241x_high_data));
+
+	/* rate limit vehicle status updates to 50Hz */
+	orb_set_interval(_vcontrol_mode_sub, 20);
+	/* rate limit attitude control to 50 Hz */
+	orb_set_interval(_att_sub, 20);
 
 	parameters_update();
 
@@ -667,7 +775,7 @@ LowPriorityLogic::task_main()
 	vehicle_accel_poll();
 	vehicle_control_mode_poll();
 	vehicle_manual_poll();
-	global_pos_poll();	// TODO: might remove this....
+	global_pos_poll();
 	local_pos_poll();
 	vehicle_status_poll();
 	sensor_combined_poll();
@@ -688,8 +796,8 @@ LowPriorityLogic::task_main()
 
 		_loop_counter = 0;
 
-		/* wait for up to 500ms for data */
-		int pret = poll(&fds[0], (sizeof(fds) / sizeof(fds[0])), 100);
+		/* wait for up to 200ms for data */
+		int pret = poll(&fds[0], (sizeof(fds) / sizeof(fds[0])), 200);
 
 		/* timed out - periodic check for _task_should_exit, etc. */
 		if (pret == 0)
@@ -711,7 +819,7 @@ LowPriorityLogic::task_main()
 			parameters_update();
 		}
 
-		/* only run controller if attitude changed */
+		/* only run loop if attitude changed */
 		if (fds[1].revents & POLLIN) {
 
 
@@ -738,62 +846,42 @@ LowPriorityLogic::task_main()
 			sensor_combined_poll();
 			battery_status_poll();
 
+			// update aa241x data structs as needed
+			picture_result_poll();
+			water_drop_result_poll();
+			mission_status_poll();
+			high_data_poll();
 
-			if (_vcontrol_mode.flag_low_auto_enabled) {
+			// DEBUG
+			// set all the variables needed for the control law
+			set_aux_values();
+
+			/* run the custom control law */
+			low_loop();
+
+			/* publish the shared data */
+			publish_low_data();
+
+			/* update previous loop timestamp */
+			previous_loop_timestamp = timestamp;
+			// DEBUG
+
+			/*	// DEBUG
+			if (_vcontrol_mode.flag_control_auto_enabled) {
 
 				// set all the variables needed for the control law
 				set_aux_values();
 
-				// TODO: add function for students to fill out
+				// run the custom control law
+				low_loop();
 
-				// TODO: potentially add stabilize and other modes back in....
-				flight_control();
+				// publish the shared data
+				publish_low_data();
 
-				// set the user desired servo positions (that were set in the flight control function)
-				set_actuators();
+				// update previous loop timestamp
+				previous_loop_timestamp = timestamp;
 
-				// set the attitude setpoint values
-				_att_sp.roll_body = (isfinite(roll_desired)) ? roll_desired : 0.0f;
-				_att_sp.pitch_body = (isfinite(pitch_desired)) ? pitch_desired : 0.0f;
-				_att_sp.yaw_body = (isfinite(yaw_desired)) ? yaw_desired : 0.0f;
-				_att_sp.thrust = (isfinite(throttle_desired)) ? throttle_desired : 0.0f;
-
-
-			} else { // have manual control of the plane
-
-				/* manual/direct control */
-				_actuators.control[0] = _manual.y;
-				_actuators.control[1] = -_manual.x;
-				_actuators.control[2] = _manual.r;
-				_actuators.control[3] = _manual.z;
-				_actuators.control[4] = _manual.flaps;
-
-			}
-
-			// TODO: maybe remove these?? (they aren't needed)
-			_actuators.control[5] = _manual.aux1;
-			_actuators.control[6] = _manual.aux2;
-			_actuators.control[7] = _manual.aux3;
-
-			/* lazily publish the setpoint only once available */
-			_actuators.timestamp = hrt_absolute_time();
-			_actuators.timestamp_sample = _att.timestamp;
-
-
-			/* publish the actuator controls */
-			if (_actuators_0_pub > 0) {
-				orb_publish(_actuators_id, _actuators_0_pub, &_actuators);
-			} else if (_actuators_id) {
-				_actuators_0_pub= orb_advertise(_actuators_id, &_actuators);
-			}
-
-			/* publish the attitude setpoint (the targeted roll, pitch and yaw angles) */
-			if (_attitude_sp_pub > 0) {
-				orb_publish(ORB_ID(vehicle_attitude_setpoint), _attitude_sp_pub, &_att_sp);
-			} else {
-				_attitude_sp_pub = orb_advertise(ORB_ID(vehicle_attitude_setpoint), &_att_sp);
-			}
-
+			} */
 		}
 
 		_loop_counter++;
@@ -807,7 +895,7 @@ LowPriorityLogic::task_main()
 }
 
 int
-LowPriorityLogic::start()
+LowPriorityLoop::start()
 {
 	ASSERT(_control_task == -1);
 
@@ -816,7 +904,7 @@ LowPriorityLogic::start()
 				       SCHED_DEFAULT,
 				       SCHED_PRIORITY_DEFAULT + 20,
 				       1800,
-				       (main_t)&LowPriorityLogic::task_main_trampoline,
+				       (main_t)&LowPriorityLoop::task_main_trampoline,
 				       nullptr);
 
 	if (_control_task < 0) {
@@ -834,22 +922,22 @@ int aa241x_low_main(int argc, char *argv[])
 
 	if (!strcmp(argv[1], "start")) {
 
-		if (aa241x_low::g_low != nullptr)
+		if (low_control::g_control != nullptr)
 			errx(1, "already running");
 
-		aa241x_low::g_low = new LowPriorityLogic;
+		low_control::g_control = new LowPriorityLoop;
 
-		if (aa241x_low::g_low == nullptr)
+		if (low_control::g_control == nullptr)
 			errx(1, "alloc failed");
 
-		if (OK != aa241x_low::g_low->start()) {
-			delete aa241x_low::g_low;
-			aa241x_low::g_low = nullptr;
+		if (OK != low_control::g_control->start()) {
+			delete low_control::g_control;
+			low_control::g_control = nullptr;
 			err(1, "start failed");
 		}
 
 		/* avoid memory fragmentation by not exiting start handler until the task has fully started */
-		while (aa241x_low::g_low == nullptr || !aa241x_low::g_low->task_running()) {
+		while (low_control::g_control == nullptr || !low_control::g_control->task_running()) {
 			usleep(50000);
 			printf(".");
 			fflush(stdout);
@@ -860,16 +948,16 @@ int aa241x_low_main(int argc, char *argv[])
 	}
 
 	if (!strcmp(argv[1], "stop")) {
-		if (aa241x_low::g_low == nullptr)
+		if (low_control::g_control == nullptr)
 			errx(1, "not running");
 
-		delete aa241x_low::g_low;
-		aa241x_low::g_low = nullptr;
+		delete low_control::g_control;
+		low_control::g_control = nullptr;
 		exit(0);
 	}
 
 	if (!strcmp(argv[1], "status")) {
-		if (aa241x_low::g_low) {
+		if (low_control::g_control) {
 			errx(0, "running");
 
 		} else {
@@ -880,4 +968,3 @@ int aa241x_low_main(int argc, char *argv[])
 	warnx("unrecognized command");
 	return 1;
 }
-
