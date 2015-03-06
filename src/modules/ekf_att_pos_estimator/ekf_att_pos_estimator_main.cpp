@@ -1249,7 +1249,7 @@ FixedwingEstimator::task_main()
 					// Look up mag declination based on current position
 					float declination = math::radians(get_mag_declination(lat, lon));
 
-					_ekf->InitialiseFilter(initVelNED, math::radians(lat), math::radians(lon) - M_PI, gps_alt, declination);
+					// _ekf->InitialiseFilter(initVelNED, math::radians(lat), math::radians(lon) - M_PI, gps_alt, declination);
 
 					// Initialize projection
 					if (_parameters.origin_lat >= -90.0f && _parameters.origin_lat <= 90.0f && _parameters.origin_lon >= -180.0f && _parameters.origin_lon <= 180.0f) {
@@ -1267,6 +1267,8 @@ FixedwingEstimator::task_main()
 					}
 
 					_local_pos.ref_timestamp = _gps.timestamp_position;
+
+					_ekf->InitialiseFilter(initVelNED, math::radians(_local_pos.ref_lat), math::radians(_local_pos.ref_lon) - M_PI, gps_alt, declination);
 
 					map_projection_init(&_pos_ref, lat, lon);
 					mavlink_log_info(_mavlink_fd, "[ekf] ref: LA %.4f,LO %.4f,ALT %.2f", lat, lon, (double)gps_alt);
