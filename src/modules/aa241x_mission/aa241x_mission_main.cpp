@@ -25,6 +25,7 @@
 #include <drivers/drv_hrt.h>
 #include <arch/board/board.h>
 #include <mathlib/mathlib.h>
+#include <mavlink/mavlink_log.h>
 
 #include "LakeFire.h"
 #include "fires.h"
@@ -48,6 +49,7 @@ LakeFire::LakeFire() :
 	_task_should_exit(false),
 	_task_running(false),
 	_control_task(-1),
+	_mavlink_fd(-1),
 	_vcontrol_mode_sub(-1),
 	_global_pos_sub(-1),
 	_local_pos_sub(-1),
@@ -925,6 +927,9 @@ LakeFire::task_main()
 	warnx("Initializing..");
 	fflush(stdout);
 
+	/* open connection to mavlink logging */
+	_mavlink_fd = open(MAVLINK_LOG_DEVICE, 0);
+
 	/*
 	 * do subscriptions
 	 */
@@ -1040,6 +1045,7 @@ LakeFire::task_main()
 			if (!_vehicle_status.gps_failure && -_local_data.D_gps >= _parameters.auto_alt && !_vcontrol_mode.flag_control_auto_enabled) {
 				// not allowed to start is above auto alt and not in auto mode
 				_can_start = false;
+				mavlink_log_info(_mavlink_fd, "AA241x mission start conditions violated");
 			}
 		}
 
@@ -1052,6 +1058,7 @@ LakeFire::task_main()
 				_mission_start_time = hrt_absolute_time();
 				_last_propagation_time = hrt_absolute_time();
 				initialize_mission();
+				mavlink_log_info(_mavlink_fd, "AA241x mission started");
 			}
 		}
 
@@ -1063,6 +1070,7 @@ LakeFire::task_main()
 				// end mission and set score to 0 if switch to manual mode
 				_in_mission = false;
 				_early_termination = true;
+				mavlink_log_info(_mavlink_fd, "AA241x mission termination: control mode violation");
 			}
 
 			/* check strict requirements (max alt and radius) */
@@ -1073,6 +1081,7 @@ LakeFire::task_main()
 				_in_mission = false;
 				_mission_failed = true;
 				_score = 0.0f;
+				mavlink_log_info(_mavlink_fd, "AA241x mission failed: boundary violation");
 			}
 
 			/* check min altitude requirements */
@@ -1080,6 +1089,7 @@ LakeFire::task_main()
 				// end mission, but let fire propagate for rest of time
 				_in_mission = false;
 				_early_termination = true;
+				mavlink_log_info(_mavlink_fd, "AA241x mission termination: below min alt");
 			}
 
 			/* check to see if mission time has elapsed */
@@ -1088,6 +1098,7 @@ LakeFire::task_main()
 				// TODO: would be nice to send a message that mission is over
 				_in_mission = false;
 				_can_start = false;
+				mavlink_log_info(_mavlink_fd, "AA241x mission completed");
 				// TODO: end mission gracefully and report final score
 			}
 

@@ -10,6 +10,7 @@
 #include <drivers/drv_hrt.h>
 #include <time.h>
 #include <mathlib/mathlib.h>
+#include <mavlink/mavlink_log.h>
 
 #include <uORB/uORB.h>
 #include <uORB/topics/vehicle_control_mode.h>
@@ -73,6 +74,8 @@ private:
 	bool	_task_should_exit;		/**< if true, aa241x mission should exit */
 	bool	_task_running;			/**< if true, task is running in its mainloop */
 	int		_control_task;			/**< task handle for aa241x mission */
+
+	int		_mavlink_fd;			/**< file description for mavlink to be able to send warnings */
 
 	// handles to subscriptions needed
 	int		_vcontrol_mode_sub;		/**< vehicle status (control mode) subscription */
