@@ -52,7 +52,7 @@
 #include <uORB/topics/aa241x_low_data.h>
 #include <uORB/topics/aa241x_high_data.h>
 
-// #include "aa241x_fw_control_params.h"
+#include "aa241x_low_params.h"
 
 // set these variables for help in debugging (these will be sent to the ground station)
 // TODO: add local position setpoint variables
@@ -137,7 +137,7 @@ extern aa241x_low_data_s low_data;
 extern aa241x_high_data_s high_data;
 
 // user config parameters structure
-// extern struct aa_params aa_parameters;		// struct containing all of the user editable parameters (via ground station)
+extern struct aal_params aal_parameters;		// struct containing all of the user editable parameters (via ground station)
 
 // mission definition parameters
 struct mis_params {
@@ -153,6 +153,7 @@ struct mis_params {
 	float min_fov;
 	float max_fov;
 	int index;
+	float water_weight;
 	float weight_per_drop;
 	float ctr_lat;
 	float ctr_lon;

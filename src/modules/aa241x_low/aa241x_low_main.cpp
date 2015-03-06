@@ -84,7 +84,7 @@
 #include <platforms/px4_defines.h>
 
 
-// #include "aa241x_fw_control_params.h"
+#include "aa241x_low_params.h"
 #include "aa241x_low_aux.h"
 
 /**
@@ -213,7 +213,7 @@ private:
 
 	// handles for custom parameters
 	// NOTE: the struct for the parameters themselves can be found in the aa241x_fw_aux file
-	// struct aa_param_handles		_aa_parameter_handles;
+	struct aal_param_handles		_aal_parameter_handles;
 
 
 	/**
@@ -394,20 +394,19 @@ LowPriorityLoop::LowPriorityLoop() :
 	_parameter_handles.min_fov = param_find("AAMIS_FOV_MIN");
 	_parameter_handles.max_fov = param_find("AAMIS_FOV_MAX");
 	_parameter_handles.index = param_find("AA_MIS_INDEX");
-	_parameter_handles.water_weight = param_find("AAMIS_WGHT_DROP");
+	_parameter_handles.weight_per_drop = param_find("AAMIS_WGHT_DROP");
+	_parameter_handles.water_weight = param_find("AA_WATER_WGHT");
 	_parameter_handles.ctr_lat = param_find("AAMIS_CTR_LAT");
 	_parameter_handles.ctr_lon = param_find("AAMIS_CTR_LON");
 	_parameter_handles.ctr_alt = param_find("AAMIS_CTR_ALT");
 
 	// initialize the aa241x control parameters
-	// aa_parameters_init(&_aa_parameter_handles);
+	aal_parameters_init(&_aal_parameter_handles);
 
 
 	// fetch initial remote parameters
 	parameters_update();
 
-	// fetch initial aa241x control parameters
-	// aa_parameters_update(&_aa_parameter_handles, &aa_parameters);
 }
 
 LowPriorityLoop::~LowPriorityLoop()
@@ -456,12 +455,13 @@ LowPriorityLoop::parameters_update()
 	param_get(_parameter_handles.t_pic, &(mission_parameters.t_pic));
 	param_get(_parameter_handles.index, &(mission_parameters.index));
 	param_get(_parameter_handles.weight_per_drop, &(mission_parameters.weight_per_drop));
+	param_get(_parameter_handles.water_weight, &(mission_parameters.water_weight));
 	param_get(_parameter_handles.ctr_lat, &(mission_parameters.ctr_lat));
 	param_get(_parameter_handles.ctr_lon, &(mission_parameters.ctr_lon));
 	param_get(_parameter_handles.ctr_alt, &(mission_parameters.ctr_alt));
 
 	// update the aa241x control parameters
-	// aa_parameters_update(&_aa_parameter_handles, &aa_parameters);
+	aal_parameters_update(&_aal_parameter_handles, &aal_parameters);
 
 	return OK;
 }

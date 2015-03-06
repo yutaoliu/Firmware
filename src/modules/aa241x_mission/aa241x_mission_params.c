@@ -180,3 +180,20 @@ PARAM_DEFINE_FLOAT(AAMIS_CTR_LON, -122.1760917f);
  * @group AA241x Mission
  */
 PARAM_DEFINE_FLOAT(AAMIS_CTR_ALT, 40.0f);
+
+/**
+ * The amount of weight in [grams] of "water" being carried by this UAV.
+ *
+ * @unit grams
+ * @min 0
+ * @group AA241x Student Params
+ */
+PARAM_DEFINE_FLOAT(AA_WATER_WGHT, 10.0f);
+
+/**
+ * Index (0 based) of the mission to be executed.
+ *
+ * @min 0
+ * @group AA241x Student Params
+ */
+PARAM_DEFINE_INT32(AA_MIS_INDEX, 0);

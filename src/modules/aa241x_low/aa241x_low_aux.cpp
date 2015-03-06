@@ -135,7 +135,7 @@ struct aa241x_high_data_s high_data = {};
 
 
 // user config parameters structure
-// struct aa_params aa_parameters = {};		// struct containing all of the user editable parameters (via ground station)
+struct aal_params aal_parameters = {};		// struct containing all of the user editable parameters (via ground station)
 
 struct mis_params mission_parameters = {};
 

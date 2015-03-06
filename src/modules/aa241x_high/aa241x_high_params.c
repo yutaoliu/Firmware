@@ -32,77 +32,67 @@
  ****************************************************************************/
 
 /*
- * @file aa241x_fw_control_params.h
+ * @file aa241x_fw_control_params.c
  *
  * Definition of custom parameters for fixedwing controllers
  * being written for AA241x.
  *
  *  @author Adrien Perkins		<adrienp@stanford.edu>
  */
-#pragma once
 
-#ifndef AA241X_FW_CONTROL_PARAMS_H_
-#define AA241X_FW_CONTROL_PARAMS_H_
+#include "aa241x_high_params.h"
 
 
-#include <systemlib/param/param.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
-/**
- * Struct of all of the custom parameters.
- *
- * Please make sure to add a variable for each of your newly defined
- * parameters here.
- */
-struct aa_params {
-	float water_weight;
-
-	float example_param;
-
-	// TODO: add custom parameter variable names here......
-
-};
-
-
-/**
- * Struct of handles to all of the custom parameters.
- *
- *  Please make sure to add a variable for each of your newly
- *  defined parameters here.
- *
- *  NOTE: these variable names can be the same as the ones above
- *  (makes life easier if they are)
- */
-struct aa_param_handles {
-	param_t water_weight;
-
-	param_t example_param;
-
-	// TODO: add custom parameter variable names here.......
-
-};
-
-/**
- * Initialize all parameter handles and values
+/*
+ *  controller parameters, use max. 15 characters for param name!
  *
  */
-int aa_parameters_init(struct aa_param_handles *h);
 
 /**
- * Update all parameters
+ * This is an example parameter.  The name of the parameter in QGroundControl
+ * will be AAH_EXAMPLE and will be in the AAH dropdown.  Make sure to always
+ * start your parameters with AA to have them all in one place.
  *
+ * The default value of this float parameter will be 10.0.
+ *
+ * @unit meter 						(the unit attribute (not required, just helps for sanity))
+ * @min 0 							(optional minimum value for displaying in the ground station)
+ * @max 100 						(optional max)
+ * @group AA241x High Params		(always include this)
  */
-int aa_parameters_update(const struct aa_param_handles *h, struct aa_params *p);
+PARAM_DEFINE_FLOAT(AAH_EXAMPLE, 10.0f);
 
-#ifdef __cplusplus
+// TODO: define custom parameters here
+
+
+int aah_parameters_init(struct aah_param_handles *h)
+{
+
+	/* for each of your custom parameters, make sure to define a corresponding
+	 * variable in the aa_param_handles struct and the aa_params struct these
+	 * structs can be found in the aa241x_fw_control_params.h file
+	 *
+	 * NOTE: the string passed to param_find is the same as the name provided
+	 * in the above PARAM_DEFINE_FLOAT
+	 */
+	h->example_high_param	=	param_find("AAH_EXAMPLE");
+
+	// TODO: add the above line for each of your custom parameters........
+
+
+
+	return OK;
 }
-#endif
 
+int aah_parameters_update(const struct aah_param_handles *h, struct aah_params *p)
+{
 
+	// for each of your custom parameters, make sure to add this line with
+	// the corresponding variable name
+	param_get(h->example_high_param, &(p->example_high_param));
 
+	// TODO: add the above line for each of your custom parameters.....
 
-#endif /* AA241X_FW_CONTROL_PARAMS_H_ */
+	return OK;
+}

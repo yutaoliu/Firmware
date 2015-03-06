@@ -32,33 +32,68 @@
  ****************************************************************************/
 
 /*
- * @file aa241x_low.cpp
+ * @file aa241x_low_params.c
  *
- * Secondary control law file for AA241x.  Contains control/navigation
- * logic to be executed with a lower priority, and "slowly"
+ * Definition of custom parameters for low priority controller.
  *
  *  @author Adrien Perkins		<adrienp@stanford.edu>
  *  @author YOUR NAME			<YOU@EMAIL.COM>
  */
 
+#include "aa241x_low_params.h"
 
-// include header file
-#include "aa241x_low.h"
-#include "aa241x_low_aux.h"
 
-#include <uORB/uORB.h>
-#include <uORB/topics/aa241x_picture_result.h>
+
+/*
+ * controller parameters, use max. 15 characters for param name!
+ *
+ */
 
 /**
- * Main function in which your code should be written.
+ * This is an example parameter.  The name of the parameter in QGroundControl
+ * will be AAL_EXAMPLE and will be in the AAL dropdown.  Make sure to always
+ * start your parameters with AAL to have them all in one place.
  *
- * This is the only function that is executed at a set interval,
- * feel free to add all the function you'd like, but make sure all
- * the code you'd like executed on a loop is in this function.
+ * The default value of this float parameter will be 10.0.
  *
- * This loop executes at ~50Hz, but is not guaranteed to be 50Hz every time.
+ * @unit meter 						(the unit attribute (not required, just helps for sanity))
+ * @min 0 							(optional minimum value for displaying in the ground station)
+ * @max 100 						(optional max)
+ * @group AA241x Low Params			(always include this)
  */
-void low_loop()
+PARAM_DEFINE_FLOAT(AAL_EXAMPLE, 10.0f);
+
+// TODO: define custom parameters here
+
+
+int aal_parameters_init(struct aal_param_handles *h)
 {
-	printf("loop deltaT = %fms\n", (double) (timestamp - previous_loop_timestamp)/1000.0);
+
+
+	/* for each of your custom parameters, make sure to define a corresponding
+	 * variable in the aa_param_handles struct and the aa_params struct these
+	 * structs can be found in the aa241x_fw_control_params.h file
+	 *
+	 * NOTE: the string passed to param_find is the same as the name provided
+	 * in the above PARAM_DEFINE_FLOAT
+	 */
+	h->example_low_param	=	param_find("AAL_EXAMPLE");
+
+	// TODO: add the above line for each of your custom parameters........
+
+
+
+	return OK;
+}
+
+int aal_parameters_update(const struct aal_param_handles *h, struct aal_params *p)
+{
+
+	// for each of your custom parameters, make sure to add this line with
+	// the corresponding variable name
+	param_get(h->example_low_param, &(p->example_low_param));
+
+	// TODO: add the above line for each of your custom parameters.....
+
+	return OK;
 }

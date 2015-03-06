@@ -41,12 +41,12 @@
  *  @author YOUR NAME			<YOU@EMAIL.COM>
  */
 
-// include header file
-#include "aa241x_fw_control.h"
-#include "aa241x_fw_aux.h"
-
 #include <uORB/uORB.h>
 #include <uORB/topics/aa241x_picture_result.h>
+
+// include header file
+#include "aa241x_high_control_law.h"
+#include "aa241x_high_aux.h"
 
 int pic_res_sub = 0;
 hrt_abstime pic_taken_time = 0;

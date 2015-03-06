@@ -52,7 +52,7 @@
 #include <uORB/topics/aa241x_low_data.h>
 #include <uORB/topics/aa241x_high_data.h>
 
-#include "aa241x_fw_control_params.h"
+#include "aa241x_high_params.h"
 
 // set these variables for help in debugging (these will be sent to the ground station)
 extern float roll_desired;
@@ -141,7 +141,7 @@ extern aa241x_low_data_s low_data;
 extern aa241x_high_data_s high_data;
 
 // user config parameters structure
-extern struct aa_params aa_parameters;		// struct containing all of the user editable parameters (via ground station)
+extern struct aah_params aah_parameters;		// struct containing parameters for high priority loop
 
 // mission definition parameters
 struct mis_params {
@@ -158,6 +158,7 @@ struct mis_params {
 	float max_fov;
 	int index;
 	float weight_per_drop;
+	float water_weight;
 	float ctr_lat;
 	float ctr_lon;
 	float ctr_alt;

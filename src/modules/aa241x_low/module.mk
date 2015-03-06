@@ -38,8 +38,9 @@
 MODULE_COMMAND	= aa241x_low
 
 SRCS		= aa241x_low_main.cpp \
-		  aa241x_low.cpp \
-		  aa241x_low_aux.cpp
+		  aa241x_low_control_law.cpp \
+		  aa241x_low_aux.cpp \
+		  aa241x_low_params.c
 		  
 # NOTE: if you choose to add files to this module, add the .c or .cpp files 
 #		to the above source file list (SRC).  Each line (except for the last)

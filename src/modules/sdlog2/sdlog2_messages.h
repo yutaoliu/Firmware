@@ -44,7 +44,7 @@
 #define SDLOG2_MESSAGES_H_
 
 #include "sdlog2_format.h"
-#include "../aa241x_fw_control/aa241x_high_data_struct.h"
+#include "../aa241x_high/aa241x_high_data_struct.h"
 #include "../aa241x_low/aa241x_low_data_struct.h"
 
 /* define message formats */

@@ -35,12 +35,12 @@
 # AA241x fixed wing control application
 #
 
-MODULE_COMMAND	= aa241x_fw_control
+MODULE_COMMAND	= aa241x_high
 
-SRCS		= aa241x_fw_control_main.cpp \
-		  aa241x_fw_control_params.c \
-		  aa241x_fw_control.cpp \
-		  aa241x_fw_aux.cpp 
+SRCS		= aa241x_high_main.cpp \
+		  aa241x_high_params.c \
+		  aa241x_high_control_law.cpp \
+		  aa241x_high_aux.cpp 
 		  
 # NOTE: if you choose to add files to this module, add the .c or .cpp files 
 #		to the above source file list (SRC).  Each line (except for the last)

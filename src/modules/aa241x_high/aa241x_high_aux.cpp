@@ -48,7 +48,7 @@
 #include <uORB/topics/aa241x_water_drop_request.h>
 #include <drivers/drv_hrt.h>
 
-#include "aa241x_fw_aux.h"
+#include "aa241x_high_aux.h"
 
 // set these variables for help in debugging (these will be sent to the ground station)
 float roll_desired = 0.0f;
@@ -139,7 +139,7 @@ struct aa241x_high_data_s high_data = {};
 
 
 // user config parameters structure
-struct aa_params aa_parameters = {};		// struct containing all of the user editable parameters (via ground station)
+struct aah_params aah_parameters = {};		// struct containing all of the user editable parameters (via ground station)
 
 struct mis_params mission_parameters = {};
 
