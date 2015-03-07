@@ -845,8 +845,8 @@ FixedwingControl::set_actuators()
 void
 FixedwingControl::task_main_trampoline(int argc, char *argv[])
 {
-	// att_control::g_control->task_main();
-	att_control::g_control->sim_testing(); 	// DEBUG
+	att_control::g_control->task_main();
+	// att_control::g_control->sim_testing(); 	// DEBUG
 }
 
 void

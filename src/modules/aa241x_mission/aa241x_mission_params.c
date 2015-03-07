@@ -142,7 +142,7 @@ PARAM_DEFINE_FLOAT(AAMIS_FOV_MAX, 60.0f);
  * @min 0
  * @group AA241x Mission
  */
-PARAM_DEFINE_FLOAT(AAMIS_WGHT_DRP, 5.0f);
+PARAM_DEFINE_FLOAT(AAMIS_WGHT_DRP, 1.0f);
 
 /**
  * Origin latitude for local position.
@@ -188,7 +188,7 @@ PARAM_DEFINE_FLOAT(AAMIS_CTR_ALT, 40.0f);
  * @min 0
  * @group AA241x Student Params
  */
-PARAM_DEFINE_FLOAT(AA_WATER_WGHT, 10.0f);
+PARAM_DEFINE_FLOAT(AA_WATER_WGHT, 100.0f);
 
 /**
  * Index (0 based) of the mission to be executed.

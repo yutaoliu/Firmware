@@ -853,20 +853,22 @@ LowPriorityLoop::task_main()
 			high_data_poll();
 
 			// DEBUG
+			/*
 			// set all the variables needed for the control law
 			set_aux_values();
 
-			/* run the custom control law */
+			// run the custom control law
 			low_loop();
 
-			/* publish the shared data */
+			// publish the shared data
 			publish_low_data();
 
-			/* update previous loop timestamp */
+			// update previous loop timestamp
 			previous_loop_timestamp = timestamp;
+			*/
 			// DEBUG
 
-			/*	// DEBUG
+
 			if (_vcontrol_mode.flag_control_auto_enabled) {
 
 				// set all the variables needed for the control law
@@ -881,7 +883,7 @@ LowPriorityLoop::task_main()
 				// update previous loop timestamp
 				previous_loop_timestamp = timestamp;
 
-			} */
+			}
 		}
 
 		_loop_counter++;

@@ -64,15 +64,20 @@ void flight_control() {
 
 	if (new_pic) {
 
-		printf("New pic received:\n");
-
+		// printf("New pic received:\n");
+		int f_count = 0;
 		for (int i = 0; i < pic_result.num_cells; i++) {
-			printf("(%i,%i) -> %i\n", pic_result.i[i], pic_result.j[i], pic_result.state[i]);
+			// printf("(%i,%i) -> %i\n", pic_result.i[i], pic_result.j[i], pic_result.state[i]);
+			if (pic_result.state[i] == 1) {
+				f_count++;
+			}
 		}
 
 		// just going to want to drop water
-		printf("sending water drop request\n");
-		drop_water();
+		// printf("sending water drop request\n");
+		if (f_count > 0) {
+			drop_water();
+		}
 
 		// TODO: run picture result logic here......
 
@@ -85,6 +90,26 @@ void flight_control() {
 
 
 
+	// setting high data values
+	high_data.variable_name1 = roll;
+	high_data.variable_name2 = pitch;
+	high_data.variable_name3 = yaw;
+
+	high_data.variable_name4 = roll_rate;
+	high_data.variable_name5 = pitch_rate;
+	high_data.variable_name6 = yaw_rate;
+
+	high_data.variable_name7 = speed_body_u;
+	high_data.variable_name8 = speed_body_v;
+	high_data.variable_name9 = speed_body_w;
+
+	high_data.variable_name10 = low_data.variable_name10;
+	high_data.variable_name11 = low_data.variable_name11;
+	high_data.variable_name12 = low_data.variable_name12;
+	high_data.variable_name13 = low_data.variable_name13;
+	high_data.variable_name14 = low_data.variable_name14;
+	high_data.variable_name15 = low_data.variable_name15;
+	high_data.variable_name16 = low_data.variable_name16;
 
 
 	// ENSURE THAT YOU SET THE SERVO OUTPUTS!!!
@@ -97,7 +122,7 @@ void flight_control() {
 
 	/* to take a picture */
 	if ((hrt_absolute_time() - last_pic_request_time)/1000000.0f > 3.0f) {
-		printf("sending pic request\n");
+		// printf("sending pic request\n");
 		take_picture();
 
 		pic_taken_time = hrt_absolute_time();

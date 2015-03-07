@@ -52,7 +52,7 @@
 /**
  * This is an example parameter.  The name of the parameter in QGroundControl
  * will be AAH_EXAMPLE and will be in the AAH dropdown.  Make sure to always
- * start your parameters with AA to have them all in one place.
+ * start your parameters with AAH to have them all in one place.
  *
  * The default value of this float parameter will be 10.0.
  *
