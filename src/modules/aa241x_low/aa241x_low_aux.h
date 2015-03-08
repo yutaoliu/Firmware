@@ -90,7 +90,7 @@ extern float position_D_baro; 		// note: this is down, so altitude above ground 
 
 // ground course and speed
 extern float ground_speed;		// speed relative to ground in [m/s]
-extern float ground_course; 	// this is course over ground (direction of velocity relative to North in [rad])
+extern float ground_course; 	// this is course over ground (direction of velocity relative to North in [rad] from -PI .. PI)
 
 // airspeed [m/s]
 extern float air_speed;		// speed relative to air in [m/s] (measured by pitot tube)
