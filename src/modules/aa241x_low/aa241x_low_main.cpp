@@ -781,6 +781,10 @@ LowPriorityLoop::task_main()
 	sensor_combined_poll();
 	battery_status_poll();
 
+	/* initialize projection reference */
+	map_projection_init(&_lake_lag_proj_ref, (double) mission_parameters.ctr_lat, (double) mission_parameters.ctr_lon);
+
+
 	/* wakeup source(s) */
 	struct pollfd fds[2];
 
