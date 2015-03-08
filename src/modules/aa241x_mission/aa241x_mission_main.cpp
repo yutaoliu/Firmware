@@ -1152,6 +1152,10 @@ LakeFire::task_main()
 				calculate_score();
 			}
 		}
+
+		/* publish the mission status as the last thing to do each loop */
+		publish_mission_status();
+
 	}
 
 	warnx("exiting.\n");
