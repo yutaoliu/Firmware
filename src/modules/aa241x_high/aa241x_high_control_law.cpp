@@ -116,7 +116,7 @@ void flight_control() {
 	// outputs should be set to values between -1..1 (except throttle is 0..1)
 	// where zero is no actuation, and -1,1 are full throw in either the + or - directions
 	roll_servo_out = man_roll_in;		// as an example, just passing through manual control
-	pitch_servo_out = man_pitch_in;
+	pitch_servo_out = -man_pitch_in;
 	yaw_servo_out = man_yaw_in;
 	throttle_servo_out = man_throttle_in;
 
