@@ -108,6 +108,7 @@
 #include <uORB/topics/aa241x_water_drop_result.h>
 #include <uORB/topics/aa241x_high_data.h>
 #include <uORB/topics/aa241x_low_data.h>
+#include <uORB/topics/aa241x_local_data.h>
 
 #include <systemlib/systemlib.h>
 #include <systemlib/param/param.h>
@@ -1019,6 +1020,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 		struct water_drop_result_s water_drop_result;
 		struct aa241x_high_data_s high_data;
 		struct aa241x_low_data_s low_data;
+		struct aa241x_local_data_s local_data;
 	} buf;
 
 	memset(&buf, 0, sizeof(buf));
@@ -1071,6 +1073,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 			struct log_WDRP_s log_WDRP;
 			struct log_HIGH_s log_HIGH;
 			struct log_LOW_s log_LOW;
+			struct log_ADAT_s log_ADAT;
 		} body;
 	} log_msg = {
 		LOG_PACKET_HEADER_INIT(0)
@@ -1118,6 +1121,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 		int water_drop_result_sub;
 		int high_data_sub;
 		int low_data_sub;
+		int local_data_sub;
 	} subs;
 
 	subs.cmd_sub = orb_subscribe(ORB_ID(vehicle_command));
@@ -1163,6 +1167,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 	subs.water_drop_result_sub = orb_subscribe(ORB_ID(aa241x_water_drop_result));
 	subs.high_data_sub = orb_subscribe(ORB_ID(aa241x_high_data));
 	subs.low_data_sub = orb_subscribe(ORB_ID(aa241x_low_data));
+	subs.local_data_sub = orb_subscribe(ORB_ID(aa241x_local_data));
 
 	orb_set_interval(subs.mis_sub, 1000); // rate limit the mission subscription to only listen to the updates once a second
 
@@ -1954,7 +1959,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 			LOGBUFFER_WRITE_AND_COUNT(HIGH);
 		}
 
-		/* --- HIGH DATA --- */
+		/* --- LOW DATA --- */
 		if (copy_if_updated(ORB_ID(aa241x_low_data), subs.low_data_sub, &buf.low_data)) {
 			log_msg.msg_type = LOG_LOW_MSG;
 			log_msg.body.log_LOW.field1 = (float) buf.low_data.LOW_FIELD1;
@@ -1974,6 +1979,20 @@ int sdlog2_thread_main(int argc, char *argv[])
 			log_msg.body.log_LOW.field15 = (float) buf.low_data.LOW_FIELD15;
 			log_msg.body.log_LOW.field16 = (float) buf.low_data.LOW_FIELD16;
 			LOGBUFFER_WRITE_AND_COUNT(LOW);
+		}
+
+		/* --- LOCAL DATA --- */
+		if (copy_if_updated(ORB_ID(aa241x_local_data), subs.local_data_sub, &buf.local_data)) {
+			log_msg.msg_type = LOG_ADAT_MSG;
+			log_msg.body.log_ADAT.N = (float) buf.local_data.N;
+			log_msg.body.log_ADAT.E = (float) buf.local_data.E;
+			log_msg.body.log_ADAT.D_baro = (float) buf.local_data.D_baro;
+			log_msg.body.log_ADAT.D_gps = (float) buf.local_data.D_gps;
+			log_msg.body.log_ADAT.body_u = (float) buf.local_data.body_u;
+			log_msg.body.log_ADAT.body_v = (float) buf.local_data.body_v;
+			log_msg.body.log_ADAT.body_w = (float) buf.local_data.body_w;
+			log_msg.body.log_ADAT.ground_speed = (float) buf.local_data.ground_speed;
+			LOGBUFFER_WRITE_AND_COUNT(ADAT);
 		}
 
 		/* signal the other thread new data, but not yet unlock */

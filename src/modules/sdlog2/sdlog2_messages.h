@@ -535,6 +535,20 @@ struct log_LOW_s {
 	float field16;
 };
 
+/* --- AA241x LOCAL DATA --- */
+#define LOG_ADAT_MSG 71
+struct log_ADAT_s {
+	float N;
+	float E;
+	float D_baro;
+	float D_gps;
+	float body_u;
+	float body_v;
+	float body_w;
+	float ground_speed;
+};
+
+
 /********** SYSTEM MESSAGES, ID > 0x80 **********/
 
 /* --- TIME - TIME STAMP --- */
@@ -612,6 +626,7 @@ static const struct log_format_s log_formats[] = {
 	LOG_FORMAT(WDRP, "BQBB", "Success,T,i,j"),
 	LOG_FORMAT(HIGH, "ffffffffffffffff", HIGH_DATA_LABELS),
 	LOG_FORMAT(LOW, "ffffffffffffffff", LOW_DATA_LABELS),
+	LOG_FORMAT(ADAT, "ffffffff", "N,E,Dbaro,Dgps,u,v,w,GrndCrs"),
 
 	/* system-level messages, ID >= 0x80 */
 	/* FMT: don't write format of format message, it's useless */
