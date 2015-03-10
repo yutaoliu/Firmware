@@ -685,7 +685,7 @@ LowPriorityLoop::set_aux_values()
 	position_N = 0.0f;
 	position_E = 0.0f;
 	position_D_baro = 0.0f;
-	position_D_gps = _global_pos.alt + mission_parameters.ctr_alt;
+	position_D_gps = -_global_pos.alt + mission_parameters.ctr_alt;
 	if (_local_pos.xy_valid) {		// only copy the data if it is valid
 		// convert from gps to custom local
 		map_projection_project(&_lake_lag_proj_ref, _global_pos.lat, _global_pos.lon, &position_N, &position_E);
@@ -780,6 +780,10 @@ LowPriorityLoop::task_main()
 	vehicle_status_poll();
 	sensor_combined_poll();
 	battery_status_poll();
+
+	// 241x stuff
+	mission_status_poll();
+	high_data_poll();
 
 	/* initialize projection reference */
 	map_projection_init(&_lake_lag_proj_ref, (double) mission_parameters.ctr_lat, (double) mission_parameters.ctr_lon);
