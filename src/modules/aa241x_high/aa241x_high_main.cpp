@@ -752,7 +752,7 @@ FixedwingControl::set_aux_values()
 	position_N = 0.0f;
 	position_E = 0.0f;
 	position_D_baro = 0.0f;
-	position_D_gps = _global_pos.alt + mission_parameters.ctr_alt;
+	position_D_gps = -_global_pos.alt + mission_parameters.ctr_alt;
 	if (_local_pos.xy_valid) {		// only copy the data if it is valid
 		// convert from gps to custom local
 		map_projection_project(&_lake_lag_proj_ref, _global_pos.lat, _global_pos.lon, &position_N, &position_E);
@@ -1098,6 +1098,10 @@ FixedwingControl::task_main()
 	sensor_combined_poll();
 	battery_status_poll();
 
+	// 241x poll
+	mission_status_poll();
+	low_data_poll();
+
 	/* wakeup source(s) */
 	struct pollfd fds[2];
 
@@ -1184,6 +1188,9 @@ FixedwingControl::task_main()
 
 				// set the user desired servo positions (that were set in the flight control function)
 				set_actuators();
+
+				/* publish the custom calculated data */
+				publish_local_data();
 
 				/* update previous loop timestamp */
 				previous_loop_timestamp = timestamp;
