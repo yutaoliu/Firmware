@@ -113,7 +113,7 @@ void flight_control() {
 
 
 	// roll control (stabilize)
-	float roll_error = -roll;
+	float roll_error = aah_parameters.roll_command - roll;
 	float roll_control = aah_parameters.roll_p * roll_error;
 	roll_servo_out = math::constrain(man_roll_in + (2.0f/M_PI_F) * roll_control, -1.0f, 1.0f);
 
