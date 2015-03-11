@@ -64,6 +64,7 @@
 PARAM_DEFINE_FLOAT(AAH_EXAMPLE, 10.0f);
 
 // TODO: define custom parameters here
+PARAM_DEFINE_FLOAT(AAH_R_P, 0.5f);
 
 
 int aah_parameters_init(struct aah_param_handles *h)
@@ -80,6 +81,8 @@ int aah_parameters_init(struct aah_param_handles *h)
 
 	// TODO: add the above line for each of your custom parameters........
 
+	h->roll_p = param_find("AAH_R_P");
+
 
 
 	return OK;
@@ -93,6 +96,8 @@ int aah_parameters_update(const struct aah_param_handles *h, struct aah_params *
 	param_get(h->example_high_param, &(p->example_high_param));
 
 	// TODO: add the above line for each of your custom parameters.....
+
+	param_get(h->roll_p, &(p->roll_p));
 
 	return OK;
 }

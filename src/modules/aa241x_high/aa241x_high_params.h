@@ -64,6 +64,8 @@ struct aah_params {
 
 	// TODO: add custom parameter variable names here......
 
+	float roll_p;
+
 };
 
 
@@ -81,6 +83,8 @@ struct aah_param_handles {
 	param_t example_high_param;
 
 	// TODO: add custom parameter variable names here.......
+
+	param_t roll_p;
 
 };
 

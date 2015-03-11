@@ -109,13 +109,21 @@ void flight_control() {
 	high_data.variable_name13 = low_data.variable_name13;
 	high_data.variable_name14 = low_data.variable_name14;
 	high_data.variable_name15 = low_data.variable_name15;
-	high_data.variable_name16 = low_data.variable_name16;
+	// high_data.variable_name16 = low_data.variable_name16;
+
+
+	// roll control (stabilize)
+	float roll_error = -roll;
+	float roll_control = aah_parameters.roll_p * roll_error;
+	roll_servo_out = math::constrain(man_roll_in + (2.0f/M_PI_F) * roll_control, -1.0f, 1.0f);
+
+	high_data.variable_name16 = roll_control;
 
 
 	// ENSURE THAT YOU SET THE SERVO OUTPUTS!!!
 	// outputs should be set to values between -1..1 (except throttle is 0..1)
 	// where zero is no actuation, and -1,1 are full throw in either the + or - directions
-	roll_servo_out = man_roll_in;		// as an example, just passing through manual control
+	// roll_servo_out = man_roll_in;		// as an example, just passing through manual control
 	pitch_servo_out = -man_pitch_in;
 	yaw_servo_out = man_yaw_in;
 	throttle_servo_out = man_throttle_in;
