@@ -319,6 +319,11 @@ private:
 	void	publish_local_data();
 
 	/**
+	 * Set the aux variables that need to be constantly logged.
+	 */
+	void	set_local_data();
+
+	/**
 	 * Set all the aux variables needed for control law.
 	 */
 	void 	set_aux_values();
@@ -707,22 +712,9 @@ FixedwingControl::publish_local_data()
 	}
 }
 
-
 void
-FixedwingControl::set_aux_values()
+FixedwingControl::set_local_data()
 {
-
-	// set the euler angles and rates
-	roll = _att.roll;
-	pitch = _att.pitch;
-	yaw = _att.yaw;
-
-	// set the angular rates
-	roll_rate = _att.rollspeed;
-	pitch_rate = _att.pitchspeed;
-	yaw_rate = _att.yawspeed;
-
-
 	// calculate the body velocities
 	speed_body_u = 0.0f;		// set them to 0 just in case unable to do calculation
 	speed_body_v = 0.0f;
@@ -736,17 +728,6 @@ FixedwingControl::set_aux_values()
 			warnx("Did not get a valid R\n");
 		}
 	}
-
-	// body accelerations [m/s^2]
-	accel_body_x = _sensor_combined.accelerometer_m_s2[0];
-	accel_body_y = _sensor_combined.accelerometer_m_s2[1];
-	accel_body_z = _sensor_combined.accelerometer_m_s2[2];
-
-	// velocities in the NED frame [m/s]
-	// TODO: maybe use local position...
-	vel_N = _global_pos.vel_n;
-	vel_E = _global_pos.vel_e;
-	vel_D = _global_pos.vel_d;
 
 	// local position in NED frame [m] from center of lake lag
 	position_N = 0.0f;
@@ -767,6 +748,33 @@ FixedwingControl::set_aux_values()
 	// TODO: maybe use local position....
 	ground_speed = sqrtf(_global_pos.vel_n * _global_pos.vel_n + _global_pos.vel_e * _global_pos.vel_e);		// speed relative to ground in [m/s]
 	ground_course = _global_pos.yaw; 	// this is course over ground (direction of velocity relative to North in [rad])
+}
+
+
+void
+FixedwingControl::set_aux_values()
+{
+
+	// set the euler angles and rates
+	roll = _att.roll;
+	pitch = _att.pitch;
+	yaw = _att.yaw;
+
+	// set the angular rates
+	roll_rate = _att.rollspeed;
+	pitch_rate = _att.pitchspeed;
+	yaw_rate = _att.yawspeed;
+
+	// body accelerations [m/s^2]
+	accel_body_x = _sensor_combined.accelerometer_m_s2[0];
+	accel_body_y = _sensor_combined.accelerometer_m_s2[1];
+	accel_body_z = _sensor_combined.accelerometer_m_s2[2];
+
+	// velocities in the NED frame [m/s]
+	// TODO: maybe use local position...
+	vel_N = _global_pos.vel_n;
+	vel_E = _global_pos.vel_e;
+	vel_D = _global_pos.vel_d;
 
 	// airspeed [m/s]
 	air_speed = _airspeed.true_airspeed_m_s;	// speed relative to air in [m/s] (measured by pitot tube)
@@ -1173,6 +1181,12 @@ FixedwingControl::task_main()
 			mission_status_poll();
 			low_data_poll();
 
+			/* set the data that needs to be logged regardless of control mode */
+			set_local_data();
+
+			/* publish the custom calculated data */
+			publish_local_data();
+
 
 			if (_vcontrol_mode.flag_control_auto_enabled) {
 
@@ -1188,9 +1202,6 @@ FixedwingControl::task_main()
 
 				// set the user desired servo positions (that were set in the flight control function)
 				set_actuators();
-
-				/* publish the custom calculated data */
-				publish_local_data();
 
 				/* update previous loop timestamp */
 				previous_loop_timestamp = timestamp;
@@ -1255,7 +1266,7 @@ FixedwingControl::start()
 	ASSERT(_control_task == -1);
 
 	/* start the task */
-	_control_task = task_spawn_cmd("aa241x_fw_control",
+	_control_task = task_spawn_cmd("aa241x_high",
 				       SCHED_DEFAULT,
 				       SCHED_PRIORITY_MAX - 5,
 				       2048,
