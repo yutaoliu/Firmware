@@ -1984,14 +1984,14 @@ int sdlog2_thread_main(int argc, char *argv[])
 		/* --- LOCAL DATA --- */
 		if (copy_if_updated(ORB_ID(aa241x_local_data), subs.local_data_sub, &buf.local_data)) {
 			log_msg.msg_type = LOG_ADAT_MSG;
-			log_msg.body.log_ADAT.N = (float) buf.local_data.N;
-			log_msg.body.log_ADAT.E = (float) buf.local_data.E;
-			log_msg.body.log_ADAT.D_baro = (float) buf.local_data.D_baro;
-			log_msg.body.log_ADAT.D_gps = (float) buf.local_data.D_gps;
-			log_msg.body.log_ADAT.body_u = (float) buf.local_data.body_u;
-			log_msg.body.log_ADAT.body_v = (float) buf.local_data.body_v;
-			log_msg.body.log_ADAT.body_w = (float) buf.local_data.body_w;
-			log_msg.body.log_ADAT.ground_speed = (float) buf.local_data.ground_speed;
+			log_msg.body.log_ADAT.N = buf.local_data.N;
+			log_msg.body.log_ADAT.E = buf.local_data.E;
+			log_msg.body.log_ADAT.D_baro = buf.local_data.D_baro;
+			log_msg.body.log_ADAT.D_gps = buf.local_data.D_gps;
+			log_msg.body.log_ADAT.body_u = buf.local_data.body_u;
+			log_msg.body.log_ADAT.body_v = buf.local_data.body_v;
+			log_msg.body.log_ADAT.body_w = buf.local_data.body_w;
+			log_msg.body.log_ADAT.ground_speed = buf.local_data.ground_speed;
 			LOGBUFFER_WRITE_AND_COUNT(ADAT);
 		}
 
