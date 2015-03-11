@@ -421,7 +421,7 @@ LakeFire::local_data_update()
 	orb_check(_local_data_sub, &local_data_updated);
 
 	if (local_data_updated) {
-		orb_copy(ORB_ID(vehicle_status), _local_data_sub, &_local_data);
+		orb_copy(ORB_ID(aa241x_local_data), _local_data_sub, &_local_data);
 	}
 }
 
@@ -1074,6 +1074,7 @@ LakeFire::task_main()
 		if (fds[7].revents & POLLIN) {
 			local_data_update();
 		}
+
 
 		/* check auto start requirements */
 		if (_can_start && !_in_mission) {
