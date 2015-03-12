@@ -996,7 +996,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 		struct position_setpoint_triplet_s triplet;
 		//struct vehicle_vicon_position_s vicon_pos;		// AA241x REMOVED
 		//struct vision_position_estimate vision_pos;		// AA241x REMOVED
-		struct optical_flow_s flow;
+		// struct optical_flow_s flow;						// AA241x REMOVED
 		struct rc_channels_s rc;
 		struct differential_pressure_s diff_pres;
 		struct airspeed_s airspeed;
@@ -1045,7 +1045,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 			struct log_OUT0_s log_OUT0;
 			struct log_AIRS_s log_AIRS;
 			struct log_ARSP_s log_ARSP;
-			struct log_FLOW_s log_FLOW;
+			// struct log_FLOW_s log_FLOW;	// AA241x REMOVED
 			struct log_GPOS_s log_GPOS;
 			struct log_GPSP_s log_GPSP;
 			struct log_ESC_s log_ESC;
@@ -1100,7 +1100,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 		int sat_info_sub;
 		//int vicon_pos_sub;		// AA241x REMOVED
 		//int vision_pos_sub;		// AA241x REMOVED
-		int flow_sub;
+		// int flow_sub;			// AA241x REMOVED
 		int rc_sub;
 		int airspeed_sub;
 		int esc_sub;
@@ -1141,7 +1141,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 	subs.triplet_sub = orb_subscribe(ORB_ID(position_setpoint_triplet));
 	//subs.vicon_pos_sub = orb_subscribe(ORB_ID(vehicle_vicon_position));		// AA241x REMOVED
 	//subs.vision_pos_sub = orb_subscribe(ORB_ID(vision_position_estimate));	// AA241x REMOVED
-	subs.flow_sub = orb_subscribe(ORB_ID(optical_flow));
+	// subs.flow_sub = orb_subscribe(ORB_ID(optical_flow)); 					// AA241x REMOVED
 	subs.rc_sub = orb_subscribe(ORB_ID(rc_channels));
 	subs.airspeed_sub = orb_subscribe(ORB_ID(airspeed));
 	subs.esc_sub = orb_subscribe(ORB_ID(esc_status));
@@ -1656,6 +1656,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 		} */
 
 		/* --- FLOW --- */
+		/*
 		if (copy_if_updated(ORB_ID(optical_flow), subs.flow_sub, &buf.flow)) {
 			log_msg.msg_type = LOG_FLOW_MSG;
 			log_msg.body.log_FLOW.ground_distance_m = buf.flow.ground_distance_m;
@@ -1669,7 +1670,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 			log_msg.body.log_FLOW.quality = buf.flow.quality;
 			log_msg.body.log_FLOW.sensor_id = buf.flow.sensor_id;
 			LOGBUFFER_WRITE_AND_COUNT(FLOW);
-		}
+		} */
 
 		/* --- RC CHANNELS --- */
 		if (copy_if_updated(ORB_ID(rc_channels), subs.rc_sub, &buf.rc)) {
@@ -1877,7 +1878,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 		}
 
 		/* --- PICTURE RESULT --- */
-		if (copy_if_updated(ORB_ID(aa241x_new_fire), subs.fire_sub, &buf.pic_result)) {
+		if (copy_if_updated(ORB_ID(aa241x_picture_result), subs.pic_result_sub, &buf.pic_result)) {
 			log_msg.msg_type = LOG_PICR_MSG;
 			log_msg.body.log_PICR.pic_taken = buf.pic_result.pic_taken;
 			log_msg.body.log_PICR.time_us = buf.pic_result.time_us;
@@ -1915,16 +1916,6 @@ int sdlog2_thread_main(int argc, char *argv[])
 				remaining = size - i_max;
 				msg_num++;
 			}
-		}
-
-		/* --- WATER DROP RESULT --- */
-		if (copy_if_updated(ORB_ID(aa241x_water_drop_result), subs.water_drop_result_sub, &buf.water_drop_result)) {
-			log_msg.msg_type = LOG_WDRP_MSG;
-			log_msg.body.log_WDRP.time_us = buf.water_drop_result.time_us;
-			log_msg.body.log_WDRP.success = buf.water_drop_result.success;
-			log_msg.body.log_WDRP.i = buf.water_drop_result.i;
-			log_msg.body.log_WDRP.j = buf.water_drop_result.j;
-			LOGBUFFER_WRITE_AND_COUNT(WDRP);
 		}
 
 		/* --- WATER DROP RESULT --- */
