@@ -166,10 +166,6 @@ struct mis_params {
 extern struct mis_params mission_parameters;			/**< local copies of mission parameters */
 
 
-// DEBUG
-extern hrt_abstime pic_taken_time;
-
-
 /* functions */
 
 /**
@@ -189,8 +185,6 @@ void	take_picture();
  */
 void	drop_water();
 
-
-
 /**
  * Main function in which your code should be written.
  *
@@ -200,37 +194,6 @@ void	drop_water();
  */
 void flight_control();
 
-
-/**
- * Send desired attitude (target roll, pitch, yaw and throttle) to the ground station and to logging.
- *
- * This is great for debugging, and I highly recommend you do use this function to log the desired attitude
- * values.
- */
-// void	publish_desired_attitude(const float &roll, const float &pitch, const float &yaw, const float &throttle);
-
-
-
-/**
- * Function to take a picture from the current location of the UAV.
- * Make sure to check the boolean as to whether or not the picture was actually taken.
- * The rest of the struct fields will only have valid data if picture was taken.
- *
- * @return  struct containing the picture result.
- * See /src/modules/uORB/topics/aa241x_picture_result.h for details on struct fields
- */
-// picture_result_s take_picture();
-
-
-/**
- * Function to drop water from the current location of the UAV.
- * Make sure to check the boolean as to whether or not the water was actually dropped.
- * The rest of the struct fields will only have valid data if water was dropped.
- *
- * @return  struct containing the water drop result.
- * See /src/modules/uORB/topics/aa241x_water_drop.h for details on struct fields
- */
-// water_drop_result_s drop_water();
 
 
 #endif /* AA241X_FW_AUX_H_ */

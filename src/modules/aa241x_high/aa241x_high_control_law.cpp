@@ -48,8 +48,10 @@
 #include "aa241x_high_control_law.h"
 #include "aa241x_high_aux.h"
 
-int pic_res_sub = 0;
 hrt_abstime pic_taken_time = 0;
+hrt_abstime pic_gotten_time = 0;
+hrt_abstime last_pic_request_time = 0;
+
 
 /**
  * Main function in which your code should be written.
@@ -135,32 +137,5 @@ void flight_control() {
 
 		pic_taken_time = hrt_absolute_time();
 		last_pic_request_time = hrt_absolute_time();
-		/*
-		int fuck = 0;
-		while (!new_pic) {
-			// just wait
-
-			// check if there is a new picture result
-			bool pic_result_updated;
-			if (pic_res_sub <= 0) {
-				pic_res_sub = orb_subscribe(ORB_ID(aa241x_picture_result));
-			}
-			orb_check(pic_res_sub, &pic_result_updated);
-
-			if (pic_result_updated) {
-				orb_copy(ORB_ID(aa241x_picture_result), pic_res_sub, &pic_result);
-
-				// set the data to be used by students
-				new_pic = true;
-			}
-			fuck++;
-			if (fuck >= 10) {
-				break;
-			}
-			printf(".");
-		}
-		printf("pic lag: %fus\n", (double) (hrt_absolute_time() - pic_taken_time));
-		*/
-
 	}
 }

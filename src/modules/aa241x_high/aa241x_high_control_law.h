@@ -61,9 +61,6 @@
 #include <mathlib/mathlib.h>
 
 
-hrt_abstime pic_gotten_time = 0;
-hrt_abstime last_pic_request_time = 0;
-
 
 
 #endif /* AA241X_FW_CONTROL_MAIN_H_ */

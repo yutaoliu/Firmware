@@ -182,7 +182,6 @@ void	take_picture();
 void	drop_water();
 
 
-
 /**
  * Main function in which your code should be written.
  *

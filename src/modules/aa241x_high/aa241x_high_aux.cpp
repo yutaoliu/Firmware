@@ -140,7 +140,6 @@ struct aa241x_high_data_s high_data = {};
 
 // user config parameters structure
 struct aah_params aah_parameters = {};		// struct containing all of the user editable parameters (via ground station)
-
 struct mis_params mission_parameters = {};
 
 
@@ -183,49 +182,5 @@ void drop_water()
 		_water_drop_request_pub = orb_advertise(ORB_ID(aa241x_water_drop_request), &water_drop_request);
 	}
 }
-
-/*
-void publish_desired_attitude(const float &roll_d, const float &pitch_d, const float &yaw_d, const float &throttle_d)
-{
-	vehicle_attitude_setpoint_s att_sp;
-	att_sp.roll_body = roll_d;
-	att_sp.pitch_body = pitch_d;
-	att_sp.yaw_body = yaw_d;
-	att_sp.thrust = throttle_d;
-
-	// publish the desired attitude
-	if (_attitude_sp_pub > 0) {
-		orb_publish(ORB_ID(aa241x_mission_status), _attitude_sp_pub, &att_sp);
-	} else {
-		_attitude_sp_pub = orb_advertise(ORB_ID(aa241x_mission_status), &att_sp);
-	}
-}
-*/
-
-
-/*
-picture_result_s take_picture()
-{
-
-	if (aa241x_mission::g_aa241x_mission) {
-		return aa241x_mission::g_aa241x_mission->take_picture();
-	} else {
-		picture_result_s pic_result;
-		pic_result.pic_taken = false;
-		return pic_result;
-	}
-}
-
-water_drop_result_s drop_water()
-{
-
-	if (aa241x_mission::g_aa241x_mission) {
-		return aa241x_mission::g_aa241x_mission->drop_water();
-	} else {
-		water_drop_result_s water_drop;
-		water_drop.success = false;
-		return water_drop;
-	}
-} */
 
 
