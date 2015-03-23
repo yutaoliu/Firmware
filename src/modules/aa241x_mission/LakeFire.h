@@ -208,7 +208,12 @@ private:
 
 
 	int8_t	_grid[GRID_WIDTH][GRID_WIDTH];			/**< the grid that represents the lake */
+	bool	_grid_mask[GRID_WIDTH][GRID_WIDTH];		/**< mask to determine in bounds in grid */
 
+	/**
+	 * Put together the mask that determines what is and isn't in bouds
+	 */
+	void	build_grid_mask();
 
 	/**
 	 * Get the diameter of the fov for a give altitude.

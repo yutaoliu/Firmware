@@ -107,7 +107,8 @@ LakeFire::LakeFire() :
 	_score(0.0f),
 	_last_picture(0),
 	_wind_direction(WIND_OTHER),
-	_grid{{0}}
+	_grid{{0}},
+	_grid_mask{{false}}
 {
 	_vcontrol_mode = {};
 	_global_pos = {};
@@ -135,6 +136,8 @@ LakeFire::LakeFire() :
 	_parameter_handles.ctr_alt = param_find("AAMIS_CTR_ALT");
 
 	parameters_update();
+
+	build_grid_mask();
 
 	_water_drops_remaining = int(_parameters.water_weight/_parameters.weight_per_drop);
 
@@ -250,6 +253,50 @@ LakeFire::drop_water()
 	return water_drop;
 }
 
+void
+LakeFire::build_grid_mask()
+{
+	float hw = GRID_WIDTH/2.0f;
+	math::Vector<2> center;
+
+	math::Vector<2> left = math::Vector<2>(0, -hw);
+	math::Vector<2> right = math::Vector<2>(0, hw);
+	math::Vector<2> top = math::Vector<2>(-hw, 0);
+	math::Vector<2> bottom = math::Vector<2>(hw, 0);
+
+	math::Vector<2> sides[4] = {left, right, top, bottom};
+
+	float r2 = _parameters.max_radius * _parameters.max_radius;
+	bool valid = true;
+
+	for (int i = 0; i < GRID_WIDTH; i++) {
+		for (int j = 0; j < GRID_WIDTH; j++) {
+			valid = true;
+
+			// get center coord
+			center = ij2ne((float) i, (float) j);
+
+			// if center isn't valid, definite not a valid cell
+			if (center.length_squared() >= r2) {
+				continue;
+			}
+
+			// check each of the sides
+			for (int k = 0; k < 4; k++) {
+				if ((center + sides[k]).length_squared() >= r2) {
+					valid = false;
+					break;
+				}
+			}
+
+			// set mask to true if an inbound cell
+			if (valid) {
+				_grid_mask[i][j] = true;
+			}
+		}
+	}
+}
+
 float
 LakeFire::get_fov_d(const float &alt)
 {
@@ -320,6 +367,9 @@ LakeFire::get_fire_info(picture_result_s *pic_result)
 	int loc = 0;
 	for (int i = i_min; i <= i_max; i++) {
 		for (int j = j_min; j <= j_max; j++) {
+
+			/*check to ensure the grid cell is in bounds */
+			if (!_grid_mask[i][j]) continue;
 
 			/* check to ensure center of cell is within fov */
 			if ((ij2ne(i,j) - center).length_squared() <= d2) {
@@ -659,6 +709,9 @@ LakeFire::propagate_fire()
 
 			/* check to make sure new fire cell is a valid location */
 			if (i_prop >= GRID_WIDTH || i_prop < 0 || j_prop >= GRID_WIDTH || j_prop < 0) continue;
+
+			/* check that the new cell is in bounds */
+			if (!_grid_mask[i_prop][j_prop]) continue;
 
 			/* check for new fire cell value */
 			cell_val = _grid[i_prop][j_prop];
