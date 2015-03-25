@@ -48,10 +48,6 @@
 #include "aa241x_high_control_law.h"
 #include "aa241x_high_aux.h"
 
-hrt_abstime pic_taken_time = 0;
-hrt_abstime pic_gotten_time = 0;
-hrt_abstime last_pic_request_time = 0;
-
 
 /**
  * Main function in which your code should be written.
@@ -62,28 +58,13 @@ hrt_abstime last_pic_request_time = 0;
  */
 void flight_control() {
 
-	// printf("loop deltaT = %fms\n", (double) (timestamp - previous_loop_timestamp)/1000.0);
+	float my_float_variable = 0.0f;		/**< example float variable */
 
 	if (new_pic) {
 
-		// printf("New pic received:\n");
-		int f_count = 0;
-		for (int i = 0; i < pic_result.num_cells; i++) {
-			// printf("(%i,%i) -> %i\n", pic_result.i[i], pic_result.j[i], pic_result.state[i]);
-			if (pic_result.state[i] == 1) {
-				f_count++;
-			}
-		}
-
-		// just going to want to drop water
-		// printf("sending water drop request\n");
-		if (f_count > 0) {
-			drop_water();
-		}
-
 		// TODO: run picture result logic here......
 
-		// set new_pic to false, as just processed this pic result
+		// set new_pic to false, as just processed this pic result, DO NOT REMOVE
 		new_pic = false;
 	}
 
@@ -91,51 +72,18 @@ void flight_control() {
 	// TODO: write all of your flight control here...
 
 
+	// getting low data value example
+	float my_low_data = low_data.variable_name1;
 
-	// setting high data values
-	high_data.variable_name1 = roll;
-	high_data.variable_name2 = pitch;
-	high_data.variable_name3 = yaw;
-
-	high_data.variable_name4 = roll_rate;
-	high_data.variable_name5 = pitch_rate;
-	high_data.variable_name6 = yaw_rate;
-
-	high_data.variable_name7 = speed_body_u;
-	high_data.variable_name8 = speed_body_v;
-	high_data.variable_name9 = speed_body_w;
-
-	high_data.variable_name10 = low_data.variable_name10;
-	high_data.variable_name11 = low_data.variable_name11;
-	high_data.variable_name12 = low_data.variable_name12;
-	high_data.variable_name13 = low_data.variable_name13;
-	high_data.variable_name14 = low_data.variable_name14;
-	high_data.variable_name15 = low_data.variable_name15;
-	// high_data.variable_name16 = low_data.variable_name16;
-
-
-	// roll control (stabilize)
-	float roll_error = aah_parameters.roll_command - roll;
-	float roll_control = aah_parameters.roll_p * roll_error;
-	roll_servo_out = math::constrain(man_roll_in + (2.0f/M_PI_F) * roll_control, -1.0f, 1.0f);
-
-	high_data.variable_name16 = roll_control;
+	// setting high data value example
+	high_data.variable_name1 = my_float_variable;
 
 
 	// ENSURE THAT YOU SET THE SERVO OUTPUTS!!!
 	// outputs should be set to values between -1..1 (except throttle is 0..1)
 	// where zero is no actuation, and -1,1 are full throw in either the + or - directions
-	// roll_servo_out = man_roll_in;		// as an example, just passing through manual control
+	roll_servo_out = man_roll_in;		// as an example, just passing through manual control
 	pitch_servo_out = -man_pitch_in;
 	yaw_servo_out = man_yaw_in;
 	throttle_servo_out = man_throttle_in;
-
-	/* to take a picture */
-	if ((hrt_absolute_time() - last_pic_request_time)/1000000.0f > 3.0f) {
-		// printf("sending pic request\n");
-		take_picture();
-
-		pic_taken_time = hrt_absolute_time();
-		last_pic_request_time = hrt_absolute_time();
-	}
 }
