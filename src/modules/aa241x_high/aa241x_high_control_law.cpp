@@ -73,7 +73,7 @@ void flight_control() {
 
 
 	// getting low data value example
-	float my_low_data = low_data.variable_name1;
+	// float my_low_data = low_data.variable_name1;
 
 	// setting high data value example
 	high_data.variable_name1 = my_float_variable;

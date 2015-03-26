@@ -60,34 +60,21 @@
  */
 void low_loop()
 {
-	// printf("loop deltaT = %fms\n", (double) (timestamp - previous_loop_timestamp)/1000.0);
+
+	float my_float_variable = 0.0f;		/**< example float variable */
 
 	if (new_pic) {
+		// TODO: run picture result logic here......
 
+		// set new_pic to false, as just processed this pic result, DO NOT REMOVE
 		new_pic = false;
 	}
 
+	// getting high data value example
+	// float my_high_data = high_data.variable_name1;
 
-	low_data.variable_name1 = high_data.variable_name1;
-	low_data.variable_name2 = high_data.variable_name2;
-	low_data.variable_name3 = high_data.variable_name3;
-	low_data.variable_name4 = high_data.variable_name4;
-	low_data.variable_name5 = high_data.variable_name5;
-	low_data.variable_name6 = high_data.variable_name6;
-	low_data.variable_name7 = high_data.variable_name7;
-
-	low_data.variable_name10 = position_N;
-	low_data.variable_name11 = position_E;
-	low_data.variable_name12 = position_D_gps;
-	low_data.variable_name13 = position_D_baro;
-
-	low_data.variable_name14 = ground_course;
-	low_data.variable_name15 = ground_speed;
-
-	low_data.variable_name16 = air_speed;
-
-	low_data.variable_name8 = battery_current;
-	low_data.variable_name9 = battery_voltage;
+	// setting low data value example
+	low_data.variable_name1 = my_float_variable;
 
 
 }
