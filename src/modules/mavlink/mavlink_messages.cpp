@@ -2298,6 +2298,192 @@ protected:
 	}
 };
 
+class MavlinkStreamAA241xMissionStatus : public MavlinkStream
+{
+public:
+	const char *get_name() const
+	{
+		return MavlinkStreamAA241xMissionStatus::get_name_static();
+	}
+
+	static const char *get_name_static()
+	{
+		return "AA241X_MISSION_STATUS";
+	}
+
+	uint8_t get_id()
+	{
+		return MAVLINK_MSG_ID_AA241X_MISSION_STATUS;
+	}
+
+	static MavlinkStream *new_instance(Mavlink *mavlink)
+	{
+		return new MavlinkStreamAA241xMissionStatus(mavlink);
+	}
+
+	unsigned get_size()
+	{
+		return MAVLINK_MSG_ID_AA241X_MISSION_STATUS_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES;
+	}
+
+private:
+	MavlinkOrbSubscription *_mis_status_sub;
+	uint64_t _mis_time;
+
+	/* do not allow top copying this class */
+	MavlinkStreamAA241xMissionStatus(MavlinkStreamAA241xMissionStatus &);
+	MavlinkStreamAA241xMissionStatus& operator = (const MavlinkStreamAA241xMissionStatus &);
+
+protected:
+	explicit MavlinkStreamAA241xMissionStatus(Mavlink *mavlink) : MavlinkStream(mavlink),
+		_mis_status_sub(_mavlink->add_orb_subscription(ORB_ID(aa241x_mission_status))),
+				_mis_time(0)
+	{}
+
+	void send(const hrt_abstime t)
+	{
+		struct aa241x_mission_status_s mis_status;
+
+		if (_mis_status_sub->update(&_mis_time, &mis_status)) {
+			mavlink_aa241x_mission_status_t msg;
+
+			msg.can_start = mis_status.can_start;
+			msg.in_mission = mis_status.in_mission;
+			msg.mission_time = mis_status.mission_time;
+			msg.score = mis_status.score;
+
+			_mavlink->send_message(MAVLINK_MSG_ID_AA241X_MISSION_STATUS, &msg);
+		}
+	}
+};
+
+class MavlinkStreamAA241xPicResult : public MavlinkStream
+{
+public:
+	const char *get_name() const
+	{
+		return MavlinkStreamAA241xPicResult::get_name_static();
+	}
+
+	static const char *get_name_static()
+	{
+		return "AA241X_PICTURE_RESULT";
+	}
+
+	uint8_t get_id()
+	{
+		return MAVLINK_MSG_ID_AA241X_PICTURE_RESULT;
+	}
+
+	static MavlinkStream *new_instance(Mavlink *mavlink)
+	{
+		return new MavlinkStreamAA241xPicResult(mavlink);
+	}
+
+	unsigned get_size()
+	{
+		return MAVLINK_MSG_ID_AA241X_PICTURE_RESULT_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES;
+	}
+
+private:
+	MavlinkOrbSubscription *_pic_result_sub;
+	uint64_t _pic_time;
+
+	/* do not allow top copying this class */
+	MavlinkStreamAA241xPicResult(MavlinkStreamAA241xPicResult &);
+	MavlinkStreamAA241xPicResult& operator = (const MavlinkStreamAA241xPicResult &);
+
+protected:
+	explicit MavlinkStreamAA241xPicResult(Mavlink *mavlink) : MavlinkStream(mavlink),
+		_pic_result_sub(_mavlink->add_orb_subscription(ORB_ID(aa241x_picture_result))),
+				_pic_time(0)
+	{}
+
+	void send(const hrt_abstime t)
+	{
+		struct picture_result_s pic_result;
+
+		if (_pic_result_sub->update(&_pic_time, &pic_result)) {
+			mavlink_aa241x_picture_result_t msg;
+
+			msg.mission_time = pic_result.time_us;
+			msg.success = pic_result.pic_taken;
+
+			msg.center_d = pic_result.center_d;
+			msg.center_e = pic_result.center_e;
+			msg.center_n = pic_result.center_n;
+			msg.pic_d = pic_result.pic_d;
+
+			msg.num_cells = pic_result.num_cells;
+			memcpy(msg.i, pic_result.i, sizeof(pic_result.i));
+			memcpy(msg.j, pic_result.j, sizeof(pic_result.j));
+			memcpy(msg.state, pic_result.state, sizeof(pic_result.state));
+
+			_mavlink->send_message(MAVLINK_MSG_ID_AA241X_PICTURE_RESULT, &msg);
+		}
+	}
+};
+
+
+class MavlinkStreamAA241xWaterDropResult : public MavlinkStream
+{
+public:
+	const char *get_name() const
+	{
+		return MavlinkStreamAA241xWaterDropResult::get_name_static();
+	}
+
+	static const char *get_name_static()
+	{
+		return "AA241X_WATER_DROP_RESULT";
+	}
+
+	uint8_t get_id()
+	{
+		return MAVLINK_MSG_ID_AA241X_WATER_DROP_RESULT;
+	}
+
+	static MavlinkStream *new_instance(Mavlink *mavlink)
+	{
+		return new MavlinkStreamAA241xWaterDropResult(mavlink);
+	}
+
+	unsigned get_size()
+	{
+		return MAVLINK_MSG_ID_AA241X_WATER_DROP_RESULT_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES;
+	}
+
+private:
+	MavlinkOrbSubscription *_water_result_sub;
+	uint64_t _water_time;
+
+	/* do not allow top copying this class */
+	MavlinkStreamAA241xWaterDropResult(MavlinkStreamAA241xWaterDropResult &);
+	MavlinkStreamAA241xWaterDropResult& operator = (const MavlinkStreamAA241xWaterDropResult &);
+
+protected:
+	explicit MavlinkStreamAA241xWaterDropResult(Mavlink *mavlink) : MavlinkStream(mavlink),
+		_water_result_sub(_mavlink->add_orb_subscription(ORB_ID(aa241x_water_drop_result))),
+				_water_time(0)
+	{}
+
+	void send(const hrt_abstime t)
+	{
+		struct water_drop_result_s water_result;
+
+		if (_water_result_sub->update(&_water_time, &water_result)) {
+			mavlink_aa241x_water_drop_result_t msg;
+
+			msg.mission_time = water_result.time_us;
+			msg.success = water_result.success;
+			msg.i = water_result.i;
+			msg.j = water_result.j;
+
+			_mavlink->send_message(MAVLINK_MSG_ID_AA241X_WATER_DROP_RESULT, &msg);
+		}
+	}
+};
+
 
 StreamListItem *streams_list[] = {
 	new StreamListItem(&MavlinkStreamHeartbeat::new_instance, &MavlinkStreamHeartbeat::get_name_static),
@@ -2333,5 +2519,8 @@ StreamListItem *streams_list[] = {
 	new StreamListItem(&MavlinkStreamNamedValueFloat::new_instance, &MavlinkStreamNamedValueFloat::get_name_static),
 	new StreamListItem(&MavlinkStreamCameraCapture::new_instance, &MavlinkStreamCameraCapture::get_name_static),
 	new StreamListItem(&MavlinkStreamDistanceSensor::new_instance, &MavlinkStreamDistanceSensor::get_name_static),
+	new StreamListItem(&MavlinkStreamAA241xMissionStatus::new_instance, &MavlinkStreamAA241xMissionStatus::get_name_static),
+	new StreamListItem(&MavlinkStreamAA241xPicResult::new_instance, &MavlinkStreamAA241xPicResult::get_name_static),
+	new StreamListItem(&MavlinkStreamAA241xWaterDropResult::new_instance, &MavlinkStreamAA241xWaterDropResult::get_name_static),
 	nullptr
 };
