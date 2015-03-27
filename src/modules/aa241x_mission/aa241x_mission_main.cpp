@@ -140,6 +140,7 @@ LakeFire::LakeFire() :
 	build_grid_mask();
 
 	_water_drops_remaining = int(_parameters.water_weight/_parameters.weight_per_drop);
+	_propagations_remaining = int(_parameters.duration*60.0f/_parameters.timestep);
 
 }
 
@@ -518,7 +519,12 @@ LakeFire::publish_mission_status()
 	mis_stat.can_start = _can_start;
 	mis_stat.in_mission = _in_mission;
 	mis_stat.score = _score;
-	mis_stat.mission_time = (hrt_absolute_time() - _mission_start_time)/(1000000.0f*60.0f);
+
+	if (_in_mission) {
+		mis_stat.mission_time = (hrt_absolute_time() - _mission_start_time)/(1000000.0f*60.0f);
+	} else {
+		mis_stat.mission_time = 0.0f;
+	}
 
 	/* publish the mission status */
 	if (_mission_status_pub > 0) {
@@ -773,6 +779,9 @@ LakeFire::propagate_fire()
 			}
 		}
 	}
+
+	/* publish the new fire cells */
+	publish_new_fire(i_new, j_new);
 
 	/* clear vectors after having published the info */
 	i_new.clear();
@@ -1247,18 +1256,8 @@ LakeFire::task_main()
 				mavlink_log_info(_mavlink_fd, "AA241x mission termination: below min alt");
 			}
 
-			/* check to see if mission time has elapsed */
+			/* get the current time needed for further calculations */
 			hrt_abstime current_time = hrt_absolute_time();
-			if ((current_time - _mission_start_time)/1000000.0f >= _parameters.duration*60.0f) {
-				// TODO: would be nice to send a message that mission is over
-				_in_mission = false;
-				_can_start = false;
-				mavlink_log_info(_mavlink_fd, "AA241x mission completed");
-				// TODO: end mission gracefully and report final score
-			}
-
-			// TODO: if early termination, want to propagate the fire for the rest of the duration quickly
-			// to be able to give a score
 
 			/* ensure we are still in mission and check if timestep has advanced */
 			if (_in_mission && (current_time - _last_propagation_time) >= _parameters.timestep*1E6f) {
@@ -1267,9 +1266,42 @@ LakeFire::task_main()
 				/* propagate the fire for this next timestep */
 				propagate_fire();
 
+				_propagations_remaining--;
+
 				/* calculate the new score */
 				calculate_score();
 			}
+
+			/* check to see if mission time has elapsed */
+			if ((current_time - _mission_start_time)/1000000.0f >= _parameters.duration*60.0f) {
+				// TODO: would be nice to send a message that mission is over
+				_in_mission = false;
+				_can_start = false;
+				mavlink_log_info(_mavlink_fd, "AA241x mission completed");
+
+				/* make sure that have done all fire propagations */
+				if (_propagations_remaining > 0) {
+					// TODO: check to make sure there is only ever 1 left here
+					propagate_fire();
+				}
+
+				calculate_score();
+				// TODO: end mission gracefully and report final score
+			}
+
+			// TODO: if early termination, want to propagate the fire for the rest of the duration quickly
+			// to be able to give a score
+			if (_early_termination) {
+
+				/* propagate the rest of the time */
+				while (_propagations_remaining > 0) {
+					propagate_fire();
+					_propagations_remaining--;
+				}
+
+				calculate_score();
+			}
+
 		}
 
 		/* publish the mission status as the last thing to do each loop */

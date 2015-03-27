@@ -187,6 +187,7 @@ private:
 	hrt_abstime _last_picture;			/**< timestamp of when the last picture was taken */
 
 	int			_water_drops_remaining;	/**< the number of water shots remaining */
+	int			_propagations_remaining;	/**< the number of fire propagations remaining */
 
 	enum WIND_DIRECTION {
 		WIND_OTHER = -1,
