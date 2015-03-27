@@ -529,6 +529,56 @@ LakeFire::publish_mission_status()
 }
 
 void
+LakeFire::publish_condensed_grid()
+{
+	/*// IF 16 x 16 GRID
+	uint16_t fire_row[16] = {0};
+	uint16_t water_row[16] = {0};
+
+	for (int i = 0; i < GRID_WIDTH; i++) {
+		for (int j = 0; j < GRID_WIDTH; j++) {
+			if (_grid[i][j] == ON_FIRE) {
+				fire_row[i] |= 1 << (16 - j);
+				water_row[i] |= 0 << (16 - j);
+			} else if (_grid[i][j] == WATER) {
+				water_row[i] |= 1 << (16 - j);
+				fire_row[i] |= 0 << (16 - j);
+			} else {
+				fire_row[i] |= 0 << (16 - j);
+				water_row[i] |= 0 << (16 - j);
+			}
+		}
+	} */
+
+	// general grid
+	uint64_t row[7] = {0};
+
+	int row_id = 0;
+	int shift_id = 62;
+
+	for (int i = 0; i < GRID_WIDTH; i++) {
+		for (int j = 0; j < GRID_WIDTH; j++) {
+			if (_grid_mask[i][j]) {
+				if (shift_id < 0) {
+					row_id++;
+					shift_id = 62;
+				}
+
+				if (_grid[i][j] == ON_FIRE) {
+					row[row_id] |= 1 << shift_id;
+				} else if (_grid[i][j] == WATER) {
+					row[row_id] |= 2 << shift_id;
+				} else {
+					row[row_id] |= 0 << shift_id;
+				}
+
+				shift_id -= 2;
+			}
+		}
+	}
+}
+
+void
 LakeFire::publish_new_fire(const std::vector<int> &i_new, const std::vector<int> &j_new)
 {
 	std::vector<int> i_fire = i_new;

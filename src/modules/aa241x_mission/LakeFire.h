@@ -302,6 +302,11 @@ private:
 	void	publish_water_drop(const water_drop_result_s &water_drop);
 
 	/**
+	 * Publish the condensed version of the grid for sending to the ground.
+	 */
+	void	publish_condensed_grid();
+
+	/**
 	 * Gaussian random number generator.
 	 *
 	 * Uses the Box-Muller transform
