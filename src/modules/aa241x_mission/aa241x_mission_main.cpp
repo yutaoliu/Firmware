@@ -256,7 +256,7 @@ LakeFire::drop_water()
 void
 LakeFire::build_grid_mask()
 {
-	float hw = GRID_WIDTH/2.0f;
+	float hw = _parameters.cell_width/2.0f;
 	math::Vector<2> center;
 
 	math::Vector<2> left = math::Vector<2>(0, -hw);
@@ -283,7 +283,7 @@ LakeFire::build_grid_mask()
 
 			// check each of the sides
 			for (int k = 0; k < 4; k++) {
-				if ((center + sides[k]).length_squared() >= r2) {
+				if ((center + sides[k]).length_squared() > r2) {
 					valid = false;
 					break;
 				}
@@ -804,6 +804,7 @@ void
 LakeFire::task_main_trampoline(int argc, char **argv)
 {
 	aa241x_mission::g_aa241x_mission->task_main();
+	// aa241x_mission::g_aa241x_mission->prop_testing(); // DEBUG
 	// aa241x_mission::g_aa241x_mission->testing(); // DEBUG
 	// aa241x_mission::g_aa241x_mission->sim_testing(); // DEBUG
 }
@@ -814,6 +815,18 @@ LakeFire::print_grid() {
 	for (int i = 0; i < GRID_WIDTH; i++) {
 		for (int j = 0;j < GRID_WIDTH; j++) {
 			printf("%d ", _grid[i][j]);
+		}
+		printf("\n");
+	}
+	printf("\n");
+}
+
+void
+LakeFire::print_mask() {
+	printf("\n");
+	for (int i = 0; i < GRID_WIDTH; i++) {
+		for (int j = 0;j < GRID_WIDTH; j++) {
+			printf("%d ", _grid_mask[i][j]);
 		}
 		printf("\n");
 	}
@@ -887,11 +900,13 @@ LakeFire::prop_testing()
 		printf("\n");
 	}
 
+	printf("grid mask\n");
+	print_mask();
 
 	initialize_mission();
 	print_grid();
 
-	for (int i = 0; i < 60; i++) {
+	for (int i = 0; i < 100; i++) {
 		propagate_fire();
 		// usleep(500000);
 	}

@@ -65,7 +65,7 @@ PARAM_DEFINE_FLOAT(AAMIS_ALT_MAX, 121.92f);
  * @unit meters
  * @group AA241x Mission
  */
-PARAM_DEFINE_FLOAT(AAMIS_RAD_MAX, 150.0f);
+PARAM_DEFINE_FLOAT(AAMIS_RAD_MAX, 170.0f);
 
 /**
  * Width of a grid cell in [m].

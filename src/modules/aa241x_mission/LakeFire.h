@@ -349,6 +349,8 @@ private:
 
 	void print_grid();
 
+	void print_mask();
+
 	/**
 	 * Main task.
 	 */
