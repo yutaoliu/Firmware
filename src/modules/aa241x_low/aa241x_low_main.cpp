@@ -686,10 +686,7 @@ LowPriorityLoop::set_aux_values()
 	position_E = 0.0f;
 	position_D_baro = 0.0f;
 	position_D_gps = -_global_pos.alt + mission_parameters.ctr_alt;
-	if (_local_pos.xy_valid) {		// only copy the data if it is valid
-		// convert from gps to custom local
-		map_projection_project(&_lake_lag_proj_ref, _global_pos.lat, _global_pos.lon, &position_N, &position_E);
-	}
+	map_projection_project(&_lake_lag_proj_ref, _global_pos.lat, _global_pos.lon, &position_N, &position_E);
 	if (_local_pos.z_valid) {
 		position_D_baro = _local_pos.z;
 	}
