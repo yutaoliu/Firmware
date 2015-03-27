@@ -49,6 +49,10 @@
 #include "aa241x_high_aux.h"
 
 
+hrt_abstime pic_taken_time = 0;
+hrt_abstime pic_gotten_time = 0;
+hrt_abstime last_pic_request_time = 0;
+
 /**
  * Main function in which your code should be written.
  *
@@ -63,6 +67,21 @@ void flight_control() {
 	if (new_pic) {
 
 		// TODO: run picture result logic here......
+
+		// printf("New pic received:\n");
+		int f_count = 0;
+		for (int i = 0; i < pic_result.num_cells; i++) {
+			// printf("(%i,%i) -> %i\n", pic_result.i[i], pic_result.j[i], pic_result.state[i]);
+			if (pic_result.state[i] == 1) {
+				f_count++;
+			}
+		}
+
+		// just going to want to drop water
+		// printf("sending water drop request\n");
+		if (f_count > 0) {
+			drop_water();
+		}
 
 		// set new_pic to false, as just processed this pic result, DO NOT REMOVE
 		new_pic = false;
@@ -86,4 +105,13 @@ void flight_control() {
 	pitch_servo_out = -man_pitch_in;
 	yaw_servo_out = man_yaw_in;
 	throttle_servo_out = man_throttle_in;
+
+	/* to take a picture */
+	if ((hrt_absolute_time() - last_pic_request_time)/1000000.0f > 3.0f) {
+		// printf("sending pic request\n");
+		take_picture();
+
+		pic_taken_time = hrt_absolute_time();
+		last_pic_request_time = hrt_absolute_time();
+	}
 }
