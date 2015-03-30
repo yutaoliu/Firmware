@@ -1381,7 +1381,7 @@ Mavlink::task_main(int argc, char *argv[])
 		configure_stream("VFR_HUD", 8.0f);
 		configure_stream("GPS_RAW_INT", 1.0f);
 		configure_stream("GLOBAL_POSITION_INT", 3.0f);
-		configure_stream("LOCAL_POSITION_NED", 3.0f);
+		// configure_stream("LOCAL_POSITION_NED", 3.0f);	// AA241X EDIT
 		configure_stream("RC_CHANNELS_RAW", 1.0f);
 		configure_stream("POSITION_TARGET_GLOBAL_INT", 3.0f);
 		configure_stream("ATTITUDE_TARGET", 3.0f);
@@ -1390,6 +1390,9 @@ Mavlink::task_main(int argc, char *argv[])
 		configure_stream("AA241X_MISSION_STATUS", 1.0f);
 		configure_stream("AA241X_PICTURE_RESULT", 1.0f);
 		configure_stream("AA241X_WATER_DROP_RESULT", 1.0f);
+		configure_stream("AA241X_HIGH", 3.0f);
+		configure_stream("AA241X_LOW", 1.0f);
+		configure_stream("AA241X_AUX_DATA", 3.0f);
 		break;
 
 	case MAVLINK_MODE_ONBOARD:

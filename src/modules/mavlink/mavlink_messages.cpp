@@ -72,6 +72,9 @@
 #include <uORB/topics/aa241x_mission_status.h>
 #include <uORB/topics/aa241x_picture_result.h>
 #include <uORB/topics/aa241x_water_drop_result.h>
+#include <uORB/topics/aa241x_high_data.h>
+#include <uORB/topics/aa241x_low_data.h>
+#include <uORB/topics/aa241x_local_data.h>
 
 #include <drivers/drv_rc_input.h>
 #include <drivers/drv_pwm_output.h>
@@ -2489,6 +2492,215 @@ protected:
 	}
 };
 
+class MavlinkStreamAA241xHighData : public MavlinkStream
+{
+public:
+	const char *get_name() const
+	{
+		return MavlinkStreamAA241xHighData::get_name_static();
+	}
+
+	static const char *get_name_static()
+	{
+		return "AA241X_HIGH";
+	}
+
+	uint8_t get_id()
+	{
+		return MAVLINK_MSG_ID_AA241X_HIGH;
+	}
+
+	static MavlinkStream *new_instance(Mavlink *mavlink)
+	{
+		return new MavlinkStreamAA241xHighData(mavlink);
+	}
+
+	unsigned get_size()
+	{
+		return MAVLINK_MSG_ID_AA241X_HIGH_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES;
+	}
+
+private:
+	MavlinkOrbSubscription *_high_data_sub;
+	uint64_t _high_time;
+
+	/* do not allow top copying this class */
+	MavlinkStreamAA241xHighData(MavlinkStreamAA241xHighData &);
+	MavlinkStreamAA241xHighData& operator = (const MavlinkStreamAA241xHighData &);
+
+protected:
+	explicit MavlinkStreamAA241xHighData(Mavlink *mavlink) : MavlinkStream(mavlink),
+		_high_data_sub(_mavlink->add_orb_subscription(ORB_ID(aa241x_high_data))),
+				_high_time(0)
+	{}
+
+	void send(const hrt_abstime t)
+	{
+		struct aa241x_high_data_s high_data;
+
+		if (_high_data_sub->update(&_high_time, &high_data)) {
+			mavlink_aa241x_high_t msg;
+
+			msg.timestamp = hrt_absolute_time();
+			msg.field1 = high_data.HIGH_FIELD1;
+			msg.field2 = high_data.HIGH_FIELD2;
+			msg.field3 = high_data.HIGH_FIELD3;
+			msg.field4 = high_data.HIGH_FIELD4;
+			msg.field5 = high_data.HIGH_FIELD5;
+			msg.field6 = high_data.HIGH_FIELD6;
+			msg.field7 = high_data.HIGH_FIELD7;
+			msg.field8 = high_data.HIGH_FIELD8;
+			msg.field9 = high_data.HIGH_FIELD9;
+			msg.field10 = high_data.HIGH_FIELD10;
+			msg.field11 = high_data.HIGH_FIELD11;
+			msg.field12 = high_data.HIGH_FIELD12;
+			msg.field13 = high_data.HIGH_FIELD13;
+			msg.field14 = high_data.HIGH_FIELD14;
+			msg.field15 = high_data.HIGH_FIELD15;
+			msg.field16 = high_data.HIGH_FIELD16;
+
+			_mavlink->send_message(MAVLINK_MSG_ID_AA241X_HIGH, &msg);
+		}
+	}
+};
+
+class MavlinkStreamAA241xLowData : public MavlinkStream
+{
+public:
+	const char *get_name() const
+	{
+		return MavlinkStreamAA241xLowData::get_name_static();
+	}
+
+	static const char *get_name_static()
+	{
+		return "AA241X_LOW";
+	}
+
+	uint8_t get_id()
+	{
+		return MAVLINK_MSG_ID_AA241X_LOW;
+	}
+
+	static MavlinkStream *new_instance(Mavlink *mavlink)
+	{
+		return new MavlinkStreamAA241xLowData(mavlink);
+	}
+
+	unsigned get_size()
+	{
+		return MAVLINK_MSG_ID_AA241X_LOW_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES;
+	}
+
+private:
+	MavlinkOrbSubscription *_low_data_sub;
+	uint64_t _low_time;
+
+	/* do not allow top copying this class */
+	MavlinkStreamAA241xLowData(MavlinkStreamAA241xLowData &);
+	MavlinkStreamAA241xLowData& operator = (const MavlinkStreamAA241xLowData &);
+
+protected:
+	explicit MavlinkStreamAA241xLowData(Mavlink *mavlink) : MavlinkStream(mavlink),
+		_low_data_sub(_mavlink->add_orb_subscription(ORB_ID(aa241x_low_data))),
+				_low_time(0)
+	{}
+
+	void send(const hrt_abstime t)
+	{
+		struct aa241x_low_data_s low_data;
+
+		if (_low_data_sub->update(&_low_time, &low_data)) {
+			mavlink_aa241x_high_t msg;
+
+			msg.timestamp = hrt_absolute_time();
+			msg.field1 = low_data.LOW_FIELD1;
+			msg.field2 = low_data.LOW_FIELD2;
+			msg.field3 = low_data.LOW_FIELD3;
+			msg.field4 = low_data.LOW_FIELD4;
+			msg.field5 = low_data.LOW_FIELD5;
+			msg.field6 = low_data.LOW_FIELD6;
+			msg.field7 = low_data.LOW_FIELD7;
+			msg.field8 = low_data.LOW_FIELD8;
+			msg.field9 = low_data.LOW_FIELD9;
+			msg.field10 = low_data.LOW_FIELD10;
+			msg.field11 = low_data.LOW_FIELD11;
+			msg.field12 = low_data.LOW_FIELD12;
+			msg.field13 = low_data.LOW_FIELD13;
+			msg.field14 = low_data.LOW_FIELD14;
+			msg.field15 = low_data.LOW_FIELD15;
+			msg.field16 = low_data.LOW_FIELD16;
+
+			_mavlink->send_message(MAVLINK_MSG_ID_AA241X_LOW, &msg);
+		}
+	}
+};
+
+
+class MavlinkStreamAA241xAuxData : public MavlinkStream
+{
+public:
+	const char *get_name() const
+	{
+		return MavlinkStreamAA241xAuxData::get_name_static();
+	}
+
+	static const char *get_name_static()
+	{
+		return "AA241X_AUX_DATA";
+	}
+
+	uint8_t get_id()
+	{
+		return MAVLINK_MSG_ID_AA241X_AUX_DATA;
+	}
+
+	static MavlinkStream *new_instance(Mavlink *mavlink)
+	{
+		return new MavlinkStreamAA241xAuxData(mavlink);
+	}
+
+	unsigned get_size()
+	{
+		return MAVLINK_MSG_ID_AA241X_AUX_DATA_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES;
+	}
+
+private:
+	MavlinkOrbSubscription *_local_data_sub;
+	uint64_t _local_time;
+
+	/* do not allow top copying this class */
+	MavlinkStreamAA241xAuxData(MavlinkStreamAA241xAuxData &);
+	MavlinkStreamAA241xAuxData& operator = (const MavlinkStreamAA241xAuxData &);
+
+protected:
+	explicit MavlinkStreamAA241xAuxData(Mavlink *mavlink) : MavlinkStream(mavlink),
+	_local_data_sub(_mavlink->add_orb_subscription(ORB_ID(aa241x_water_drop_result))),
+	_local_time(0)
+	{}
+
+	void send(const hrt_abstime t)
+	{
+		struct aa241x_local_data_s local_data;
+
+		if (_local_data_sub->update(&_local_time, &local_data)) {
+			mavlink_aa241x_aux_data_t msg;
+
+			msg.timestamp = hrt_absolute_time();
+			msg.N = local_data.N;
+			msg.E = local_data.E;
+			msg.D_baro = local_data.D_baro;
+			msg.D_gps = local_data.D_gps;
+			msg.body_u = local_data.body_u;
+			msg.body_v = local_data.body_v;
+			msg.body_w = local_data.body_w;
+			msg.ground_speed = local_data.ground_speed;
+
+			_mavlink->send_message(MAVLINK_MSG_ID_AA241X_AUX_DATA, &msg);
+		}
+	}
+};
+
 
 StreamListItem *streams_list[] = {
 	new StreamListItem(&MavlinkStreamHeartbeat::new_instance, &MavlinkStreamHeartbeat::get_name_static),
@@ -2527,5 +2739,8 @@ StreamListItem *streams_list[] = {
 	new StreamListItem(&MavlinkStreamAA241xMissionStatus::new_instance, &MavlinkStreamAA241xMissionStatus::get_name_static),
 	new StreamListItem(&MavlinkStreamAA241xPicResult::new_instance, &MavlinkStreamAA241xPicResult::get_name_static),
 	new StreamListItem(&MavlinkStreamAA241xWaterDropResult::new_instance, &MavlinkStreamAA241xWaterDropResult::get_name_static),
+	new StreamListItem(&MavlinkStreamAA241xHighData::new_instance, &MavlinkStreamAA241xHighData::get_name_static),
+	new StreamListItem(&MavlinkStreamAA241xLowData::new_instance, &MavlinkStreamAA241xLowData::get_name_static),
+	new StreamListItem(&MavlinkStreamAA241xAuxData::new_instance, &MavlinkStreamAA241xAuxData::get_name_static),
 	nullptr
 };
