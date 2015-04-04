@@ -95,7 +95,22 @@ void flight_control() {
 	// float my_low_data = low_data.variable_name1;
 
 	// setting high data value example
-	high_data.variable_name1 = my_float_variable;
+	high_data.variable_name1 = roll;
+	high_data.variable_name2 = pitch;
+	high_data.variable_name3 = yaw;
+	high_data.variable_name4 = roll_rate;
+	high_data.variable_name5 = pitch_rate;
+	high_data.variable_name6 = yaw_rate;
+	high_data.variable_name7 = speed_body_u;
+	high_data.variable_name8 = speed_body_v;
+	high_data.variable_name9 = speed_body_w;
+	high_data.variable_name10 = accel_body_x;
+	high_data.variable_name11 = accel_body_y;
+	high_data.variable_name12 = accel_body_z;
+	high_data.variable_name13 = my_float_variable;
+	high_data.variable_name14 = my_float_variable;
+	high_data.variable_name15 = my_float_variable;
+	high_data.variable_name16 = my_float_variable;
 
 
 	// ENSURE THAT YOU SET THE SERVO OUTPUTS!!!

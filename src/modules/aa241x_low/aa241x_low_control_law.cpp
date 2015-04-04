@@ -74,7 +74,22 @@ void low_loop()
 	// float my_high_data = high_data.variable_name1;
 
 	// setting low data value example
-	low_data.variable_name1 = my_float_variable;
+	low_data.variable_name1 = vel_N;
+	low_data.variable_name2 = vel_E;
+	low_data.variable_name3 = vel_D;
+	low_data.variable_name4 = position_N;
+	low_data.variable_name5 = position_E;
+	low_data.variable_name6 = position_D_gps;
+	low_data.variable_name7 = position_D_baro;
+	low_data.variable_name8 = ground_speed;
+	low_data.variable_name9 = ground_course;
+	low_data.variable_name10 = air_speed;
+	low_data.variable_name11 = battery_voltage;
+	low_data.variable_name12 = battery_current;
+	low_data.variable_name13 = my_float_variable;
+	low_data.variable_name14 = my_float_variable;
+	low_data.variable_name15 = my_float_variable;
+	low_data.variable_name16 = my_float_variable;
 
 
 }
