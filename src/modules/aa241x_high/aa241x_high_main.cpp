@@ -790,6 +790,10 @@ FixedwingControl::set_aux_values()
 	man_yaw_in = _manual.r;
 	man_throttle_in = _manual.z;
 
+	man_flaps_in = _manual.flaps;
+	man_aux1_in = _manual.aux1;
+	man_aux2_in = _manual.aux2;
+
 	// trim conditions (from remote control)
 	roll_trim = _parameters.trim_roll;
 	pitch_trim = _parameters.trim_pitch;
