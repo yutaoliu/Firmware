@@ -119,6 +119,13 @@ float man_pitch_in = 0.0f;
 float man_yaw_in = 0.0f;
 float man_throttle_in = 0.0f;
 
+// additional inputs from remote control that you can use for custom mode switching, etc
+// these will only have values if you included them in the radio calibration
+float man_flaps_in = 0.0f;
+float man_aux1_in = 0.0f;
+float man_aux2_in = 0.0f;
+
+
 // trim conditions (from remote control)
 float roll_trim = 0.0f;
 float pitch_trim = 0.0f;

@@ -260,10 +260,10 @@ LakeFire::build_grid_mask()
 	float hw = _parameters.cell_width/2.0f;
 	math::Vector<2> center;
 
-	math::Vector<2> left = math::Vector<2>(0, -hw);
-	math::Vector<2> right = math::Vector<2>(0, hw);
-	math::Vector<2> top = math::Vector<2>(-hw, 0);
-	math::Vector<2> bottom = math::Vector<2>(hw, 0);
+	math::Vector<2> left = math::Vector<2>(-hw, -hw);
+	math::Vector<2> right = math::Vector<2>(hw, hw);
+	math::Vector<2> top = math::Vector<2>(-hw, hw);
+	math::Vector<2> bottom = math::Vector<2>(hw, -hw);
 
 	math::Vector<2> sides[4] = {left, right, top, bottom};
 

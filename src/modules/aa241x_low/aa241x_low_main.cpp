@@ -175,6 +175,8 @@ private:
 
 	map_projection_reference_s		_lake_lag_proj_ref;		/**< projection reference given by the center of the lake */
 
+	float		_initial_baro_offset;	/**< the initial baro alt difference from adjusted gps in [m] */
+	bool		_initial_offset_valid;	/**< boolean to flag whether or not the above offset is valid */
 
 	// general RC parameters
 	struct {
@@ -357,7 +359,9 @@ LowPriorityLoop::LowPriorityLoop() :
 
 /* states */
 	_setpoint_valid(false),
-	_debug(false)
+	_debug(false),
+	_initial_baro_offset(NAN),
+	_initial_offset_valid(false)
 {
 	/* safely initialize structs */
 	_att = {};
@@ -689,9 +693,18 @@ LowPriorityLoop::set_aux_values()
 	map_projection_project(&_lake_lag_proj_ref, _global_pos.lat, _global_pos.lon, &position_N, &position_E);
 	if (_local_pos.z_valid) {
 		position_D_baro = _local_pos.z;
+
+		if (_initial_offset_valid) {
+			position_D_baro += _initial_baro_offset;
+		}
 	}
 	local_pos_ne_valid = _local_pos.xy_valid;
 	local_pos_d_valid = _local_pos.z_valid;
+
+	if (gps_ok && !_initial_offset_valid && local_pos_d_valid) {
+		_initial_baro_offset = position_D_baro - position_D_gps;
+		_initial_offset_valid = true;
+	}
 
 	// ground course and speed
 	// TODO: maybe use local position....
@@ -714,6 +727,10 @@ LowPriorityLoop::set_aux_values()
 	man_pitch_in = _manual.x;
 	man_yaw_in = _manual.r;
 	man_throttle_in = _manual.z;
+
+	man_flaps_in = _manual.flaps;
+	man_aux1_in = _manual.aux1;
+	man_aux2_in = _manual.aux2;
 
 	// trim conditions (from remote control)
 	roll_trim = _parameters.trim_roll;
