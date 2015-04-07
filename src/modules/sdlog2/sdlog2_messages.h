@@ -626,7 +626,7 @@ static const struct log_format_s log_formats[] = {
 	LOG_FORMAT(WDRP, "BQBB", "Success,T,i,j"),
 	LOG_FORMAT(HIGH, "ffffffffffffffff", HIGH_DATA_LABELS),
 	LOG_FORMAT(LOW, "ffffffffffffffff", LOW_DATA_LABELS),
-	LOG_FORMAT(ADAT, "ffffffff", "N,E,Dbaro,Dgps,u,v,w,GrndCrs"),
+	LOG_FORMAT(ADAT, "ffffffff", "N,E,Dbaro,Dgps,u,v,w,GrndSpd"),
 
 	/* system-level messages, ID >= 0x80 */
 	/* FMT: don't write format of format message, it's useless */
