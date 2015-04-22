@@ -18,6 +18,8 @@ struct aa241x_mission_status_s {
 	bool can_start;			/**< if false, mission starting conditions violated */
 	float mission_time;		/**< time since mission start (in minutes) */
 	float score;			/**< current mission score */
+	int wind_direction;		/**< the wind direction for this mission */
+	int mission_index;		/**< the index of the currently running mission */
 };
 
 /* register this as object request broker structure */

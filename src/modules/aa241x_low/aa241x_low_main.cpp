@@ -617,7 +617,7 @@ LowPriorityLoop::mission_status_poll()
 	orb_check(_mission_status_sub, &mission_status_updated);
 
 	if (mission_status_updated) {
-		orb_copy(ORB_ID(battery_status), _mission_status_sub, &_mis_status);
+		orb_copy(ORB_ID(aa241x_mission_status), _mission_status_sub, &_mis_status);
 	}
 }
 
@@ -740,6 +740,9 @@ LowPriorityLoop::set_aux_values()
 	// time information
 	timestamp = hrt_absolute_time();
 	utc_timestamp = _global_pos.time_utc_usec;
+
+	// wind direction
+	mission_parameters.wind_dir = _mis_status.wind_direction;
 
 }
 
