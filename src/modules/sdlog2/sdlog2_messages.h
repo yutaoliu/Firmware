@@ -451,6 +451,8 @@ struct log_AMIS_s {
 	uint8_t can_start;
 	float mission_time;
 	float score;
+	int8_t wind_dir;
+	int8_t index;
 };
 
 /* --- AA241x NEW FIRE --- */
@@ -619,7 +621,7 @@ static const struct log_format_s log_formats[] = {
 	LOG_FORMAT(ENCD, "qfqf",	"cnt0,vel0,cnt1,vel1"),
 
 	/* AA241x logging */
-	LOG_FORMAT(AMIS, "BBff", "InMission,CanStart,MisTime,Score"),
+	LOG_FORMAT(AMIS, "BBffbb", "InMission,CanStart,MisTime,Score,WindDir,Ind"),
 	LOG_FORMAT(FIRE, "QBBBBBBBBBBBBBBB", "T,n,i1,i2,i3,i4,i5,i6,i7,j1,j2,j3,j4,j5,j6,j7"),
 	LOG_FORMAT(PICR, "BQffffB", "Success,T,CntrN,CntrE,CntrD,PicD,nCell"),
 	LOG_FORMAT(PICD, "BBBBBBBBBBBbbbbb", "n,i1,i2,i3,i4,i5,j1,j2,j3,j4,j5,s1,s2,s3,s4,s5"),
