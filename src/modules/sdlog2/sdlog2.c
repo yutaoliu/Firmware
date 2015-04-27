@@ -104,6 +104,7 @@
 // #include <vector>
 #include <uORB/topics/aa241x_mission_status.h>
 #include <uORB/topics/aa241x_new_fire.h>
+#include <uORB/topics/aa241x_fire_prop.h>
 #include <uORB/topics/aa241x_picture_result.h>
 #include <uORB/topics/aa241x_water_drop_result.h>
 #include <uORB/topics/aa241x_high_data.h>
@@ -1015,7 +1016,8 @@ int sdlog2_thread_main(int argc, char *argv[])
 		struct vtol_vehicle_status_s vtol_status;
 		/* AA241x */
 		struct aa241x_mission_status_s mis_status;
-		struct aa241x_new_fire_s new_fire;
+		//struct aa241x_new_fire_s new_fire;
+		struct aa241x_fire_prop_s fire_prop;
 		struct picture_result_s pic_result;
 		struct water_drop_result_s water_drop_result;
 		struct aa241x_high_data_s high_data;
@@ -1067,7 +1069,8 @@ int sdlog2_thread_main(int argc, char *argv[])
 			struct log_ENCD_s log_ENCD;
 			/* AA241x */
 			struct log_AMIS_s log_AMIS;
-			struct log_FIRE_s log_FIRE;
+			//struct log_FIRE_s log_FIRE;
+			struct log_PROP_s log_PROP;
 			struct log_PICR_s log_PICR;
 			struct log_PICD_s log_PICD;
 			struct log_WDRP_s log_WDRP;
@@ -1116,7 +1119,8 @@ int sdlog2_thread_main(int argc, char *argv[])
 		int encoders_sub;
 		/* AA241x */
 		int mis_sub;
-		int fire_sub;
+		//int fire_sub;
+		int prop_sub;
 		int pic_result_sub;
 		int water_drop_result_sub;
 		int high_data_sub;
@@ -1162,7 +1166,8 @@ int sdlog2_thread_main(int argc, char *argv[])
 
 	/* AA241x topics */
 	subs.mis_sub = orb_subscribe(ORB_ID(aa241x_mission_status));
-	subs.fire_sub = orb_subscribe(ORB_ID(aa241x_new_fire));
+	//subs.fire_sub = orb_subscribe(ORB_ID(aa241x_new_fire));
+	subs.prop_sub = orb_subscribe(ORB_ID(aa241x_fire_prop));
 	subs.pic_result_sub = orb_subscribe(ORB_ID(aa241x_picture_result));
 	subs.water_drop_result_sub = orb_subscribe(ORB_ID(aa241x_water_drop_result));
 	subs.high_data_sub = orb_subscribe(ORB_ID(aa241x_high_data));
@@ -1848,9 +1853,10 @@ int sdlog2_thread_main(int argc, char *argv[])
 		}
 
 		/* --- NEW FIRE --- */
+		/*
 		if (copy_if_updated(ORB_ID(aa241x_new_fire), subs.fire_sub, &buf.new_fire)) {
 
-			/* may need to split up the message (depending on how many new fire cells) */
+			// may need to split up the message (depending on how many new fire cells)
 			uint8_t msg_num = 0;
 			uint8_t size = buf.new_fire.num_new;
 			uint8_t i_max = 0;
@@ -1877,6 +1883,15 @@ int sdlog2_thread_main(int argc, char *argv[])
 				remaining = size - i_max;
 				msg_num++;
 			}
+		} */
+
+		/* --- FIRE PROP --- */
+		if (copy_if_updated(ORB_ID(aa241x_fire_prop), subs.prop_sub, &buf.fire_prop)) {
+			log_msg.msg_type = LOG_PROP_MSG;
+			log_msg.body.log_PROP.time_us = buf.fire_prop.time_us;
+			log_msg.body.log_PROP.props_remaining = buf.fire_prop.props_remaining;
+			log_msg.body.log_PROP.num_new = buf.fire_prop.num_new;
+			LOGBUFFER_WRITE_AND_COUNT(PROP);
 		}
 
 		/* --- PICTURE RESULT --- */

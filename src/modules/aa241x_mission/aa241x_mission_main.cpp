@@ -96,6 +96,7 @@ LakeFire::LakeFire() :
 	_local_data_sub(-1),
 	_mission_status_pub(-1),
 	_new_fire_pub(-1),
+	_fire_prop_pub(-1),
 	_pic_result_pub(-1),
 	_water_drop_result_pub(-1),
 	_mission_start_time(-1),
@@ -106,6 +107,7 @@ LakeFire::LakeFire() :
 	_mission_failed(true),
 	_score(0.0f),
 	_last_picture(0),
+	_new_fire_count(0),
 	_wind_direction(WIND_OTHER),
 	_grid{{0}},
 	_grid_mask{{false}}
@@ -607,6 +609,22 @@ LakeFire::publish_new_fire(const std::vector<int> &i_new, const std::vector<int>
 }
 
 void
+LakeFire::publish_fire_prop()
+{
+	aa241x_fire_prop_s fire_prop;
+	fire_prop.time_us = _last_propagation_time;
+	fire_prop.num_new = _new_fire_count;
+	fire_prop.props_remaining = _propagations_remaining;
+
+	/* publish the info on this fire prop step */
+	if (_fire_prop_pub > 0) {
+		orb_publish(ORB_ID(aa241x_fire_prop), _fire_prop_pub, &fire_prop);
+	} else {
+		_fire_prop_pub = orb_advertise(ORB_ID(aa241x_fire_prop), &fire_prop);
+	}
+}
+
+void
 LakeFire::publish_picture_result(const picture_result_s &pic_result)
 {
 	/* publish the picture result */
@@ -740,6 +758,7 @@ LakeFire::propagate_fire()
 	std::vector<int> j_new;
 
 	int count = 0;
+	_new_fire_count = 0;
 
 	for (int i = 0; i < GRID_WIDTH; i++) {
 		for (int j = 0; j < GRID_WIDTH; j++) {
@@ -776,6 +795,7 @@ LakeFire::propagate_fire()
 			if (cell_val == OPEN_LAND) {
 				/* add fire to this cell */
 				_grid[i_prop][j_prop] = ON_FIRE;
+				_new_fire_count++;		// increase new fire tally
 				i_new.push_back(i_prop);
 				j_new.push_back(j_prop);
 			}
@@ -1116,8 +1136,8 @@ LakeFire::task_main()
 
 				/* propagate the fire for this next timestep */
 				propagate_fire();
-
 				_propagations_remaining--;
+				publish_fire_prop();
 
 				/* calculate the new score */
 				calculate_score();
@@ -1148,6 +1168,7 @@ LakeFire::task_main()
 				while (_propagations_remaining > 0) {
 					propagate_fire();
 					_propagations_remaining--;
+					publish_fire_prop();
 				}
 
 				calculate_score();

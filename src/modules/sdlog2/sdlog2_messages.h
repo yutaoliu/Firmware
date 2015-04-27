@@ -464,6 +464,14 @@ struct log_FIRE_s {
 	uint8_t j[7];
 };
 
+/* --- AA241x FIRE PROPAGATION --- */
+#define LOG_PROP_MSG 72
+struct log_PROP_s {
+	uint64_t time_us;
+	uint8_t props_remaining;
+	uint8_t num_new;
+};
+
 /* --- AA241x PICTURE RESULT OVERVIEW --- */
 #define LOG_PICR_MSG 66
 struct log_PICR_s {
@@ -623,6 +631,7 @@ static const struct log_format_s log_formats[] = {
 	/* AA241x logging */
 	LOG_FORMAT(AMIS, "BBffbb", "InMission,CanStart,MisTime,Score,WindDir,Ind"),
 	LOG_FORMAT(FIRE, "QBBBBBBBBBBBBBBB", "T,n,i1,i2,i3,i4,i5,i6,i7,j1,j2,j3,j4,j5,j6,j7"),
+	LOG_FORMAT(PROP, "QBB", "PropTime,PropsLeft,NumNew"),
 	LOG_FORMAT(PICR, "BQffffB", "Success,T,CntrN,CntrE,CntrD,PicD,nCell"),
 	LOG_FORMAT(PICD, "BBBBBBBBBBBbbbbb", "n,i1,i2,i3,i4,i5,j1,j2,j3,j4,j5,s1,s2,s3,s4,s5"),
 	LOG_FORMAT(WDRP, "BQBB", "Success,T,i,j"),

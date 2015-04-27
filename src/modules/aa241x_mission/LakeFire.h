@@ -54,6 +54,7 @@
 #include <uORB/topics/vehicle_status.h>
 #include <uORB/topics/aa241x_mission_status.h>
 #include <uORB/topics/aa241x_new_fire.h>
+#include <uORB/topics/aa241x_fire_prop.h>
 #include <uORB/topics/aa241x_water_drop_result.h>
 #include <uORB/topics/aa241x_water_drop_request.h>
 #include <uORB/topics/aa241x_picture_result.h>
@@ -133,6 +134,7 @@ private:
 
 	orb_advert_t	_mission_status_pub;
 	orb_advert_t	_new_fire_pub;
+	orb_advert_t	_fire_prop_pub;
 	orb_advert_t	_pic_result_pub;
 	orb_advert_t	_water_drop_result_pub;
 
@@ -188,6 +190,7 @@ private:
 
 	int			_water_drops_remaining;	/**< the number of water shots remaining */
 	int			_propagations_remaining;	/**< the number of fire propagations remaining */
+	int			_new_fire_count;		/**< the number of cells newly on fire */
 
 	enum WIND_DIRECTION {
 		WIND_OTHER = -1,
@@ -291,6 +294,11 @@ private:
 	 * Publish a list of (i,j) coords of the new fire locations.
 	 */
 	void	publish_new_fire(const std::vector<int> &i_new, const std::vector<int> &j_new);
+
+	/**
+	 * Publish information on the propagation step for the fire.
+	 */
+	void	publish_fire_prop();
 
 	/**
 	 * Publish the picture result data when a picture is taken.
