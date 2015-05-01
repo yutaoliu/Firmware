@@ -1087,7 +1087,7 @@ LakeFire::task_main()
 		/* check mission start requirements */
 		if (_can_start && !_in_mission) {
 
-			if (-_local_data.D_gps >= _parameters.min_alt && _vcontrol_mode.flag_control_auto_enabled) {
+			if (-_local_data.D_gps >= _parameters.auto_alt && _vcontrol_mode.flag_control_auto_enabled) {
 				/* start the mission once have crossed over the minimum altitude */
 				_in_mission = true;
 				_mission_start_time = hrt_absolute_time();
