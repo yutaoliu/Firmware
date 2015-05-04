@@ -182,6 +182,16 @@ PARAM_DEFINE_FLOAT(AAMIS_CTR_LON, -122.1760917f);
 PARAM_DEFINE_FLOAT(AAMIS_CTR_ALT, 40.0f);
 
 /**
+ * Maximum battery capacity allowed.
+ *
+ * Maximum battery discharge allowed during the mission.
+ *
+ * @unit mAh
+ * @group AA241x Mission
+ */
+PARAM_DEFINE_FLOAT(AAMIS_BATT_MAX, 650.0f);
+
+/**
  * The amount of weight in [grams] of "water" being carried by this UAV.
  *
  * @unit grams
