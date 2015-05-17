@@ -100,6 +100,7 @@ LakeFire::LakeFire() :
 	_fire_prop_pub(-1),
 	_pic_result_pub(-1),
 	_water_drop_result_pub(-1),
+	_cgrid_pub(-1),
 	_mission_start_time(-1),
 	_last_propagation_time(-1),
 	_mission_start_battery(0),
@@ -583,31 +584,41 @@ LakeFire::publish_condensed_grid()
 		}
 	} */
 
+	aa241x_cgrid_s cgrid;
+
 	// general grid
-	uint64_t row[7] = {0};
+	cgrid.time_us = hrt_absolute_time();
+	memset(&cgrid.cells, 0, sizeof(cgrid.cells));
 
 	int row_id = 0;
-	int shift_id = 62;
+	int shift_id = 30;
 
 	for (int i = 0; i < GRID_WIDTH; i++) {
 		for (int j = 0; j < GRID_WIDTH; j++) {
 			if (_grid_mask[i][j]) {
 				if (shift_id < 0) {
 					row_id++;
-					shift_id = 62;
+					shift_id = 30;
 				}
 
 				if (_grid[i][j] == ON_FIRE) {
-					row[row_id] |= 1 << shift_id;
+					cgrid.cells[row_id] |= 1 << shift_id;
 				} else if (_grid[i][j] == WATER) {
-					row[row_id] |= 2 << shift_id;
+					cgrid.cells[row_id] |= 2 << shift_id;
 				} else {
-					row[row_id] |= 0 << shift_id;
+					cgrid.cells[row_id] |= 0 << shift_id;
 				}
 
 				shift_id -= 2;
 			}
 		}
+	}
+
+	/* publish the mission status */
+	if (_cgrid_pub > 0) {
+		orb_publish(ORB_ID(aa241x_cgrid), _cgrid_pub, &cgrid);
+	} else {
+		_cgrid_pub = orb_advertise(ORB_ID(aa241x_cgrid), &cgrid);
 	}
 }
 

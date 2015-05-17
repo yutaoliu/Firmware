@@ -60,6 +60,7 @@
 #include <uORB/topics/aa241x_picture_result.h>
 #include <uORB/topics/aa241x_picture_request.h>
 #include <uORB/topics/aa241x_local_data.h>
+#include <uORB/topics/aa241x_condensed_grid.h>
 #include <uORB/topics/battery_status.h>
 
 #define GRID_WIDTH 17		/**< the number of cells wide and tall the grid is */
@@ -140,6 +141,7 @@ private:
 	orb_advert_t	_fire_prop_pub;
 	orb_advert_t	_pic_result_pub;
 	orb_advert_t	_water_drop_result_pub;
+	orb_advert_t	_cgrid_pub;
 
 	struct {
 		float min_alt;
