@@ -492,7 +492,7 @@ LakeFire::battery_status_update()
 	orb_check(_battery_status_sub, &battery_status_updated);
 
 	if (battery_status_updated) {
-		orb_copy(ORB_ID(aa241x_local_data), _battery_status_sub, &_batt_stat);
+		orb_copy(ORB_ID(battery_status), _battery_status_sub, &_batt_stat);
 	}
 }
 
