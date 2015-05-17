@@ -75,6 +75,7 @@
 #include <uORB/topics/aa241x_high_data.h>
 #include <uORB/topics/aa241x_low_data.h>
 #include <uORB/topics/aa241x_local_data.h>
+#include <uORB/topics/aa241x_condensed_grid.h>
 
 #include <drivers/drv_rc_input.h>
 #include <drivers/drv_pwm_output.h>
@@ -2702,6 +2703,63 @@ protected:
 };
 
 
+class MavlinkStreamAA241xCGrid : public MavlinkStream
+{
+public:
+	const char *get_name() const
+	{
+		return MavlinkStreamAA241xCGrid::get_name_static();
+	}
+
+	static const char *get_name_static()
+	{
+		return "AA241X_GRID_COMBINED";
+	}
+
+	uint8_t get_id()
+	{
+		return MAVLINK_MSG_ID_AA241X_GRID_COMBINED;
+	}
+
+	static MavlinkStream *new_instance(Mavlink *mavlink)
+	{
+		return new MavlinkStreamAA241xCGrid(mavlink);
+	}
+
+	unsigned get_size()
+	{
+		return MAVLINK_MSG_ID_AA241X_GRID_COMBINED_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES;
+	}
+
+private:
+	MavlinkOrbSubscription *_cgrid_sub;
+	uint64_t _grid_time;
+
+	/* do not allow top copying this class */
+	MavlinkStreamAA241xCGrid(MavlinkStreamAA241xCGrid &);
+	MavlinkStreamAA241xCGrid& operator = (const MavlinkStreamAA241xCGrid &);
+
+protected:
+	explicit MavlinkStreamAA241xCGrid(Mavlink *mavlink) : MavlinkStream(mavlink),
+	_cgrid_sub(_mavlink->add_orb_subscription(ORB_ID(aa241x_cgrid))),
+	_grid_time(0)
+	{}
+
+	void send(const hrt_abstime t)
+	{
+		struct aa241x_cgrid_s cgrid;
+
+		if (_cgrid_sub->update(&_grid_time, &cgrid)) {
+			mavlink_aa241x_grid_combined_t msg;
+
+			msg.mission_time = cgrid.time_us;
+			memcpy(&msg.cell, &cgrid.cells, sizeof(msg.cell));
+
+			_mavlink->send_message(MAVLINK_MSG_ID_AA241X_GRID_COMBINED, &msg);
+		}
+	}
+};
+
 StreamListItem *streams_list[] = {
 	new StreamListItem(&MavlinkStreamHeartbeat::new_instance, &MavlinkStreamHeartbeat::get_name_static),
 	new StreamListItem(&MavlinkStreamStatustext::new_instance, &MavlinkStreamStatustext::get_name_static),
@@ -2742,5 +2800,6 @@ StreamListItem *streams_list[] = {
 	new StreamListItem(&MavlinkStreamAA241xHighData::new_instance, &MavlinkStreamAA241xHighData::get_name_static),
 	new StreamListItem(&MavlinkStreamAA241xLowData::new_instance, &MavlinkStreamAA241xLowData::get_name_static),
 	new StreamListItem(&MavlinkStreamAA241xAuxData::new_instance, &MavlinkStreamAA241xAuxData::get_name_static),
+	new StreamListItem(&MavlinkStreamAA241xCGrid::new_instance, &MavlinkStreamAA241xCGrid::get_name_static),
 	nullptr
 };

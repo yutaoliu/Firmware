@@ -1393,6 +1393,7 @@ Mavlink::task_main(int argc, char *argv[])
 		configure_stream("AA241X_HIGH", 3.0f);
 		configure_stream("AA241X_LOW", 1.0f);
 		configure_stream("AA241X_AUX_DATA", 3.0f);
+		configure_stream("AA241X_GRID_COMBINED", 0.25f); // only send this every about 4 seconds
 		break;
 
 	case MAVLINK_MODE_ONBOARD:
