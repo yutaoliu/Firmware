@@ -17,7 +17,6 @@ struct aa241x_mission_status_s {
 	bool in_mission;		/**< if true, currently running a mission */
 	bool can_start;			/**< if false, mission starting conditions violated */
 	float mission_time;		/**< time since mission start (in minutes) */
-	float battery_used;		/**< battery capacity used since mission start (in mAh) */
 	float score;			/**< current mission score */
 	int wind_direction;		/**< the wind direction for this mission */
 	int mission_index;		/**< the index of the currently running mission */

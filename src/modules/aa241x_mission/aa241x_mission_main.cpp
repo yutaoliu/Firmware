@@ -94,7 +94,6 @@ LakeFire::LakeFire() :
 	_pic_request_sub(-1),
 	_water_drop_request_sub(-1),
 	_local_data_sub(-1),
-	_battery_status_sub(-1),
 	_mission_status_pub(-1),
 	_new_fire_pub(-1),
 	_fire_prop_pub(-1),
@@ -102,7 +101,6 @@ LakeFire::LakeFire() :
 	_water_drop_result_pub(-1),
 	_mission_start_time(-1),
 	_last_propagation_time(-1),
-	_mission_start_battery(0),
 	_in_mission(false),
 	_can_start(true),
 	_early_termination(false),
@@ -120,7 +118,6 @@ LakeFire::LakeFire() :
 	_vehicle_status = {};
 	_pic_request = {};
 	_water_drop_request = {};
-	_batt_stat = {};
 
 	_parameter_handles.min_alt = param_find("AAMIS_ALT_MIN");
 	_parameter_handles.max_alt = param_find("AAMIS_ALT_MAX");
@@ -139,7 +136,6 @@ LakeFire::LakeFire() :
 	_parameter_handles.ctr_lat = param_find("AAMIS_CTR_LAT");
 	_parameter_handles.ctr_lon = param_find("AAMIS_CTR_LON");
 	_parameter_handles.ctr_alt = param_find("AAMIS_CTR_ALT");
-	_parameter_handles.max_discharge = param_find("AAMIS_BATT_MAX");
 
 	parameters_update();
 
@@ -417,7 +413,6 @@ LakeFire::parameters_update()
 	param_get(_parameter_handles.ctr_lat, &(_parameters.ctr_lat));
 	param_get(_parameter_handles.ctr_lon, &(_parameters.ctr_lon));
 	param_get(_parameter_handles.ctr_alt, &(_parameters.ctr_alt));
-	param_get(_parameter_handles.max_discharge, &(_parameters.max_discharge));
 
 	return OK;
 }
@@ -484,19 +479,6 @@ LakeFire::local_data_update()
 }
 
 void
-LakeFire::battery_status_update()
-{
-	/* check if there is new status information */
-	bool battery_status_updated;
-	orb_check(_battery_status_sub, &battery_status_updated);
-
-	if (battery_status_updated) {
-		orb_copy(ORB_ID(aa241x_local_data), _battery_status_sub, &_batt_stat);
-	}
-}
-
-
-void
 LakeFire::handle_picture_request()
 {
 	/* copy the picture request */
@@ -544,13 +526,8 @@ LakeFire::publish_mission_status()
 
 	if (_in_mission) {
 		mis_stat.mission_time = (hrt_absolute_time() - _mission_start_time)/(1000000.0f*60.0f);
-		mis_stat.battery_used = _batt_stat.discharged_mah - _mission_start_battery;
 	} else {
-		/*
-		// don't necessarily need to set to 0?
 		mis_stat.mission_time = 0.0f;
-		mis_stat.battery_used = 0.0f;
-		*/
 	}
 
 	/* publish the mission status */
@@ -998,7 +975,6 @@ LakeFire::task_main()
 	_water_drop_request_sub = orb_subscribe(ORB_ID(aa241x_water_drop_request));
 	_pic_request_sub = orb_subscribe(ORB_ID(aa241x_picture_request));
 	_local_data_sub = orb_subscribe(ORB_ID(aa241x_local_data));
-	_battery_status_sub = orb_subscribe(ORB_ID(battery_status));
 
 	/* rate limit vehicle status updates and local data updates to 5Hz */
 	orb_set_interval(_vcontrol_mode_sub, 200);
@@ -1116,7 +1092,6 @@ LakeFire::task_main()
 				_in_mission = true;
 				_mission_start_time = hrt_absolute_time();
 				_last_propagation_time = hrt_absolute_time();
-				_mission_start_battery = _batt_stat.discharged_mah;
 				initialize_mission();
 				mavlink_log_info(_mavlink_fd, "AA241x mission started");
 			}
@@ -1131,13 +1106,6 @@ LakeFire::task_main()
 				_in_mission = false;
 				_early_termination = true;
 				mavlink_log_info(_mavlink_fd, "AA241x mission termination: control mode violation");
-			}
-
-			/* check battery requirements */
-			if ((_batt_stat.discharged_mah - _mission_start_battery) > _parameters.max_discharge) {
-				_in_mission = false;
-				_early_termination = true;
-				mavlink_log_info(_mavlink_fd, "AA241x mission termination: max battery discharge reached");
 			}
 
 			/* check strict requirements (max alt and radius) */
