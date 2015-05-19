@@ -1012,10 +1012,9 @@ LakeFire::task_main()
 	local_pos_update();
 	vehicle_status_update();
 	local_data_update();
-	battery_status_update();
 
 	/* wakeup source(s) */
-	struct pollfd fds[9];
+	struct pollfd fds[8];
 
 	/* Setup of loop */
 	fds[0].fd = _params_sub;
@@ -1034,8 +1033,6 @@ LakeFire::task_main()
 	fds[6].events = POLLIN;
 	fds[7].fd = _local_data_sub;
 	fds[7].events = POLLIN;
-	fds[8].fd = _battery_status_sub;
-	fds[8].events = POLLIN;
 
 	_task_running = true;
 
@@ -1100,10 +1097,6 @@ LakeFire::task_main()
 			local_data_update();
 		}
 
-		/* battery status updated */
-		if (fds[8].revents & POLLIN) {
-			battery_status_update();
-		}
 
 		/* check auto start requirements */
 		if (_can_start && !_in_mission) {
@@ -1140,6 +1133,13 @@ LakeFire::task_main()
 				mavlink_log_info(_mavlink_fd, "AA241x mission termination: control mode violation");
 			}
 
+			/* check battery requirements */
+			if ((_batt_stat.discharged_mah - _mission_start_battery) > _parameters.max_discharge) {
+				_in_mission = false;
+				_early_termination = true;
+				mavlink_log_info(_mavlink_fd, "AA241x mission termination: max battery discharge reached");
+			}
+
 			/* check strict requirements (max alt and radius) */
 			float r2 = _local_data.N*_local_data.N + _local_data.E*_local_data.E;
 			float max_r2 = _parameters.max_radius*_parameters.max_radius;
@@ -1149,13 +1149,6 @@ LakeFire::task_main()
 				_mission_failed = true;
 				_score = 0.0f;
 				mavlink_log_info(_mavlink_fd, "AA241x mission failed: boundary violation");
-			}
-
-			/* check battery requirements */
-			if ((_batt_stat.discharged_mah - _mission_start_battery) > _parameters.max_discharge) {
-				_in_mission = false;
-				_early_termination = true;
-				mavlink_log_info(_mavlink_fd, "AA241x mission termination: max battery discharge reached");
 			}
 
 			/* check min altitude requirements */
@@ -1201,7 +1194,7 @@ LakeFire::task_main()
 
 			// TODO: if early termination, want to propagate the fire for the rest of the duration quickly
 			// to be able to give a score
-			if (_early_termination && !_mission_failed) {
+			if (_early_termination) {
 
 				/* propagate the rest of the time */
 				while (_propagations_remaining > 0) {
