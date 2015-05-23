@@ -2360,6 +2360,9 @@ protected:
 			msg.in_mission = mis_status.in_mission;
 			msg.mission_time = mis_status.mission_time;
 			msg.score = mis_status.score;
+			msg.battery_used = mis_status.battery_used;
+			msg.wind_direction = mis_status.wind_direction;
+			msg.mission_index = mis_status.mission_index;
 
 			_mavlink->send_message(MAVLINK_MSG_ID_AA241X_MISSION_STATUS, &msg);
 		}

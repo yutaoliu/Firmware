@@ -16,7 +16,7 @@
 
 struct aa241x_cgrid_s {
 	uint64_t time_us;		/**< the current clock time in microseconds */
-	uint32_t cells[13];		/**< the status of each of the cells within bounds */
+	uint32_t cells[12];		/**< the status of each of the cells within bounds */
 };
 
 /* register this as object request broker structure */
