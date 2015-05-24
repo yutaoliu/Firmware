@@ -54,11 +54,14 @@
 #include <uORB/topics/vehicle_status.h>
 #include <uORB/topics/aa241x_mission_status.h>
 #include <uORB/topics/aa241x_new_fire.h>
+#include <uORB/topics/aa241x_fire_prop.h>
 #include <uORB/topics/aa241x_water_drop_result.h>
 #include <uORB/topics/aa241x_water_drop_request.h>
 #include <uORB/topics/aa241x_picture_result.h>
 #include <uORB/topics/aa241x_picture_request.h>
 #include <uORB/topics/aa241x_local_data.h>
+#include <uORB/topics/aa241x_condensed_grid.h>
+#include <uORB/topics/battery_status.h>
 
 #define GRID_WIDTH 17		/**< the number of cells wide and tall the grid is */
 #define GRID_CENTER 8		/**< the index of the center row and column */
@@ -121,6 +124,7 @@ private:
 	int		_pic_request_sub;		/**< requests for taking a picture */
 	int		_water_drop_request_sub; /**< requests for triggering water drop */
 	int		_local_data_sub;		/**< custom data fields */
+	int		_battery_status_sub;	/**< battery information */
 
 	// structures for subscribed data
 	struct vehicle_control_mode_s		_vcontrol_mode;		/**< vehicle control mode */
@@ -130,11 +134,14 @@ private:
 	struct picture_request_s			_pic_request;		/**< picture taking request */
 	struct water_drop_request_s			_water_drop_request; /**< water drop request */
 	struct aa241x_local_data_s			_local_data;		/**< custom calc data */
+	struct battery_status_s				_batt_stat;			/**< battery status */
 
 	orb_advert_t	_mission_status_pub;
 	orb_advert_t	_new_fire_pub;
+	orb_advert_t	_fire_prop_pub;
 	orb_advert_t	_pic_result_pub;
 	orb_advert_t	_water_drop_result_pub;
+	orb_advert_t	_cgrid_pub;
 
 	struct {
 		float min_alt;
@@ -154,6 +161,7 @@ private:
 		float ctr_lat;
 		float ctr_lon;
 		float ctr_alt;
+		float max_discharge;
 	}		_parameters;			/**< local copies of interesting parameters */
 
 	struct {
@@ -174,10 +182,12 @@ private:
 		param_t ctr_lat;
 		param_t ctr_lon;
 		param_t ctr_alt;
+		param_t max_discharge;
 	}		_parameter_handles;		/**< handles for interesting parameters */
 
 	hrt_abstime _mission_start_time;	/**< timestamp of when entered mission */
 	hrt_abstime	_last_propagation_time;	/**< timestamp of when the last fire propagation was done */
+	float		_mission_start_battery;	/**< the mAh used when entered the mission */
 	bool 		_in_mission;			/**< if true, currently running a mission (fire is spreading) */
 	bool		_can_start;				/**< if false conditions for starting have been violated */
 	bool		_early_termination;		/**< if true terminating mission early, but still need to finish running fire */
@@ -188,6 +198,7 @@ private:
 
 	int			_water_drops_remaining;	/**< the number of water shots remaining */
 	int			_propagations_remaining;	/**< the number of fire propagations remaining */
+	int			_new_fire_count;		/**< the number of cells newly on fire */
 
 	enum WIND_DIRECTION {
 		WIND_OTHER = -1,
@@ -273,6 +284,11 @@ private:
 	void	local_data_update();
 
 	/**
+	 * Check for battery status updates.
+	 */
+	void	battery_status_update();
+
+	/**
 	 * Handle the picture request, taking picture if necessary and publishing response.
 	 */
 	void	handle_picture_request();
@@ -291,6 +307,11 @@ private:
 	 * Publish a list of (i,j) coords of the new fire locations.
 	 */
 	void	publish_new_fire(const std::vector<int> &i_new, const std::vector<int> &j_new);
+
+	/**
+	 * Publish information on the propagation step for the fire.
+	 */
+	void	publish_fire_prop();
 
 	/**
 	 * Publish the picture result data when a picture is taken.

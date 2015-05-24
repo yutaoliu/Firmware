@@ -450,7 +450,10 @@ struct log_AMIS_s {
 	uint8_t in_mission;
 	uint8_t can_start;
 	float mission_time;
+	float battery_discharge;
 	float score;
+	int8_t wind_dir;
+	int8_t index;
 };
 
 /* --- AA241x NEW FIRE --- */
@@ -460,6 +463,14 @@ struct log_FIRE_s {
 	uint8_t msg_number;
 	uint8_t i[7];
 	uint8_t j[7];
+};
+
+/* --- AA241x FIRE PROPAGATION --- */
+#define LOG_PROP_MSG 72
+struct log_PROP_s {
+	uint64_t time_us;
+	uint8_t props_remaining;
+	uint8_t num_new;
 };
 
 /* --- AA241x PICTURE RESULT OVERVIEW --- */
@@ -619,14 +630,15 @@ static const struct log_format_s log_formats[] = {
 	LOG_FORMAT(ENCD, "qfqf",	"cnt0,vel0,cnt1,vel1"),
 
 	/* AA241x logging */
-	LOG_FORMAT(AMIS, "BBff", "InMission,CanStart,MisTime,Score"),
+	LOG_FORMAT(AMIS, "BBfffbb", "InMission,CanStart,MisTime,BattDis,Score,WindDir,Ind"),
 	LOG_FORMAT(FIRE, "QBBBBBBBBBBBBBBB", "T,n,i1,i2,i3,i4,i5,i6,i7,j1,j2,j3,j4,j5,j6,j7"),
+	LOG_FORMAT(PROP, "QBB", "PropTime,PropsLeft,NumNew"),
 	LOG_FORMAT(PICR, "BQffffB", "Success,T,CntrN,CntrE,CntrD,PicD,nCell"),
 	LOG_FORMAT(PICD, "BBBBBBBBBBBbbbbb", "n,i1,i2,i3,i4,i5,j1,j2,j3,j4,j5,s1,s2,s3,s4,s5"),
 	LOG_FORMAT(WDRP, "BQBB", "Success,T,i,j"),
 	LOG_FORMAT(HIGH, "ffffffffffffffff", HIGH_DATA_LABELS),
 	LOG_FORMAT(LOW, "ffffffffffffffff", LOW_DATA_LABELS),
-	LOG_FORMAT(ADAT, "ffffffff", "N,E,Dbaro,Dgps,u,v,w,GrndCrs"),
+	LOG_FORMAT(ADAT, "ffffffff", "N,E,Dbaro,Dgps,u,v,w,GrndSpd"),
 
 	/* system-level messages, ID >= 0x80 */
 	/* FMT: don't write format of format message, it's useless */

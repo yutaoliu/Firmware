@@ -94,18 +94,23 @@ LakeFire::LakeFire() :
 	_pic_request_sub(-1),
 	_water_drop_request_sub(-1),
 	_local_data_sub(-1),
+	_battery_status_sub(-1),
 	_mission_status_pub(-1),
 	_new_fire_pub(-1),
+	_fire_prop_pub(-1),
 	_pic_result_pub(-1),
 	_water_drop_result_pub(-1),
+	_cgrid_pub(-1),
 	_mission_start_time(-1),
 	_last_propagation_time(-1),
+	_mission_start_battery(0),
 	_in_mission(false),
 	_can_start(true),
 	_early_termination(false),
 	_mission_failed(true),
 	_score(0.0f),
 	_last_picture(0),
+	_new_fire_count(0),
 	_wind_direction(WIND_OTHER),
 	_grid{{0}},
 	_grid_mask{{false}}
@@ -116,6 +121,7 @@ LakeFire::LakeFire() :
 	_vehicle_status = {};
 	_pic_request = {};
 	_water_drop_request = {};
+	_batt_stat = {};
 
 	_parameter_handles.min_alt = param_find("AAMIS_ALT_MIN");
 	_parameter_handles.max_alt = param_find("AAMIS_ALT_MAX");
@@ -134,6 +140,7 @@ LakeFire::LakeFire() :
 	_parameter_handles.ctr_lat = param_find("AAMIS_CTR_LAT");
 	_parameter_handles.ctr_lon = param_find("AAMIS_CTR_LON");
 	_parameter_handles.ctr_alt = param_find("AAMIS_CTR_ALT");
+	_parameter_handles.max_discharge = param_find("AAMIS_BATT_MAX");
 
 	parameters_update();
 
@@ -411,6 +418,7 @@ LakeFire::parameters_update()
 	param_get(_parameter_handles.ctr_lat, &(_parameters.ctr_lat));
 	param_get(_parameter_handles.ctr_lon, &(_parameters.ctr_lon));
 	param_get(_parameter_handles.ctr_alt, &(_parameters.ctr_alt));
+	param_get(_parameter_handles.max_discharge, &(_parameters.max_discharge));
 
 	return OK;
 }
@@ -477,6 +485,19 @@ LakeFire::local_data_update()
 }
 
 void
+LakeFire::battery_status_update()
+{
+	/* check if there is new status information */
+	bool battery_status_updated;
+	orb_check(_battery_status_sub, &battery_status_updated);
+
+	if (battery_status_updated) {
+		orb_copy(ORB_ID(battery_status), _battery_status_sub, &_batt_stat);
+	}
+}
+
+
+void
 LakeFire::handle_picture_request()
 {
 	/* copy the picture request */
@@ -519,11 +540,18 @@ LakeFire::publish_mission_status()
 	mis_stat.can_start = _can_start;
 	mis_stat.in_mission = _in_mission;
 	mis_stat.score = _score;
+	mis_stat.wind_direction = (int) _wind_direction;
+	mis_stat.mission_index = _parameters.index;
 
 	if (_in_mission) {
 		mis_stat.mission_time = (hrt_absolute_time() - _mission_start_time)/(1000000.0f*60.0f);
+		mis_stat.battery_used = _batt_stat.discharged_mah - _mission_start_battery;
 	} else {
+		/*
+		// don't necessarily need to set to 0?
 		mis_stat.mission_time = 0.0f;
+		mis_stat.battery_used = 0.0f;
+		*/
 	}
 
 	/* publish the mission status */
@@ -556,31 +584,41 @@ LakeFire::publish_condensed_grid()
 		}
 	} */
 
+	aa241x_cgrid_s cgrid;
+
 	// general grid
-	uint64_t row[7] = {0};
+	cgrid.time_us = hrt_absolute_time();
+	memset(&cgrid.cells, 0, sizeof(cgrid.cells));
 
 	int row_id = 0;
-	int shift_id = 62;
+	int shift_id = 30;
 
 	for (int i = 0; i < GRID_WIDTH; i++) {
 		for (int j = 0; j < GRID_WIDTH; j++) {
 			if (_grid_mask[i][j]) {
 				if (shift_id < 0) {
 					row_id++;
-					shift_id = 62;
+					shift_id = 30;
 				}
 
 				if (_grid[i][j] == ON_FIRE) {
-					row[row_id] |= 1 << shift_id;
+					cgrid.cells[row_id] |= 1 << shift_id;
 				} else if (_grid[i][j] == WATER) {
-					row[row_id] |= 2 << shift_id;
+					cgrid.cells[row_id] |= 2 << shift_id;
 				} else {
-					row[row_id] |= 0 << shift_id;
+					cgrid.cells[row_id] |= 0 << shift_id;
 				}
 
 				shift_id -= 2;
 			}
 		}
+	}
+
+	/* publish the mission status */
+	if (_cgrid_pub > 0) {
+		orb_publish(ORB_ID(aa241x_cgrid), _cgrid_pub, &cgrid);
+	} else {
+		_cgrid_pub = orb_advertise(ORB_ID(aa241x_cgrid), &cgrid);
 	}
 }
 
@@ -601,6 +639,22 @@ LakeFire::publish_new_fire(const std::vector<int> &i_new, const std::vector<int>
 		orb_publish(ORB_ID(aa241x_new_fire), _new_fire_pub, &new_fire);
 	} else {
 		_new_fire_pub = orb_advertise(ORB_ID(aa241x_new_fire), &new_fire);
+	}
+}
+
+void
+LakeFire::publish_fire_prop()
+{
+	aa241x_fire_prop_s fire_prop;
+	fire_prop.time_us = _last_propagation_time;
+	fire_prop.num_new = _new_fire_count;
+	fire_prop.props_remaining = _propagations_remaining;
+
+	/* publish the info on this fire prop step */
+	if (_fire_prop_pub > 0) {
+		orb_publish(ORB_ID(aa241x_fire_prop), _fire_prop_pub, &fire_prop);
+	} else {
+		_fire_prop_pub = orb_advertise(ORB_ID(aa241x_fire_prop), &fire_prop);
 	}
 }
 
@@ -738,6 +792,7 @@ LakeFire::propagate_fire()
 	std::vector<int> j_new;
 
 	int count = 0;
+	_new_fire_count = 0;
 
 	for (int i = 0; i < GRID_WIDTH; i++) {
 		for (int j = 0; j < GRID_WIDTH; j++) {
@@ -774,6 +829,7 @@ LakeFire::propagate_fire()
 			if (cell_val == OPEN_LAND) {
 				/* add fire to this cell */
 				_grid[i_prop][j_prop] = ON_FIRE;
+				_new_fire_count++;		// increase new fire tally
 				i_new.push_back(i_prop);
 				j_new.push_back(j_prop);
 			}
@@ -931,157 +987,6 @@ LakeFire::prop_testing()
 	_exit(0);
 }
 
-void
-LakeFire::sim_testing()
-{
-	/*
-	 * do subscriptions
-	 */
-	_vcontrol_mode_sub = orb_subscribe(ORB_ID(vehicle_control_mode));
-	_global_pos_sub = orb_subscribe(ORB_ID(vehicle_global_position));
-	_local_pos_sub = orb_subscribe(ORB_ID(vehicle_local_position));
-	_vehicle_status_sub = orb_subscribe(ORB_ID(vehicle_status));
-	_params_sub = orb_subscribe(ORB_ID(parameter_update));
-	_water_drop_request_sub = orb_subscribe(ORB_ID(aa241x_water_drop_request));
-	_pic_request_sub = orb_subscribe(ORB_ID(aa241x_picture_request));
-
-	/* rate limit vehicle status updates to 5Hz */
-	orb_set_interval(_vcontrol_mode_sub, 200);
-
-	parameters_update();
-
-	/* get an initial update for all sensor and status data */
-	vehicle_control_mode_update();
-	global_pos_update();
-	local_pos_update();
-	vehicle_status_update();
-
-	/* wakeup source(s) */
-	struct pollfd fds[7];
-
-	/* Setup of loop */
-	fds[0].fd = _params_sub;
-	fds[0].events = POLLIN;
-	fds[1].fd = _vcontrol_mode_sub;
-	fds[1].events = POLLIN;
-	fds[2].fd = _global_pos_sub;
-	fds[2].events = POLLIN;
-	fds[3].fd = _local_pos_sub;
-	fds[3].events = POLLIN;
-	fds[4].fd = _vehicle_status_sub;
-	fds[4].events = POLLIN;
-	fds[5].fd = _pic_request_sub;
-	fds[5].events = POLLIN;
-	fds[6].fd = _water_drop_request_sub;
-	fds[6].events = POLLIN;
-
-	_task_running = true;
-
-	_in_mission = true;
-	_mission_start_time = hrt_absolute_time();
-	_last_propagation_time = hrt_absolute_time();
-	initialize_mission();
-
-	print_grid();
-
-	// hrt_abstime before_prop = hrt_absolute_time();
-	// hrt_abstime after_prop = hrt_absolute_time();
-
-	while (!_task_should_exit) {
-
-		/* wait for up to 100ms for data */
-		int pret = poll(&fds[0], (sizeof(fds) / sizeof(fds[0])), 100);
-
-		hrt_abstime current_time = hrt_absolute_time();
-		/* timed out - periodic check for _task_should_exit, etc. */
-		if (pret == 0 && (current_time - _last_propagation_time) < _parameters.timestep*1E6f) {
-			continue;
-		}
-
-		/* this is undesirable but not much we can do - might want to flag unhappy status */
-		if (pret < 0) {
-			warn("poll error %d, %d", pret, errno);
-			continue;
-		}
-
-		/* only update parameters if they changed */
-		if (fds[0].revents & POLLIN) {
-			/* read from param to clear updated flag */
-			struct parameter_update_s update;
-			orb_copy(ORB_ID(parameter_update), _params_sub, &update);
-
-			/* update parameters from storage */
-			parameters_update();
-		}
-
-		/* vehicle control mode updated */
-		if (fds[1].revents & POLLIN) {
-			vehicle_control_mode_update();
-		}
-
-		/* global position updated */
-		if (fds[2].revents & POLLIN) {
-			global_pos_update();
-		}
-
-		/* local position updated */
-		if (fds[3].revents & POLLIN) {
-			local_pos_update();
-		}
-
-		/* vehicle status updated */
-		if (fds[4].revents & POLLIN) {
-			vehicle_status_update();
-		}
-
-		/* picture request */
-		if (fds[5].revents & POLLIN) {
-			handle_picture_request();
-		}
-		// handle_picture_request();
-
-		/* water drop request */
-		if (fds[6].revents & POLLIN) {
-			handle_water_drop_request();
-		}
-
-		/* ensure abiding by mission rules */
-		if (_in_mission) {
-
-			/* check to see if mission time has elapsed */
-
-			if ((current_time - _mission_start_time)/1000000.0f >= _parameters.duration*60.0f) {
-				// TODO: would be nice to send a message that mission is over
-				_in_mission = false;
-				_can_start = false;
-				// TODO: end mission gracefully and report final score
-			}
-
-			// TODO: if early termination, want to propagate the fire for the rest of the duration quickly
-			// to be able to give a score
-			current_time = hrt_absolute_time();
-			/* check if timestep has advanced */
-			if ((current_time - _last_propagation_time) >= _parameters.timestep*1E6f) {
-				_last_propagation_time = current_time;
-
-				/* propagate the fire for this next timestep */
-				propagate_fire();
-
-				print_grid();	// DEBUG
-
-				/* calculate the new score */
-				calculate_score();
-			}
-		}
-	}
-
-	warnx("exiting.\n");
-
-	_control_task = -1;
-	_task_running = false;
-	_exit(0);
-
-}
 
 void
 LakeFire::task_main()
@@ -1104,6 +1009,7 @@ LakeFire::task_main()
 	_water_drop_request_sub = orb_subscribe(ORB_ID(aa241x_water_drop_request));
 	_pic_request_sub = orb_subscribe(ORB_ID(aa241x_picture_request));
 	_local_data_sub = orb_subscribe(ORB_ID(aa241x_local_data));
+	_battery_status_sub = orb_subscribe(ORB_ID(battery_status));
 
 	/* rate limit vehicle status updates and local data updates to 5Hz */
 	orb_set_interval(_vcontrol_mode_sub, 200);
@@ -1117,9 +1023,10 @@ LakeFire::task_main()
 	local_pos_update();
 	vehicle_status_update();
 	local_data_update();
+	battery_status_update();
 
 	/* wakeup source(s) */
-	struct pollfd fds[8];
+	struct pollfd fds[9];
 
 	/* Setup of loop */
 	fds[0].fd = _params_sub;
@@ -1138,6 +1045,8 @@ LakeFire::task_main()
 	fds[6].events = POLLIN;
 	fds[7].fd = _local_data_sub;
 	fds[7].events = POLLIN;
+	fds[8].fd = _battery_status_sub;
+	fds[8].events = POLLIN;
 
 	_task_running = true;
 
@@ -1202,6 +1111,10 @@ LakeFire::task_main()
 			local_data_update();
 		}
 
+		/* battery status updated */
+		if (fds[8].revents & POLLIN) {
+			battery_status_update();
+		}
 
 		/* check auto start requirements */
 		if (_can_start && !_in_mission) {
@@ -1216,11 +1129,12 @@ LakeFire::task_main()
 		/* check mission start requirements */
 		if (_can_start && !_in_mission) {
 
-			if (-_local_data.D_gps >= _parameters.min_alt && _vcontrol_mode.flag_control_auto_enabled) {
+			if (-_local_data.D_gps >= _parameters.auto_alt && _vcontrol_mode.flag_control_auto_enabled) {
 				/* start the mission once have crossed over the minimum altitude */
 				_in_mission = true;
 				_mission_start_time = hrt_absolute_time();
 				_last_propagation_time = hrt_absolute_time();
+				_mission_start_battery = _batt_stat.discharged_mah;
 				initialize_mission();
 				mavlink_log_info(_mavlink_fd, "AA241x mission started");
 			}
@@ -1248,6 +1162,13 @@ LakeFire::task_main()
 				mavlink_log_info(_mavlink_fd, "AA241x mission failed: boundary violation");
 			}
 
+			/* check battery requirements */
+			if ((_batt_stat.discharged_mah - _mission_start_battery) > _parameters.max_discharge) {
+				_in_mission = false;
+				_early_termination = true;
+				mavlink_log_info(_mavlink_fd, "AA241x mission termination: max battery discharge reached");
+			}
+
 			/* check min altitude requirements */
 			if (-_local_data.D_gps <= _parameters.min_alt) {
 				// end mission, but let fire propagate for rest of time
@@ -1265,8 +1186,8 @@ LakeFire::task_main()
 
 				/* propagate the fire for this next timestep */
 				propagate_fire();
-
 				_propagations_remaining--;
+				publish_fire_prop();
 
 				/* calculate the new score */
 				calculate_score();
@@ -1291,12 +1212,13 @@ LakeFire::task_main()
 
 			// TODO: if early termination, want to propagate the fire for the rest of the duration quickly
 			// to be able to give a score
-			if (_early_termination) {
+			if (_early_termination && !_mission_failed) {
 
 				/* propagate the rest of the time */
 				while (_propagations_remaining > 0) {
 					propagate_fire();
 					_propagations_remaining--;
+					publish_fire_prop();
 				}
 
 				calculate_score();

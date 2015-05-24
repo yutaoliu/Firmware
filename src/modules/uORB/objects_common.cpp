@@ -257,6 +257,9 @@ ORB_DEFINE(aa241x_mission_status, struct aa241x_mission_status_s);
 #include "topics/aa241x_new_fire.h"
 ORB_DEFINE(aa241x_new_fire, struct aa241x_new_fire_s);
 
+#include "topics/aa241x_fire_prop.h"
+ORB_DEFINE(aa241x_fire_prop, struct aa241x_fire_prop_s);
+
 #include "topics/aa241x_water_drop_result.h"
 ORB_DEFINE(aa241x_water_drop_result, struct water_drop_result_s);
 
@@ -277,3 +280,6 @@ ORB_DEFINE(aa241x_high_data, struct aa241x_high_data_s);
 
 #include "topics/aa241x_local_data.h"
 ORB_DEFINE(aa241x_local_data, struct aa241x_local_data_s);
+
+#include "topics/aa241x_condensed_grid.h"
+ORB_DEFINE(aa241x_cgrid, struct aa241x_cgrid_s);

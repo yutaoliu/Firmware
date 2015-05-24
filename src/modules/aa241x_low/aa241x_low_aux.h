@@ -165,6 +165,7 @@ struct mis_params {
 	float ctr_lat;
 	float ctr_lon;
 	float ctr_alt;
+	int wind_dir;
 };
 extern struct mis_params mission_parameters;			/**< local copies of mission parameters */
 
