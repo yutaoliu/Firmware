@@ -80,8 +80,11 @@ void flight_control() {
 		// just going to want to drop water
 		// printf("sending water drop request\n");
 		if (f_count > 0) {
-			drop_water();
+
 		}
+
+		// drop water regardless for testing purposes
+		drop_water();
 
 		// set new_pic to false, as just processed this pic result, DO NOT REMOVE
 		new_pic = false;

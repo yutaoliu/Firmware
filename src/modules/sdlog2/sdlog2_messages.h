@@ -558,6 +558,25 @@ struct log_ADAT_s {
 	float body_v;
 	float body_w;
 	float ground_speed;
+	uint8_t i;
+	uint8_t j;
+};
+
+/* --- AA241x CONDENSED GRID --- */
+#define LOG_GRID_MSG 72
+struct log_GRID_s {
+	uint32_t r1;
+	uint32_t r2;
+	uint32_t r3;
+	uint32_t r4;
+	uint32_t r5;
+	uint32_t r6;
+	uint32_t r7;
+	uint32_t r8;
+	uint32_t r9;
+	uint32_t r10;
+	uint32_t r11;
+	uint32_t r12;
 };
 
 
@@ -639,7 +658,8 @@ static const struct log_format_s log_formats[] = {
 	LOG_FORMAT(WDRP, "BQBB", "Success,T,i,j"),
 	LOG_FORMAT(HIGH, "ffffffffffffffff", HIGH_DATA_LABELS),
 	LOG_FORMAT(LOW, "ffffffffffffffff", LOW_DATA_LABELS),
-	LOG_FORMAT(ADAT, "ffffffff", "N,E,Dbaro,Dgps,u,v,w,GrndSpd"),
+	LOG_FORMAT(ADAT, "ffffffffBB", "N,E,Dbaro,Dgps,u,v,w,GrndSpd,i,j"),
+	LOG_FORMAT(GRID, "IIIIIIIIIIII", "r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12"),
 
 	/* system-level messages, ID >= 0x80 */
 	/* FMT: don't write format of format message, it's useless */

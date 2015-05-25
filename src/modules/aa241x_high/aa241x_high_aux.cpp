@@ -153,6 +153,9 @@ bool can_start = true;
 bool in_mission = false;
 float batt_used = 0.0f;
 
+int grid_i = 0;
+int grid_j = 0;
+
 
 orb_advert_t	_attitude_sp_pub = -1;
 orb_advert_t	_picture_request_pub = -1;

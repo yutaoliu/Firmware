@@ -21,6 +21,8 @@ struct aa241x_local_data_s {
 	float body_v;		/**< Body v velocity */
 	float body_w;		/**< Body w velocity */
 	float ground_speed;	/**< the ground speed in m/s */
+	uint8_t i;
+	uint8_t j;
 };
 
 /* register this as object request broker structure */

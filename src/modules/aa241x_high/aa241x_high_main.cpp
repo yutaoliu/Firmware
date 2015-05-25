@@ -322,6 +322,12 @@ private:
 	void	publish_local_data();
 
 	/**
+	 * Convert coordinates.
+	 */
+	int		n2i(const float &n);
+	int		e2j(const float &e);
+
+	/**
 	 * Set the aux variables that need to be constantly logged.
 	 */
 	void	set_local_data();
@@ -704,6 +710,8 @@ FixedwingControl::publish_local_data()
 	local_data.body_v = speed_body_v;
 	local_data.body_w = speed_body_w;
 	local_data.ground_speed = ground_speed;
+	local_data.i = grid_i;
+	local_data.j = grid_j;
 
 	/* publish the high priority loop data */
 	if (_local_data_pub > 0) {
@@ -711,6 +719,28 @@ FixedwingControl::publish_local_data()
 	} else {
 		_local_data_pub = orb_advertise(ORB_ID(aa241x_local_data), &local_data);
 	}
+}
+
+int
+FixedwingControl::n2i(const float &n)
+{
+	int i = 8 - (int) roundf(n/20.0f);
+
+	if (i < 0) i = 0;
+	if (i >= 17) i = 17 - 1;
+
+	return i;
+}
+
+int
+FixedwingControl::e2j(const float &e)
+{
+	int j = 8 + (int) roundf(e/20.0f);
+
+	if (j < 0) j = 0;
+	if (j >= 17) j = 17 - 1;
+
+	return j;
 }
 
 void
@@ -759,6 +789,9 @@ FixedwingControl::set_local_data()
 	batt_used = _mis_status.battery_used;
 	in_mission = _mis_status.in_mission;
 	can_start = _mis_status.can_start;
+
+	grid_i = n2i(position_N);
+	grid_j = e2j(position_E);
 }
 
 

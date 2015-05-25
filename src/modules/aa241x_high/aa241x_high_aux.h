@@ -176,6 +176,9 @@ extern bool can_start;
 extern bool in_mission;
 extern float batt_used;
 
+extern int grid_i;
+extern int grid_j;
+
 /* functions */
 
 /**
