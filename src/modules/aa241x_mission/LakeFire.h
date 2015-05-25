@@ -114,6 +114,7 @@ private:
 	int		_control_task;			/**< task handle for aa241x mission */
 
 	int		_mavlink_fd;			/**< file description for mavlink to be able to send warnings */
+	int		_buzzer;				/**< descriptor for the buzzer */
 
 	// handles to subscriptions needed
 	int		_vcontrol_mode_sub;		/**< vehicle status (control mode) subscription */
@@ -162,6 +163,7 @@ private:
 		float ctr_lon;
 		float ctr_alt;
 		float max_discharge;
+		int team_num;
 	}		_parameters;			/**< local copies of interesting parameters */
 
 	struct {
@@ -183,6 +185,7 @@ private:
 		param_t ctr_lon;
 		param_t ctr_alt;
 		param_t max_discharge;
+		param_t team_num;
 	}		_parameter_handles;		/**< handles for interesting parameters */
 
 	hrt_abstime _mission_start_time;	/**< timestamp of when entered mission */
@@ -193,6 +196,7 @@ private:
 	bool		_early_termination;		/**< if true terminating mission early, but still need to finish running fire */
 	bool		_mission_failed;		/**< if true terminating mission entirely with a score of 0 */
 	float		_score;					/**< the current mission score */
+	float		_unattended_count;		/**< the count of an unattended spread of the fire */
 
 	hrt_abstime _last_picture;			/**< timestamp of when the last picture was taken */
 
@@ -340,6 +344,17 @@ private:
 	 * fire has propagated.
 	 */
 	void	get_prop_coords(int *i_prop, int *j_prop, const int &prop_dir);
+
+	/**
+	 * Calculate the score for an unattended spread of this fire.
+	 */
+	void	calculate_unattended_score();
+
+	/**
+	 * Dumb was to propagate the temp grid used to calculate the
+	 * unattended score.
+	 */
+	void	propagate_temp_fire(int8_t temp_grid[GRID_WIDTH][GRID_WIDTH]);
 
 	/**
 	 * Initialize the mission parameters needed

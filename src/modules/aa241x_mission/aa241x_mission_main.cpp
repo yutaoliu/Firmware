@@ -62,6 +62,7 @@
 #include <arch/board/board.h>
 #include <mathlib/mathlib.h>
 #include <mavlink/mavlink_log.h>
+#include <drivers/drv_tone_alarm.h>
 
 #include "LakeFire.h"
 #include "fires.h"
@@ -86,6 +87,7 @@ LakeFire::LakeFire() :
 	_task_running(false),
 	_control_task(-1),
 	_mavlink_fd(-1),
+	_buzzer(-1),
 	_vcontrol_mode_sub(-1),
 	_global_pos_sub(-1),
 	_local_pos_sub(-1),
@@ -109,6 +111,7 @@ LakeFire::LakeFire() :
 	_early_termination(false),
 	_mission_failed(true),
 	_score(0.0f),
+	_unattended_count(0.0f),
 	_last_picture(0),
 	_new_fire_count(0),
 	_wind_direction(WIND_OTHER),
@@ -141,6 +144,7 @@ LakeFire::LakeFire() :
 	_parameter_handles.ctr_lon = param_find("AAMIS_CTR_LON");
 	_parameter_handles.ctr_alt = param_find("AAMIS_CTR_ALT");
 	_parameter_handles.max_discharge = param_find("AAMIS_BATT_MAX");
+	_parameter_handles.team_num = param_find("AA_TEAM");
 
 	parameters_update();
 
@@ -419,6 +423,7 @@ LakeFire::parameters_update()
 	param_get(_parameter_handles.ctr_lon, &(_parameters.ctr_lon));
 	param_get(_parameter_handles.ctr_alt, &(_parameters.ctr_alt));
 	param_get(_parameter_handles.max_discharge, &(_parameters.max_discharge));
+	param_get(_parameter_handles.team_num, &(_parameters.team_num));
 
 	return OK;
 }
@@ -749,18 +754,168 @@ LakeFire::get_prop_coords(int *i_prop, int *j_prop, const int &prop_dir)
 }
 
 void
+LakeFire::calculate_unattended_score()
+{
+	int8_t temp_grid[GRID_WIDTH][GRID_WIDTH] = {{0}};
+
+	// initialize the random seed
+	srand(seed_start[_parameters.index]);
+
+	// load up of the initial fire cells to the temp grid
+	int i_s;
+	int j_s;
+	for (int i = 0; i < NUM_STARTS; i++) {
+		i_s = i_start[_parameters.index][i];
+		j_s = j_start[_parameters.index][i];
+
+		/* check to see if reached the end of valid locations */
+		if (i_s < 0 || j_s < 0) {
+			break;
+		}
+
+		/* set this starting grid on fire */
+		temp_grid[i_s][j_s] = ON_FIRE;
+	}
+
+	int temp_props_remaining = int(_parameters.duration*60.0f/_parameters.timestep);
+
+	while (temp_props_remaining > 0) {
+		propagate_temp_fire(temp_grid);
+		temp_props_remaining--;
+	}
+
+	// print out the grid
+	/*
+	printf("\n");
+	printf("Printing temp grid: \n");
+	for (int i = 0; i < GRID_WIDTH; i++) {
+		for (int j = 0;j < GRID_WIDTH; j++) {
+			printf("%d ", temp_grid[i][j]);
+		}
+		printf("\n");
+	}
+	printf("\n");
+	*/
+
+	// count the number of cells on fire
+	int count = 0;
+	int8_t cell_val;
+
+	for (int i = 0; i < GRID_WIDTH; i++) {
+		for (int j = 0; j < GRID_WIDTH; j++) {
+
+			/* check for fire in cell */
+			cell_val = temp_grid[i][j];
+			if (cell_val == ON_FIRE) {
+				count++;
+			}
+		}
+	}
+
+	_unattended_count = count;
+}
+
+
+void
+LakeFire::propagate_temp_fire(int8_t temp_grid[GRID_WIDTH][GRID_WIDTH])
+{
+	float prop_dir;
+	int8_t cell_val;
+	int i_prop;
+	int j_prop;
+
+	std::vector<int> i_new;
+	std::vector<int> j_new;
+
+	int count = 0;
+
+	for (int i = 0; i < GRID_WIDTH; i++) {
+		for (int j = 0; j < GRID_WIDTH; j++) {
+
+			/* make sure this cell isn't a new fire cell */
+			if (std::find(i_new.begin(), i_new.end(), i) != i_new.end() && std::find(j_new.begin(), j_new.end(), i) != j_new.end()) {
+				continue;
+			}
+
+			/* check for fire in cell, continue if no fire in cell */
+			cell_val = temp_grid[i][j];
+			if (cell_val != ON_FIRE) continue;
+			count++;
+
+			prop_dir = roundf(generate_normal_random(_wind_direction));
+
+			/* wrap the propagation direction to be within (0,8) */
+			if (prop_dir < 0) prop_dir += 8;
+			if (prop_dir > 7) prop_dir -= 8;
+
+			i_prop = i;
+			j_prop = j;
+
+			get_prop_coords(&i_prop, &j_prop, (int) prop_dir);
+
+			/* check to make sure new fire cell is a valid location */
+			if (i_prop >= GRID_WIDTH || i_prop < 0 || j_prop >= GRID_WIDTH || j_prop < 0) continue;
+
+			/* check that the new cell is in bounds */
+			if (!_grid_mask[i_prop][j_prop]) continue;
+
+			/* check for new fire cell value */
+			cell_val = temp_grid[i_prop][j_prop];
+			if (cell_val == OPEN_LAND) {
+				/* add fire to this cell */
+				temp_grid[i_prop][j_prop] = ON_FIRE;
+				i_new.push_back(i_prop);
+				j_new.push_back(j_prop);
+			}
+		}
+	}
+
+	/* clear vectors after having published the info */
+	i_new.clear();
+	j_new.clear();
+}
+
+
+void
 LakeFire::initialize_mission()
 {
 
 	if (_parameters.index >= NUM_FIRES) {
 		// TODO: throw a system warning
 		_can_start = false;
+		mavlink_log_info(_mavlink_fd, "#audio: AA241x invalid mission index");
 		return;
 	}
 
+	// send message that mission has started
+	mavlink_log_info(_mavlink_fd, "#audio: AA241x mission started");
+
+	// trigger the buzzer audio for mission start
+	switch(_parameters.team_num){
+	case 1:
+
+		break;
+	case 2:
+
+		break;
+	case 3:
+		ioctl(_buzzer, TONE_SET_ALARM, TONE_TRAINER_BATTLE_TUNE);
+		break;
+	case 4:
+
+		break;
+	default:
+
+		break;
+	}
+
+	_in_mission = true;
+	_mission_start_time = hrt_absolute_time();
+	_last_propagation_time = hrt_absolute_time();
+	_mission_start_battery = _batt_stat.discharged_mah;
+
 	// TODO: need to ensure that the wind direction is valid
 	_wind_direction = WIND_DIRECTION(fire_wind_dir[_parameters.index]);
-	srand(seed_start[_parameters.index]);
 
 	int i_s;
 	int j_s;
@@ -770,13 +925,18 @@ LakeFire::initialize_mission()
 
 		/* check to see if reached the end of valid locations */
 		if (i_s < 0 || j_s < 0) {
-			return;
+			break;
 		}
 
 		/* set this starting grid on fire */
 		_grid[i_s][j_s] = ON_FIRE;
 	}
 
+	// calculate the unattended score
+	calculate_unattended_score();
+
+	// reinitialize the random seed
+	srand(seed_start[_parameters.index]);
 }
 
 
@@ -862,14 +1022,14 @@ LakeFire::calculate_score()
 		}
 	}
 
-	_score = (1.0f - (float) count / (float) worst_case_score[_parameters.index])*100.0f;
+	_score = (1.0f - (float) count / _unattended_count)*100.0f;
 }
 
 void
 LakeFire::task_main_trampoline(int argc, char **argv)
 {
-	aa241x_mission::g_aa241x_mission->task_main();
-	// aa241x_mission::g_aa241x_mission->prop_testing(); // DEBUG
+	 aa241x_mission::g_aa241x_mission->task_main();
+	//aa241x_mission::g_aa241x_mission->prop_testing(); // DEBUG
 	// aa241x_mission::g_aa241x_mission->testing(); // DEBUG
 	// aa241x_mission::g_aa241x_mission->sim_testing(); // DEBUG
 }
@@ -971,14 +1131,14 @@ LakeFire::prop_testing()
 	initialize_mission();
 	print_grid();
 
-	for (int i = 0; i < 100; i++) {
+	for (int i = 0; i < _propagations_remaining; i++) {
 		propagate_fire();
 		// usleep(500000);
 	}
 
 	print_grid();
 
-
+	printf("\nUnattended count: %f\n", (double) _unattended_count);
 
 	warnx("exiting.\n");
 
@@ -997,6 +1157,9 @@ LakeFire::task_main()
 
 	/* open connection to mavlink logging */
 	_mavlink_fd = open(MAVLINK_LOG_DEVICE, 0);
+
+	/* open buzzer */
+	_buzzer = open(TONEALARM0_DEVICE_PATH, O_WRONLY);
 
 	/*
 	 * do subscriptions
@@ -1122,7 +1285,7 @@ LakeFire::task_main()
 			if (!_vehicle_status.gps_failure && -_local_data.D_gps >= _parameters.auto_alt && !_vcontrol_mode.flag_control_auto_enabled) {
 				// not allowed to start is above auto alt and not in auto mode
 				_can_start = false;
-				mavlink_log_info(_mavlink_fd, "AA241x mission start conditions violated");
+				mavlink_log_info(_mavlink_fd, "#audio: AA241x mission start conditions violated");
 			}
 		}
 
@@ -1131,12 +1294,7 @@ LakeFire::task_main()
 
 			if (-_local_data.D_gps >= _parameters.auto_alt && _vcontrol_mode.flag_control_auto_enabled) {
 				/* start the mission once have crossed over the minimum altitude */
-				_in_mission = true;
-				_mission_start_time = hrt_absolute_time();
-				_last_propagation_time = hrt_absolute_time();
-				_mission_start_battery = _batt_stat.discharged_mah;
 				initialize_mission();
-				mavlink_log_info(_mavlink_fd, "AA241x mission started");
 			}
 		}
 
@@ -1148,7 +1306,7 @@ LakeFire::task_main()
 				// end mission and set score to 0 if switch to manual mode
 				_in_mission = false;
 				_early_termination = true;
-				mavlink_log_info(_mavlink_fd, "AA241x mission termination: control mode violation");
+				mavlink_log_info(_mavlink_fd, "#audio: AA241x mission termination: control mode violation");
 			}
 
 			/* check strict requirements (max alt and radius) */
@@ -1159,14 +1317,14 @@ LakeFire::task_main()
 				_in_mission = false;
 				_mission_failed = true;
 				_score = 0.0f;
-				mavlink_log_info(_mavlink_fd, "AA241x mission failed: boundary violation");
+				mavlink_log_info(_mavlink_fd, "#audio: AA241x mission failed: boundary violation");
 			}
 
 			/* check battery requirements */
 			if ((_batt_stat.discharged_mah - _mission_start_battery) > _parameters.max_discharge) {
 				_in_mission = false;
 				_early_termination = true;
-				mavlink_log_info(_mavlink_fd, "AA241x mission termination: max battery discharge reached");
+				mavlink_log_info(_mavlink_fd, "#audio: AA241x mission termination: max battery discharge reached");
 			}
 
 			/* check min altitude requirements */
@@ -1174,7 +1332,7 @@ LakeFire::task_main()
 				// end mission, but let fire propagate for rest of time
 				_in_mission = false;
 				_early_termination = true;
-				mavlink_log_info(_mavlink_fd, "AA241x mission termination: below min alt");
+				mavlink_log_info(_mavlink_fd, "#audio: AA241x mission termination: below min alt");
 			}
 
 			/* get the current time needed for further calculations */
@@ -1198,7 +1356,7 @@ LakeFire::task_main()
 				// TODO: would be nice to send a message that mission is over
 				_in_mission = false;
 				_can_start = false;
-				mavlink_log_info(_mavlink_fd, "AA241x mission completed");
+				mavlink_log_info(_mavlink_fd, "#audio: AA241x mission completed");
 
 				/* make sure that have done all fire propagations */
 				if (_propagations_remaining > 0) {
@@ -1232,6 +1390,9 @@ LakeFire::task_main()
 	}
 
 	warnx("exiting.\n");
+
+	// close the buzzer connection
+	close(_buzzer);
 
 	_control_task = -1;
 	_task_running = false;
