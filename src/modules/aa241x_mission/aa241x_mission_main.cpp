@@ -144,6 +144,7 @@ LakeFire::LakeFire() :
 	_parameter_handles.ctr_lon = param_find("AAMIS_CTR_LON");
 	_parameter_handles.ctr_alt = param_find("AAMIS_CTR_ALT");
 	_parameter_handles.max_discharge = param_find("AAMIS_BATT_MAX");
+	_parameter_handles.team_num = param_find("AA_TEAM");
 
 	parameters_update();
 
@@ -422,6 +423,7 @@ LakeFire::parameters_update()
 	param_get(_parameter_handles.ctr_lon, &(_parameters.ctr_lon));
 	param_get(_parameter_handles.ctr_alt, &(_parameters.ctr_alt));
 	param_get(_parameter_handles.max_discharge, &(_parameters.max_discharge));
+	param_get(_parameter_handles.team_num, &(_parameters.team_num));
 
 	return OK;
 }
@@ -881,6 +883,7 @@ LakeFire::initialize_mission()
 	if (_parameters.index >= NUM_FIRES) {
 		// TODO: throw a system warning
 		_can_start = false;
+		mavlink_log_info(_mavlink_fd, "#audio: AA241x invalid mission index");
 		return;
 	}
 
@@ -888,7 +891,23 @@ LakeFire::initialize_mission()
 	mavlink_log_info(_mavlink_fd, "#audio: AA241x mission started");
 
 	// trigger the buzzer audio for mission start
-	ioctl(_buzzer, TONE_SET_ALARM, TONE_TRAINER_BATTLE_TUNE);
+	switch(_parameters.team_num){
+	case 1:
+
+		break;
+	case 2:
+
+		break;
+	case 3:
+		ioctl(_buzzer, TONE_SET_ALARM, TONE_TRAINER_BATTLE_TUNE);
+		break;
+	case 4:
+
+		break;
+	default:
+
+		break;
+	}
 
 	_in_mission = true;
 	_mission_start_time = hrt_absolute_time();

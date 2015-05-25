@@ -163,6 +163,7 @@ private:
 		float ctr_lon;
 		float ctr_alt;
 		float max_discharge;
+		int team_num;
 	}		_parameters;			/**< local copies of interesting parameters */
 
 	struct {
@@ -184,6 +185,7 @@ private:
 		param_t ctr_lon;
 		param_t ctr_alt;
 		param_t max_discharge;
+		param_t team_num;
 	}		_parameter_handles;		/**< handles for interesting parameters */
 
 	hrt_abstime _mission_start_time;	/**< timestamp of when entered mission */

@@ -207,3 +207,10 @@ PARAM_DEFINE_FLOAT(AA_WATER_WGHT, 100.0f);
  * @group AA241x Student Params
  */
 PARAM_DEFINE_INT32(AA_MIS_INDEX, 0);
+
+/**
+ * Team number (1-4).
+ *
+ * @group AA241x Student Params
+ */
+PARAM_DEFINE_INT32(AA_TEAM, 3);
