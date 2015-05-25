@@ -53,6 +53,5 @@ int8_t j_start[NUM_FIRES][NUM_STARTS] = {{8, -1}};
 
 unsigned int seed_start[NUM_FIRES] = {100};
 
-int worst_case_score[NUM_FIRES] = {400};
 
 #endif /* FIRES_H_ */

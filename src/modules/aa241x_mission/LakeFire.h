@@ -194,6 +194,7 @@ private:
 	bool		_early_termination;		/**< if true terminating mission early, but still need to finish running fire */
 	bool		_mission_failed;		/**< if true terminating mission entirely with a score of 0 */
 	float		_score;					/**< the current mission score */
+	float		_unattended_count;		/**< the count of an unattended spread of the fire */
 
 	hrt_abstime _last_picture;			/**< timestamp of when the last picture was taken */
 
@@ -341,6 +342,17 @@ private:
 	 * fire has propagated.
 	 */
 	void	get_prop_coords(int *i_prop, int *j_prop, const int &prop_dir);
+
+	/**
+	 * Calculate the score for an unattended spread of this fire.
+	 */
+	void	calculate_unattended_score();
+
+	/**
+	 * Dumb was to propagate the temp grid used to calculate the
+	 * unattended score.
+	 */
+	void	propagate_temp_fire(int8_t temp_grid[GRID_WIDTH][GRID_WIDTH]);
 
 	/**
 	 * Initialize the mission parameters needed

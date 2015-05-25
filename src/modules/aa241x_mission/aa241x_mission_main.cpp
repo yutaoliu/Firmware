@@ -111,6 +111,7 @@ LakeFire::LakeFire() :
 	_early_termination(false),
 	_mission_failed(true),
 	_score(0.0f),
+	_unattended_count(0.0f),
 	_last_picture(0),
 	_new_fire_count(0),
 	_wind_direction(WIND_OTHER),
@@ -751,6 +752,129 @@ LakeFire::get_prop_coords(int *i_prop, int *j_prop, const int &prop_dir)
 }
 
 void
+LakeFire::calculate_unattended_score()
+{
+	int8_t temp_grid[GRID_WIDTH][GRID_WIDTH] = {{0}};
+
+	// initialize the random seed
+	srand(seed_start[_parameters.index]);
+
+	// load up of the initial fire cells to the temp grid
+	int i_s;
+	int j_s;
+	for (int i = 0; i < NUM_STARTS; i++) {
+		i_s = i_start[_parameters.index][i];
+		j_s = j_start[_parameters.index][i];
+
+		/* check to see if reached the end of valid locations */
+		if (i_s < 0 || j_s < 0) {
+			break;
+		}
+
+		/* set this starting grid on fire */
+		temp_grid[i_s][j_s] = ON_FIRE;
+	}
+
+	int temp_props_remaining = int(_parameters.duration*60.0f/_parameters.timestep);
+
+	while (temp_props_remaining > 0) {
+		propagate_temp_fire(temp_grid);
+		temp_props_remaining--;
+	}
+
+	// print out the grid
+	/*
+	printf("\n");
+	printf("Printing temp grid: \n");
+	for (int i = 0; i < GRID_WIDTH; i++) {
+		for (int j = 0;j < GRID_WIDTH; j++) {
+			printf("%d ", temp_grid[i][j]);
+		}
+		printf("\n");
+	}
+	printf("\n");
+	*/
+
+	// count the number of cells on fire
+	int count = 0;
+	int8_t cell_val;
+
+	for (int i = 0; i < GRID_WIDTH; i++) {
+		for (int j = 0; j < GRID_WIDTH; j++) {
+
+			/* check for fire in cell */
+			cell_val = temp_grid[i][j];
+			if (cell_val == ON_FIRE) {
+				count++;
+			}
+		}
+	}
+
+	_unattended_count = count;
+}
+
+
+void
+LakeFire::propagate_temp_fire(int8_t temp_grid[GRID_WIDTH][GRID_WIDTH])
+{
+	float prop_dir;
+	int8_t cell_val;
+	int i_prop;
+	int j_prop;
+
+	std::vector<int> i_new;
+	std::vector<int> j_new;
+
+	int count = 0;
+
+	for (int i = 0; i < GRID_WIDTH; i++) {
+		for (int j = 0; j < GRID_WIDTH; j++) {
+
+			/* make sure this cell isn't a new fire cell */
+			if (std::find(i_new.begin(), i_new.end(), i) != i_new.end() && std::find(j_new.begin(), j_new.end(), i) != j_new.end()) {
+				continue;
+			}
+
+			/* check for fire in cell, continue if no fire in cell */
+			cell_val = temp_grid[i][j];
+			if (cell_val != ON_FIRE) continue;
+			count++;
+
+			prop_dir = roundf(generate_normal_random(_wind_direction));
+
+			/* wrap the propagation direction to be within (0,8) */
+			if (prop_dir < 0) prop_dir += 8;
+			if (prop_dir > 7) prop_dir -= 8;
+
+			i_prop = i;
+			j_prop = j;
+
+			get_prop_coords(&i_prop, &j_prop, (int) prop_dir);
+
+			/* check to make sure new fire cell is a valid location */
+			if (i_prop >= GRID_WIDTH || i_prop < 0 || j_prop >= GRID_WIDTH || j_prop < 0) continue;
+
+			/* check that the new cell is in bounds */
+			if (!_grid_mask[i_prop][j_prop]) continue;
+
+			/* check for new fire cell value */
+			cell_val = temp_grid[i_prop][j_prop];
+			if (cell_val == OPEN_LAND) {
+				/* add fire to this cell */
+				temp_grid[i_prop][j_prop] = ON_FIRE;
+				i_new.push_back(i_prop);
+				j_new.push_back(j_prop);
+			}
+		}
+	}
+
+	/* clear vectors after having published the info */
+	i_new.clear();
+	j_new.clear();
+}
+
+
+void
 LakeFire::initialize_mission()
 {
 
@@ -760,6 +884,12 @@ LakeFire::initialize_mission()
 		return;
 	}
 
+	// send message that mission has started
+	mavlink_log_info(_mavlink_fd, "#audio: AA241x mission started");
+
+	// trigger the buzzer audio for mission start
+	ioctl(_buzzer, TONE_SET_ALARM, TONE_TRAINER_BATTLE_TUNE);
+
 	_in_mission = true;
 	_mission_start_time = hrt_absolute_time();
 	_last_propagation_time = hrt_absolute_time();
@@ -767,7 +897,6 @@ LakeFire::initialize_mission()
 
 	// TODO: need to ensure that the wind direction is valid
 	_wind_direction = WIND_DIRECTION(fire_wind_dir[_parameters.index]);
-	srand(seed_start[_parameters.index]);
 
 	int i_s;
 	int j_s;
@@ -777,18 +906,18 @@ LakeFire::initialize_mission()
 
 		/* check to see if reached the end of valid locations */
 		if (i_s < 0 || j_s < 0) {
-			return;
+			break;
 		}
 
 		/* set this starting grid on fire */
 		_grid[i_s][j_s] = ON_FIRE;
 	}
 
-	// send message that mission has started
-	mavlink_log_info(_mavlink_fd, "#audio: AA241x mission started");
+	// calculate the unattended score
+	calculate_unattended_score();
 
-	// trigger the buzzer audio for mission start
-	ioctl(_buzzer, TONE_SET_ALARM, TONE_TRAINER_BATTLE_TUNE);
+	// reinitialize the random seed
+	srand(seed_start[_parameters.index]);
 }
 
 
@@ -874,14 +1003,14 @@ LakeFire::calculate_score()
 		}
 	}
 
-	_score = (1.0f - (float) count / (float) worst_case_score[_parameters.index])*100.0f;
+	_score = (1.0f - (float) count / _unattended_count)*100.0f;
 }
 
 void
 LakeFire::task_main_trampoline(int argc, char **argv)
 {
-	aa241x_mission::g_aa241x_mission->task_main();
-	// aa241x_mission::g_aa241x_mission->prop_testing(); // DEBUG
+	 aa241x_mission::g_aa241x_mission->task_main();
+	//aa241x_mission::g_aa241x_mission->prop_testing(); // DEBUG
 	// aa241x_mission::g_aa241x_mission->testing(); // DEBUG
 	// aa241x_mission::g_aa241x_mission->sim_testing(); // DEBUG
 }
@@ -983,14 +1112,14 @@ LakeFire::prop_testing()
 	initialize_mission();
 	print_grid();
 
-	for (int i = 0; i < 100; i++) {
+	for (int i = 0; i < _propagations_remaining; i++) {
 		propagate_fire();
 		// usleep(500000);
 	}
 
 	print_grid();
 
-
+	printf("\nUnattended count: %f\n", (double) _unattended_count);
 
 	warnx("exiting.\n");
 
