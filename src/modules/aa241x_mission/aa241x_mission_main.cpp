@@ -890,6 +890,8 @@ LakeFire::initialize_mission()
 	// send message that mission has started
 	mavlink_log_info(_mavlink_fd, "#audio: AA241x mission started");
 
+	ioctl(_buzzer, TONE_SET_ALARM, TONE_TRAINER_BATTLE_TUNE);
+
 	// trigger the buzzer audio for mission start
 	switch(_parameters.team_num){
 	case 1:
@@ -899,7 +901,7 @@ LakeFire::initialize_mission()
 
 		break;
 	case 3:
-		ioctl(_buzzer, TONE_SET_ALARM, TONE_TRAINER_BATTLE_TUNE);
+		// ioctl(_buzzer, TONE_SET_ALARM, TONE_TRAINER_BATTLE_TUNE);
 		break;
 	case 4:
 
@@ -1141,6 +1143,207 @@ LakeFire::prop_testing()
 	printf("\nUnattended count: %f\n", (double) _unattended_count);
 
 	warnx("exiting.\n");
+
+	_control_task = -1;
+	_task_running = false;
+	_exit(0);
+}
+
+
+void
+LakeFire::sim_main()
+{
+	/* inform about start */
+	warnx("Initializing..");
+	fflush(stdout);
+
+	/* open connection to mavlink logging */
+	_mavlink_fd = open(MAVLINK_LOG_DEVICE, 0);
+
+	/* open buzzer */
+	_buzzer = open(TONEALARM0_DEVICE_PATH, O_WRONLY);
+
+	_in_mission = true;
+
+	/*
+	 * do subscriptions
+	 */
+	_vcontrol_mode_sub = orb_subscribe(ORB_ID(vehicle_control_mode));
+	_global_pos_sub = orb_subscribe(ORB_ID(vehicle_global_position));
+	_local_pos_sub = orb_subscribe(ORB_ID(vehicle_local_position));
+	_vehicle_status_sub = orb_subscribe(ORB_ID(vehicle_status));
+	_params_sub = orb_subscribe(ORB_ID(parameter_update));
+	_water_drop_request_sub = orb_subscribe(ORB_ID(aa241x_water_drop_request));
+	_pic_request_sub = orb_subscribe(ORB_ID(aa241x_picture_request));
+	_local_data_sub = orb_subscribe(ORB_ID(aa241x_local_data));
+	_battery_status_sub = orb_subscribe(ORB_ID(battery_status));
+
+	/* rate limit vehicle status updates and local data updates to 5Hz */
+	orb_set_interval(_vcontrol_mode_sub, 200);
+	orb_set_interval(_local_data_sub, 200);
+
+	parameters_update();
+
+	/* get an initial update for all sensor and status data */
+	vehicle_control_mode_update();
+	global_pos_update();
+	local_pos_update();
+	vehicle_status_update();
+	local_data_update();
+	battery_status_update();
+
+	/* wakeup source(s) */
+	struct pollfd fds[9];
+
+	/* Setup of loop */
+	fds[0].fd = _params_sub;
+	fds[0].events = POLLIN;
+	fds[1].fd = _vcontrol_mode_sub;
+	fds[1].events = POLLIN;
+	fds[2].fd = _global_pos_sub;
+	fds[2].events = POLLIN;
+	fds[3].fd = _local_pos_sub;
+	fds[3].events = POLLIN;
+	fds[4].fd = _vehicle_status_sub;
+	fds[4].events = POLLIN;
+	fds[5].fd = _pic_request_sub;
+	fds[5].events = POLLIN;
+	fds[6].fd = _water_drop_request_sub;
+	fds[6].events = POLLIN;
+	fds[7].fd = _local_data_sub;
+	fds[7].events = POLLIN;
+	fds[8].fd = _battery_status_sub;
+	fds[8].events = POLLIN;
+
+	_task_running = true;
+
+	while (!_task_should_exit) {
+
+		/* wait for up to 100ms for data */
+		int pret = poll(&fds[0], (sizeof(fds) / sizeof(fds[0])), 100);
+
+		/* timed out - periodic check for _task_should_exit, etc. */
+		if (pret == 0) {
+			continue;
+		}
+
+		/* this is undesirable but not much we can do - might want to flag unhappy status */
+		if (pret < 0) {
+			warn("poll error %d, %d", pret, errno);
+			continue;
+		}
+
+		/* only update parameters if they changed */
+		if (fds[0].revents & POLLIN) {
+			/* read from param to clear updated flag */
+			struct parameter_update_s update;
+			orb_copy(ORB_ID(parameter_update), _params_sub, &update);
+
+			/* update parameters from storage */
+			parameters_update();
+		}
+
+		/* vehicle control mode updated */
+		if (fds[1].revents & POLLIN) {
+			vehicle_control_mode_update();
+		}
+
+		/* global position updated */
+		if (fds[2].revents & POLLIN) {
+			global_pos_update();
+		}
+
+		/* local position updated */
+		if (fds[3].revents & POLLIN) {
+			local_pos_update();
+		}
+
+		/* vehicle status updated */
+		if (fds[4].revents & POLLIN) {
+			vehicle_status_update();
+		}
+
+		/* picture request */
+		if (fds[5].revents & POLLIN) {
+			handle_picture_request();
+		}
+
+		/* water drop request */
+		if (fds[6].revents & POLLIN) {
+			handle_water_drop_request();
+		}
+
+		/* local data updated */
+		if (fds[7].revents & POLLIN) {
+			local_data_update();
+		}
+
+		/* battery status updated */
+		if (fds[8].revents & POLLIN) {
+			battery_status_update();
+		}
+
+		/* ensure abiding by mission rules */
+		if (_in_mission) {
+
+			/* get the current time needed for further calculations */
+			hrt_abstime current_time = hrt_absolute_time();
+
+			/* ensure we are still in mission and check if timestep has advanced */
+			if (_in_mission && (current_time - _last_propagation_time) >= _parameters.timestep*1E6f) {
+				_last_propagation_time = current_time;
+
+				/* propagate the fire for this next timestep */
+				propagate_fire();
+				_propagations_remaining--;
+				publish_fire_prop();
+
+				/* calculate the new score */
+				calculate_score();
+			}
+
+			/* check to see if mission time has elapsed */
+			if ((current_time - _mission_start_time)/1000000.0f >= _parameters.duration*60.0f) {
+				// TODO: would be nice to send a message that mission is over
+				_in_mission = false;
+				_can_start = false;
+				mavlink_log_info(_mavlink_fd, "#audio: AA241x mission completed");
+
+				/* make sure that have done all fire propagations */
+				if (_propagations_remaining > 0) {
+					// TODO: check to make sure there is only ever 1 left here
+					propagate_fire();
+				}
+
+				calculate_score();
+				// TODO: end mission gracefully and report final score
+			}
+
+			// TODO: if early termination, want to propagate the fire for the rest of the duration quickly
+			// to be able to give a score
+			if (_early_termination && !_mission_failed) {
+
+				/* propagate the rest of the time */
+				while (_propagations_remaining > 0) {
+					propagate_fire();
+					_propagations_remaining--;
+					publish_fire_prop();
+				}
+
+				calculate_score();
+			}
+
+		}
+
+		/* publish the mission status as the last thing to do each loop */
+		publish_mission_status();
+
+	}
+
+	warnx("exiting.\n");
+
+	// close the buzzer connection
+	close(_buzzer);
 
 	_control_task = -1;
 	_task_running = false;

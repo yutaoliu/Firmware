@@ -388,6 +388,8 @@ private:
 
 	void print_mask();
 
+	void sim_main();
+
 	/**
 	 * Main task.
 	 */
