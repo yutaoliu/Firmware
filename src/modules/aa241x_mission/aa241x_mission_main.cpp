@@ -891,6 +891,7 @@ LakeFire::initialize_mission()
 	mavlink_log_info(_mavlink_fd, "#audio: AA241x mission started");
 
 	// trigger the buzzer audio for mission start
+	/*
 	switch(_parameters.team_num){
 	case 1:
 
@@ -907,7 +908,7 @@ LakeFire::initialize_mission()
 	default:
 
 		break;
-	}
+	} */
 
 	_in_mission = true;
 	_mission_start_time = hrt_absolute_time();
