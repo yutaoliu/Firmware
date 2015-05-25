@@ -339,6 +339,10 @@ ToneAlarm::ToneAlarm() :
 	_default_tunes[TONE_EKF_WARNING_TUNE] = "MFT255L8ddd#d#eeff";				// ekf warning
 	_default_tunes[TONE_BARO_WARNING_TUNE] = "MFT255L4gf#fed#d";				// baro warning
 	_default_tunes[TONE_SINGLE_BEEP_TUNE] = "MFT100a8";                             // single beep
+	_default_tunes[TONE_IMPERIAL_MARCH_TUNE] = "MFT110L4<<ggge-8b-16ge-8b-16g2";	// imperial march
+	_default_tunes[TONE_TRAINER_BATTLE_TUNE] = "MFT170L16<agfeaefeae-e#e-adedad-d#d-acdcabcbab-b#b-b8";	// trainer battle
+	_default_tunes[TONE_FINAL_COUNTDOWN_TUNE] = "MFT118L4f#16e16f#<b>P4P8g16f#16g8f#8ee8P4g16f#16gb";		// final countdown
+
 
 	_tune_names[TONE_STARTUP_TUNE] = "startup";			// startup tune
 	_tune_names[TONE_ERROR_TUNE] = "error";				// ERROR tone
@@ -354,6 +358,9 @@ ToneAlarm::ToneAlarm() :
 	_tune_names[TONE_EKF_WARNING_TUNE] = "ekf_warning";				// ekf warning
 	_tune_names[TONE_BARO_WARNING_TUNE] = "baro_warning";			// baro warning
 	_tune_names[TONE_SINGLE_BEEP_TUNE] = "beep";                    // single beep
+	_tune_names[TONE_IMPERIAL_MARCH_TUNE] = "imperial_march";		// imperial march
+	_tune_names[TONE_TRAINER_BATTLE_TUNE] = "trainer_battle";		// trainer battle
+	_tune_names[TONE_FINAL_COUNTDOWN_TUNE] = "final_countdown";		// final countdown
 }
 
 ToneAlarm::~ToneAlarm()
@@ -601,9 +608,9 @@ ToneAlarm::next_note()
 
 		case 'P':	// pause for a note length
 			stop_note();
-			hrt_call_after(&_note_call, 
+			hrt_call_after(&_note_call,
 				(hrt_abstime)rest_duration(next_number(), next_dots()),
-				(hrt_callout)next_trampoline, 
+				(hrt_callout)next_trampoline,
 				this);
 			return;
 
@@ -626,9 +633,9 @@ ToneAlarm::next_note()
 				// this is a rest - pause for the current note length
 				hrt_call_after(&_note_call,
 					(hrt_abstime)rest_duration(_note_length, next_dots()),
-					(hrt_callout)next_trampoline, 
+					(hrt_callout)next_trampoline,
 					this);
-				return;				
+				return;
 			}
 			break;
 

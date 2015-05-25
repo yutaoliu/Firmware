@@ -62,6 +62,7 @@
 #include <arch/board/board.h>
 #include <mathlib/mathlib.h>
 #include <mavlink/mavlink_log.h>
+#include <drivers/drv_tone_alarm.h>
 
 #include "LakeFire.h"
 #include "fires.h"
@@ -86,6 +87,7 @@ LakeFire::LakeFire() :
 	_task_running(false),
 	_control_task(-1),
 	_mavlink_fd(-1),
+	_buzzer(-1),
 	_vcontrol_mode_sub(-1),
 	_global_pos_sub(-1),
 	_local_pos_sub(-1),
@@ -784,6 +786,9 @@ LakeFire::initialize_mission()
 
 	// send message that mission has started
 	mavlink_log_info(_mavlink_fd, "#audio: AA241x mission started");
+
+	// trigger the buzzer audio for mission start
+	ioctl(_buzzer, TONE_SET_ALARM, TONE_TRAINER_BATTLE_TUNE);
 }
 
 
@@ -1004,6 +1009,9 @@ LakeFire::task_main()
 
 	/* open connection to mavlink logging */
 	_mavlink_fd = open(MAVLINK_LOG_DEVICE, 0);
+
+	/* open buzzer */
+	_buzzer = open(TONEALARM0_DEVICE_PATH, O_WRONLY);
 
 	/*
 	 * do subscriptions
@@ -1234,6 +1242,9 @@ LakeFire::task_main()
 	}
 
 	warnx("exiting.\n");
+
+	// close the buzzer connection
+	close(_buzzer);
 
 	_control_task = -1;
 	_task_running = false;

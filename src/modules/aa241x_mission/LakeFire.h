@@ -114,6 +114,7 @@ private:
 	int		_control_task;			/**< task handle for aa241x mission */
 
 	int		_mavlink_fd;			/**< file description for mavlink to be able to send warnings */
+	int		_buzzer;				/**< descriptor for the buzzer */
 
 	// handles to subscriptions needed
 	int		_vcontrol_mode_sub;		/**< vehicle status (control mode) subscription */
