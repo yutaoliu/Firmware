@@ -198,7 +198,7 @@ PARAM_DEFINE_FLOAT(AAMIS_BATT_MAX, 650.0f);
  * @min 0
  * @group AA241x Student Params
  */
-PARAM_DEFINE_FLOAT(AA_WATER_WGHT, 100.0f);
+PARAM_DEFINE_FLOAT(AA_WATER_WGHT, 10000.0f);
 
 /**
  * Index (0 based) of the mission to be executed.
