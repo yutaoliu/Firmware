@@ -108,7 +108,7 @@ PARAM_DEFINE_FLOAT(AAMIS_TSTEP, 15.0f);
  *
  * @group AA241x Mission
  */
-PARAM_DEFINE_FLOAT(AAMIS_STD, 0.25f);
+PARAM_DEFINE_FLOAT(AAMIS_STD, 0.3f);
 
 /**
  * Minimum time in [sec] required between successive pictures.
@@ -142,7 +142,7 @@ PARAM_DEFINE_FLOAT(AAMIS_FOV_MAX, 60.0f);
  * @min 0
  * @group AA241x Mission
  */
-PARAM_DEFINE_FLOAT(AAMIS_WGHT_DRP, 1.0f);
+PARAM_DEFINE_FLOAT(AAMIS_WGHT_DRP, 10.0f);
 
 /**
  * Origin latitude for local position.
