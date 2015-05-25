@@ -783,7 +783,7 @@ LakeFire::initialize_mission()
 	}
 
 	// send message that mission has started
-	mavlink_log_info(_mavlink_fd, "AA241x mission started");
+	mavlink_log_info(_mavlink_fd, "#audio: AA241x mission started");
 }
 
 
@@ -1129,7 +1129,7 @@ LakeFire::task_main()
 			if (!_vehicle_status.gps_failure && -_local_data.D_gps >= _parameters.auto_alt && !_vcontrol_mode.flag_control_auto_enabled) {
 				// not allowed to start is above auto alt and not in auto mode
 				_can_start = false;
-				mavlink_log_info(_mavlink_fd, "AA241x mission start conditions violated");
+				mavlink_log_info(_mavlink_fd, "#audio: AA241x mission start conditions violated");
 			}
 		}
 
@@ -1150,7 +1150,7 @@ LakeFire::task_main()
 				// end mission and set score to 0 if switch to manual mode
 				_in_mission = false;
 				_early_termination = true;
-				mavlink_log_info(_mavlink_fd, "AA241x mission termination: control mode violation");
+				mavlink_log_info(_mavlink_fd, "#audio: AA241x mission termination: control mode violation");
 			}
 
 			/* check strict requirements (max alt and radius) */
@@ -1161,14 +1161,14 @@ LakeFire::task_main()
 				_in_mission = false;
 				_mission_failed = true;
 				_score = 0.0f;
-				mavlink_log_info(_mavlink_fd, "AA241x mission failed: boundary violation");
+				mavlink_log_info(_mavlink_fd, "#audio: AA241x mission failed: boundary violation");
 			}
 
 			/* check battery requirements */
 			if ((_batt_stat.discharged_mah - _mission_start_battery) > _parameters.max_discharge) {
 				_in_mission = false;
 				_early_termination = true;
-				mavlink_log_info(_mavlink_fd, "AA241x mission termination: max battery discharge reached");
+				mavlink_log_info(_mavlink_fd, "#audio: AA241x mission termination: max battery discharge reached");
 			}
 
 			/* check min altitude requirements */
@@ -1176,7 +1176,7 @@ LakeFire::task_main()
 				// end mission, but let fire propagate for rest of time
 				_in_mission = false;
 				_early_termination = true;
-				mavlink_log_info(_mavlink_fd, "AA241x mission termination: below min alt");
+				mavlink_log_info(_mavlink_fd, "#audio: AA241x mission termination: below min alt");
 			}
 
 			/* get the current time needed for further calculations */
@@ -1200,7 +1200,7 @@ LakeFire::task_main()
 				// TODO: would be nice to send a message that mission is over
 				_in_mission = false;
 				_can_start = false;
-				mavlink_log_info(_mavlink_fd, "AA241x mission completed");
+				mavlink_log_info(_mavlink_fd, "#audio: AA241x mission completed");
 
 				/* make sure that have done all fire propagations */
 				if (_propagations_remaining > 0) {
