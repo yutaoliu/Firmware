@@ -911,6 +911,7 @@ LakeFire::initialize_mission()
 	} */
 
 	_in_mission = true;
+	_can_start = false;	// don't allow restarting of a mission
 	_mission_start_time = hrt_absolute_time();
 	_last_propagation_time = hrt_absolute_time();
 	_mission_start_battery = _batt_stat.discharged_mah;
@@ -1310,10 +1311,10 @@ LakeFire::task_main()
 				mavlink_log_info(_mavlink_fd, "#audio: AA241x mission termination: control mode violation");
 			}
 
-			/* check strict requirements (max alt and radius) */
+			/* check strict requirements (max alt and radius) (with 10 and 5 m buffers, respectively) */
 			float r2 = _local_data.N*_local_data.N + _local_data.E*_local_data.E;
-			float max_r2 = _parameters.max_radius*_parameters.max_radius;
-			if (-_local_data.D_gps >= _parameters.max_alt || r2 > max_r2) {
+			float max_r2 = _parameters.max_radius*_parameters.max_radius + 5.0f*5.0f; // with additional 5 meter buffer
+			if (-_local_data.D_gps >= (_parameters.max_alt + 10.0f) || r2 > max_r2) {
 				// end mission and set score to 0 if violate max altitude
 				_in_mission = false;
 				_mission_failed = true;
@@ -1329,7 +1330,7 @@ LakeFire::task_main()
 			}
 
 			/* check min altitude requirements */
-			if (-_local_data.D_gps <= _parameters.min_alt) {
+			if (-_local_data.D_gps <= (_parameters.min_alt - 10.0f)) {
 				// end mission, but let fire propagate for rest of time
 				_in_mission = false;
 				_early_termination = true;
