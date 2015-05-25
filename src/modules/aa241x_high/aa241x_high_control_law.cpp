@@ -107,9 +107,9 @@ void flight_control() {
 	high_data.variable_name10 = accel_body_x;
 	high_data.variable_name11 = accel_body_y;
 	high_data.variable_name12 = accel_body_z;
-	high_data.variable_name13 = my_float_variable;
-	high_data.variable_name14 = my_float_variable;
-	high_data.variable_name15 = my_float_variable;
+	high_data.variable_name13 = (float) can_start;
+	high_data.variable_name14 = (float) in_mission;
+	high_data.variable_name15 = batt_used;
 	high_data.variable_name16 = my_float_variable;
 
 

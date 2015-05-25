@@ -552,11 +552,11 @@ LakeFire::publish_mission_status()
 		mis_stat.mission_time = (hrt_absolute_time() - _mission_start_time)/(1000000.0f*60.0f);
 		mis_stat.battery_used = _batt_stat.discharged_mah - _mission_start_battery;
 	} else {
-		/*
+
 		// don't necessarily need to set to 0?
 		mis_stat.mission_time = 0.0f;
 		mis_stat.battery_used = 0.0f;
-		*/
+
 	}
 
 	/* publish the mission status */

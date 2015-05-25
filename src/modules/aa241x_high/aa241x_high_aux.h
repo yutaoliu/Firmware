@@ -172,6 +172,9 @@ struct mis_params {
 };
 extern struct mis_params mission_parameters;			/**< local copies of mission parameters */
 
+extern bool can_start;
+extern bool in_mission;
+extern float batt_used;
 
 /* functions */
 

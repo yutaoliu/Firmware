@@ -149,6 +149,10 @@ struct aa241x_high_data_s high_data = {};
 struct aah_params aah_parameters = {};		// struct containing all of the user editable parameters (via ground station)
 struct mis_params mission_parameters = {};
 
+bool can_start = true;
+bool in_mission = false;
+float batt_used = 0.0f;
+
 
 orb_advert_t	_attitude_sp_pub = -1;
 orb_advert_t	_picture_request_pub = -1;

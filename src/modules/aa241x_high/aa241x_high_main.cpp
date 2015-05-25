@@ -755,6 +755,10 @@ FixedwingControl::set_local_data()
 	// TODO: maybe use local position....
 	ground_speed = sqrtf(_global_pos.vel_n * _global_pos.vel_n + _global_pos.vel_e * _global_pos.vel_e);		// speed relative to ground in [m/s]
 	ground_course = _global_pos.yaw; 	// this is course over ground (direction of velocity relative to North in [rad])
+
+	batt_used = _mis_status.battery_used;
+	in_mission = _mis_status.in_mission;
+	can_start = _mis_status.can_start;
 }
 
 
