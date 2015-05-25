@@ -758,6 +758,11 @@ LakeFire::initialize_mission()
 		return;
 	}
 
+	_in_mission = true;
+	_mission_start_time = hrt_absolute_time();
+	_last_propagation_time = hrt_absolute_time();
+	_mission_start_battery = _batt_stat.discharged_mah;
+
 	// TODO: need to ensure that the wind direction is valid
 	_wind_direction = WIND_DIRECTION(fire_wind_dir[_parameters.index]);
 	srand(seed_start[_parameters.index]);
@@ -777,6 +782,8 @@ LakeFire::initialize_mission()
 		_grid[i_s][j_s] = ON_FIRE;
 	}
 
+	// send message that mission has started
+	mavlink_log_info(_mavlink_fd, "AA241x mission started");
 }
 
 
@@ -1131,12 +1138,7 @@ LakeFire::task_main()
 
 			if (-_local_data.D_gps >= _parameters.auto_alt && _vcontrol_mode.flag_control_auto_enabled) {
 				/* start the mission once have crossed over the minimum altitude */
-				_in_mission = true;
-				_mission_start_time = hrt_absolute_time();
-				_last_propagation_time = hrt_absolute_time();
-				_mission_start_battery = _batt_stat.discharged_mah;
 				initialize_mission();
-				mavlink_log_info(_mavlink_fd, "AA241x mission started");
 			}
 		}
 
