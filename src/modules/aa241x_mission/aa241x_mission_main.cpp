@@ -112,6 +112,7 @@ LakeFire::LakeFire() :
 	_mission_failed(true),
 	_score(0.0f),
 	_unattended_count(0.0f),
+	_cross_min(false),
 	_last_picture(0),
 	_new_fire_count(0),
 	_wind_direction(WIND_OTHER),
@@ -1303,6 +1304,11 @@ LakeFire::task_main()
 		/* ensure abiding by mission rules */
 		if (_in_mission) {
 
+			/* check to see if we have crossed min alt for first time */
+			if (!_cross_min && -_local_data.D_gps >= _parameters.min_alt) {
+				_cross_min = true;
+			}
+
 			/* check auto requirements */
 			if (!_vcontrol_mode.flag_control_auto_enabled) {
 				// end mission and set score to 0 if switch to manual mode
@@ -1322,6 +1328,14 @@ LakeFire::task_main()
 				mavlink_log_info(_mavlink_fd, "#audio: AA241x mission failed: boundary violation");
 			}
 
+			/* check min altitude requirements (with 10m buffer) only if plane has gotten above it already */
+			if (_cross_min && -_local_data.D_gps <= (_parameters.min_alt - 10.0f)) {
+				// end mission, but let fire propagate for rest of time
+				_in_mission = false;
+				_early_termination = true;
+				mavlink_log_info(_mavlink_fd, "#audio: AA241x mission termination: below min alt");
+			}
+
 			/* check battery requirements */
 			if ((_batt_stat.discharged_mah - _mission_start_battery) > _parameters.max_discharge) {
 				_in_mission = false;
@@ -1329,13 +1343,6 @@ LakeFire::task_main()
 				mavlink_log_info(_mavlink_fd, "#audio: AA241x mission termination: max battery discharge reached");
 			}
 
-			/* check min altitude requirements */
-			if (-_local_data.D_gps <= (_parameters.min_alt - 10.0f)) {
-				// end mission, but let fire propagate for rest of time
-				_in_mission = false;
-				_early_termination = true;
-				mavlink_log_info(_mavlink_fd, "#audio: AA241x mission termination: below min alt");
-			}
 
 			/* get the current time needed for further calculations */
 			hrt_abstime current_time = hrt_absolute_time();
