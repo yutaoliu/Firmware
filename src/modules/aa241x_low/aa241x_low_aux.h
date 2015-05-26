@@ -134,6 +134,7 @@ extern float yaw_trim;
 extern uint64_t timestamp; 					// unix timestamp in microseconds of the beginning of the current loop
 extern uint64_t utc_timestamp; 				// GPS UTC timestamp in microseconds
 extern uint64_t previous_loop_timestamp; 	// timestamp of start of previous loop
+extern float mission_time;					// the mission time in minutes
 
 // picture result
 extern bool new_pic;
