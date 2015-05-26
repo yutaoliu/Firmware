@@ -991,8 +991,8 @@ int sdlog2_thread_main(int argc, char *argv[])
 		struct actuator_outputs_s act_outputs;
 		struct actuator_controls_s act_controls;
 		struct actuator_controls_s act_controls1;
-		struct vehicle_local_position_s local_pos;
-		struct vehicle_local_position_setpoint_s local_pos_sp;
+		//struct vehicle_local_position_s local_pos;				// AA241x REMOVED
+		//struct vehicle_local_position_setpoint_s local_pos_sp;	// AA241x REMOVED
 		struct vehicle_global_position_s global_pos;
 		struct position_setpoint_triplet_s triplet;
 		//struct vehicle_vicon_position_s vicon_pos;		// AA241x REMOVED
@@ -1001,8 +1001,8 @@ int sdlog2_thread_main(int argc, char *argv[])
 		struct rc_channels_s rc;
 		struct differential_pressure_s diff_pres;
 		struct airspeed_s airspeed;
-		struct esc_status_s esc;
-		struct vehicle_global_velocity_setpoint_s global_vel_sp;
+		//struct esc_status_s esc;							// AA241x REMOVED
+		//struct vehicle_global_velocity_setpoint_s global_vel_sp;	// AA241x REMOVED
 		struct battery_status_s battery;
 		struct telemetry_status_s telemetry;
 		//struct range_finder_report range_finder;			// AA241x REMOVED
@@ -1010,10 +1010,10 @@ int sdlog2_thread_main(int argc, char *argv[])
 		struct tecs_status_s tecs_status;
 		struct system_power_s system_power;
 		struct servorail_status_s servorail_status;
-		struct satellite_info_s sat_info;
+		//struct satellite_info_s sat_info;					// AA241x REMOVED
 		struct wind_estimate_s wind_estimate;
-		struct encoders_s encoders;
-		struct vtol_vehicle_status_s vtol_status;
+		//struct encoders_s encoders;						// AA241x REMOVED
+		//struct vtol_vehicle_status_s vtol_status;			// AA241x REMOVED
 		/* AA241x */
 		struct aa241x_mission_status_s mis_status;
 		//struct aa241x_new_fire_s new_fire;
@@ -1037,8 +1037,8 @@ int sdlog2_thread_main(int argc, char *argv[])
 			struct log_ATSP_s log_ATSP;
 			struct log_IMU_s log_IMU;
 			struct log_SENS_s log_SENS;
-			struct log_LPOS_s log_LPOS;
-			struct log_LPSP_s log_LPSP;
+			//struct log_LPOS_s log_LPOS;	// AA241x REMOVED
+			//struct log_LPSP_s log_LPSP;	// AA241x REMOVED
 			struct log_GPS_s log_GPS;
 			struct log_ATTC_s log_ATTC;
 			struct log_STAT_s log_STAT;
@@ -1049,8 +1049,8 @@ int sdlog2_thread_main(int argc, char *argv[])
 			struct log_ARSP_s log_ARSP;
 			// struct log_FLOW_s log_FLOW;	// AA241x REMOVED
 			struct log_GPOS_s log_GPOS;
-			struct log_GPSP_s log_GPSP;
-			struct log_ESC_s log_ESC;
+			//struct log_GPSP_s log_GPSP;	// AA241x REMOVED
+			//struct log_ESC_s log_ESC;		// AA241x REMOVED
 			struct log_GVSP_s log_GVSP;
 			struct log_BATT_s log_BATT;
 			//struct log_DIST_s log_DIST;	// AA241x REMOVED
@@ -1060,13 +1060,13 @@ int sdlog2_thread_main(int argc, char *argv[])
 			struct log_PWR_s log_PWR;
 			//struct log_VICN_s log_VICN;	// AA241x REMOVED
 			//struct log_VISN_s log_VISN;	// AA241x REMOVED
-			struct log_GS0A_s log_GS0A;
-			struct log_GS0B_s log_GS0B;
-			struct log_GS1A_s log_GS1A;
-			struct log_GS1B_s log_GS1B;
+			//struct log_GS0A_s log_GS0A;	// AA241x REMOVED
+			//struct log_GS0B_s log_GS0B;	// AA241x REMOVED
+			//struct log_GS1A_s log_GS1A;	// AA241x REMOVED
+			//struct log_GS1B_s log_GS1B;	// AA241x REMOVED
 			struct log_TECS_s log_TECS;
 			struct log_WIND_s log_WIND;
-			struct log_ENCD_s log_ENCD;
+			//struct log_ENCD_s log_ENCD;	// AA241x REMOVED
 			/* AA241x */
 			struct log_AMIS_s log_AMIS;
 			//struct log_FIRE_s log_FIRE;
@@ -1087,7 +1087,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 	struct {
 		int cmd_sub;
 		int status_sub;
-		int vtol_status_sub;
+		//int vtol_status_sub;		// AA241x REMOVED
 		int sensor_sub;
 		int att_sub;
 		int att_sp_sub;
@@ -1095,18 +1095,18 @@ int sdlog2_thread_main(int argc, char *argv[])
 		int act_outputs_sub;
 		int act_controls_sub;
 		int act_controls_1_sub;
-		int local_pos_sub;
-		int local_pos_sp_sub;
+		//int local_pos_sub;		// AA241x REMOVED
+		//int local_pos_sp_sub;		// AA241x REMOVED
 		int global_pos_sub;
 		int triplet_sub;
 		int gps_pos_sub;
-		int sat_info_sub;
+		//int sat_info_sub;
 		//int vicon_pos_sub;		// AA241x REMOVED
 		//int vision_pos_sub;		// AA241x REMOVED
 		// int flow_sub;			// AA241x REMOVED
 		int rc_sub;
 		int airspeed_sub;
-		int esc_sub;
+		//int esc_sub;
 		int global_vel_sp_sub;
 		int battery_sub;
 		int telemetry_subs[TELEMETRY_STATUS_ORB_ID_NUM];
@@ -1116,7 +1116,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 		int system_power_sub;
 		int servorail_status_sub;
 		int wind_sub;
-		int encoders_sub;
+		//int encoders_sub;			// AA241x REMOVED
 		/* AA241x */
 		int mis_sub;
 		//int fire_sub;
@@ -1130,7 +1130,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 
 	subs.cmd_sub = orb_subscribe(ORB_ID(vehicle_command));
 	subs.status_sub = orb_subscribe(ORB_ID(vehicle_status));
-	subs.vtol_status_sub = orb_subscribe(ORB_ID(vtol_vehicle_status));
+	//subs.vtol_status_sub = orb_subscribe(ORB_ID(vtol_vehicle_status));		// AA241x REMOVED
 	subs.gps_pos_sub = orb_subscribe(ORB_ID(vehicle_gps_position));
 	subs.sensor_sub = orb_subscribe(ORB_ID(sensor_combined));
 	subs.att_sub = orb_subscribe(ORB_ID(vehicle_attitude));
@@ -1139,8 +1139,8 @@ int sdlog2_thread_main(int argc, char *argv[])
 	subs.act_outputs_sub = orb_subscribe(ORB_ID(actuator_outputs));
 	subs.act_controls_sub = orb_subscribe(ORB_ID_VEHICLE_ATTITUDE_CONTROLS);
 	subs.act_controls_1_sub = orb_subscribe(ORB_ID(actuator_controls_1));
-	subs.local_pos_sub = orb_subscribe(ORB_ID(vehicle_local_position));
-	subs.local_pos_sp_sub = orb_subscribe(ORB_ID(vehicle_local_position_setpoint));
+	//subs.local_pos_sub = orb_subscribe(ORB_ID(vehicle_local_position));		// AA241x REMOVED
+	//subs.local_pos_sp_sub = orb_subscribe(ORB_ID(vehicle_local_position_setpoint));	// AA241x REMOVED
 	subs.global_pos_sub = orb_subscribe(ORB_ID(vehicle_global_position));
 	subs.triplet_sub = orb_subscribe(ORB_ID(position_setpoint_triplet));
 	//subs.vicon_pos_sub = orb_subscribe(ORB_ID(vehicle_vicon_position));		// AA241x REMOVED
@@ -1148,7 +1148,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 	// subs.flow_sub = orb_subscribe(ORB_ID(optical_flow)); 					// AA241x REMOVED
 	subs.rc_sub = orb_subscribe(ORB_ID(rc_channels));
 	subs.airspeed_sub = orb_subscribe(ORB_ID(airspeed));
-	subs.esc_sub = orb_subscribe(ORB_ID(esc_status));
+	//subs.esc_sub = orb_subscribe(ORB_ID(esc_status));							// AA241x REMOVED
 	subs.global_vel_sp_sub = orb_subscribe(ORB_ID(vehicle_global_velocity_setpoint));
 	subs.battery_sub = orb_subscribe(ORB_ID(battery_status));
 	//subs.range_finder_sub = orb_subscribe(ORB_ID(sensor_range_finder));		// AA241x REMOVED
@@ -1160,7 +1160,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 
 	/* we need to rate-limit wind, as we do not need the full update rate */
 	orb_set_interval(subs.wind_sub, 90);
-	subs.encoders_sub = orb_subscribe(ORB_ID(encoders));
+	//subs.encoders_sub = orb_subscribe(ORB_ID(encoders));						// AA241x REMOVED
 
 	/* add new topics HERE */
 
@@ -1181,11 +1181,13 @@ int sdlog2_thread_main(int argc, char *argv[])
 		subs.telemetry_subs[i] = orb_subscribe(telemetry_status_orb_id[i]);
 	}
 
+	/* // AA241x REMOVED
 	if (_extended_logging) {
 		subs.sat_info_sub = orb_subscribe(ORB_ID(satellite_info));
 	} else {
 		subs.sat_info_sub = 0;
 	}
+	*/
 
 	/* close non-needed fd's */
 
@@ -1277,11 +1279,13 @@ int sdlog2_thread_main(int argc, char *argv[])
 		}
 
 		/* --- VTOL VEHICLE STATUS --- */
+		/*
 		if(copy_if_updated(ORB_ID(vtol_vehicle_status), subs.vtol_status_sub, &buf.vtol_status)) {
 			log_msg.msg_type = LOG_VTOL_MSG;
 			log_msg.body.log_VTOL.airspeed_tot = buf.vtol_status.airspeed_tot;
 			LOGBUFFER_WRITE_AND_COUNT(VTOL);
 		}
+		*/
 
 		/* --- GPS POSITION - UNIT #1 --- */
 		if (gps_pos_updated) {
@@ -1306,11 +1310,12 @@ int sdlog2_thread_main(int argc, char *argv[])
 		}
 
 		/* --- SATELLITE INFO - UNIT #1 --- */
+		/*
 		if (_extended_logging) {
 
 			if (copy_if_updated(ORB_ID(satellite_info), subs.sat_info_sub, &buf.sat_info)) {
 
-				/* log the SNR of each satellite for a detailed view of signal quality */
+				// log the SNR of each satellite for a detailed view of signal quality
 				unsigned sat_info_count = MIN(buf.sat_info.count, sizeof(buf.sat_info.snr) / sizeof(buf.sat_info.snr[0]));
 				unsigned log_max_snr = sizeof(log_msg.body.log_GS0A.satellite_snr) / sizeof(log_msg.body.log_GS0A.satellite_snr[0]);
 
@@ -1318,16 +1323,16 @@ int sdlog2_thread_main(int argc, char *argv[])
 				memset(&log_msg.body.log_GS0A, 0, sizeof(log_msg.body.log_GS0A));
 				snr_mean = 0.0f;
 
-				/* fill set A and calculate mean SNR */
+				// fill set A and calculate mean SNR
 				for (unsigned i = 0; i < sat_info_count; i++) {
 
 					snr_mean += buf.sat_info.snr[i];
 
 					int satindex = buf.sat_info.svid[i] - 1;
 
-					/* handles index exceeding and wraps to to arithmetic errors */
+					// handles index exceeding and wraps to to arithmetic errors
 					if ((satindex >= 0) && (satindex < (int)log_max_snr)) {
-						/* map satellites by their ID so that logs from two receivers can be compared */
+						// map satellites by their ID so that logs from two receivers can be compared
 						log_msg.body.log_GS0A.satellite_snr[satindex] = buf.sat_info.snr[i];
 					}
 				}
@@ -1337,21 +1342,22 @@ int sdlog2_thread_main(int argc, char *argv[])
 				log_msg.msg_type = LOG_GS0B_MSG;
 				memset(&log_msg.body.log_GS0B, 0, sizeof(log_msg.body.log_GS0B));
 
-				/* fill set B */
+				// fill set B
 				for (unsigned i = 0; i < sat_info_count; i++) {
 
-					/* get second bank of satellites, thus deduct bank size from index */
+					// get second bank of satellites, thus deduct bank size from index
 					int satindex = buf.sat_info.svid[i] - 1 - log_max_snr;
 
-					/* handles index exceeding and wraps to to arithmetic errors */
+					// handles index exceeding and wraps to to arithmetic errors
 					if ((satindex >= 0) && (satindex < (int)log_max_snr)) {
-						/* map satellites by their ID so that logs from two receivers can be compared */
+						// map satellites by their ID so that logs from two receivers can be compared
 						log_msg.body.log_GS0B.satellite_snr[satindex] = buf.sat_info.snr[i];
 					}
 				}
 				LOGBUFFER_WRITE_AND_COUNT(GS0B);
 			}
 		}
+		*/
 
 		/* --- SENSOR COMBINED --- */
 		if (copy_if_updated(ORB_ID(sensor_combined), subs.sensor_sub, &buf.sensor)) {
@@ -1552,6 +1558,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 		}
 
 		/* --- LOCAL POSITION --- */
+		/*
 		if (copy_if_updated(ORB_ID(vehicle_local_position), subs.local_pos_sub, &buf.local_pos)) {
 			log_msg.msg_type = LOG_LPOS_MSG;
 			log_msg.body.log_LPOS.x = buf.local_pos.x;
@@ -1576,8 +1583,10 @@ int sdlog2_thread_main(int argc, char *argv[])
 			log_msg.body.log_LPOS.epv = buf.local_pos.epv;
 			LOGBUFFER_WRITE_AND_COUNT(LPOS);
 		}
+		*/
 
 		/* --- LOCAL POSITION SETPOINT --- */
+		/*
 		if (copy_if_updated(ORB_ID(vehicle_local_position_setpoint), subs.local_pos_sp_sub, &buf.local_pos_sp)) {
 			log_msg.msg_type = LOG_LPSP_MSG;
 			log_msg.body.log_LPSP.x = buf.local_pos_sp.x;
@@ -1591,7 +1600,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 			log_msg.body.log_LPSP.acc_y = buf.local_pos_sp.acc_y;
 			log_msg.body.log_LPSP.acc_z = buf.local_pos_sp.acc_z;
 			LOGBUFFER_WRITE_AND_COUNT(LPSP);
-		}
+		} */
 
 		/* --- GLOBAL POSITION --- */
 		if (copy_if_updated(ORB_ID(vehicle_global_position), subs.global_pos_sub, &buf.global_pos)) {
@@ -1613,6 +1622,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 		}
 
 		/* --- GLOBAL POSITION SETPOINT --- */
+		/*
 		if (copy_if_updated(ORB_ID(position_setpoint_triplet), subs.triplet_sub, &buf.triplet)) {
 
 			if (buf.triplet.current.valid) {
@@ -1629,6 +1639,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 				LOGBUFFER_WRITE_AND_COUNT(GPSP);
 			}
 		}
+		*/
 
 		/* --- VICON POSITION --- */
 		/*
@@ -1697,6 +1708,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 		}
 
 		/* --- ESCs --- */
+		/*
 		if (copy_if_updated(ORB_ID(esc_status), subs.esc_sub, &buf.esc)) {
 			for (uint8_t i = 0; i < buf.esc.esc_count; i++) {
 				log_msg.msg_type = LOG_ESC_MSG;
@@ -1715,8 +1727,10 @@ int sdlog2_thread_main(int argc, char *argv[])
 				LOGBUFFER_WRITE_AND_COUNT(ESC);
 			}
 		}
+		*/
 
 		/* --- GLOBAL VELOCITY SETPOINT --- */
+		/*
 		if (copy_if_updated(ORB_ID(vehicle_global_velocity_setpoint), subs.global_vel_sp_sub, &buf.global_vel_sp)) {
 			log_msg.msg_type = LOG_GVSP_MSG;
 			log_msg.body.log_GVSP.vx = buf.global_vel_sp.vx;
@@ -1724,6 +1738,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 			log_msg.body.log_GVSP.vz = buf.global_vel_sp.vz;
 			LOGBUFFER_WRITE_AND_COUNT(GVSP);
 		}
+		*/
 
 		/* --- BATTERY --- */
 		if (copy_if_updated(ORB_ID(battery_status), subs.battery_sub, &buf.battery)) {
@@ -1829,6 +1844,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 		}
 
 		/* --- ENCODERS --- */
+		/*
 		if (copy_if_updated(ORB_ID(encoders), subs.encoders_sub, &buf.encoders)) {
 			log_msg.msg_type = LOG_ENCD_MSG;
 			log_msg.body.log_ENCD.cnt0 = buf.encoders.counts[0];
@@ -1837,6 +1853,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 			log_msg.body.log_ENCD.vel1 = buf.encoders.velocity[1];
 			LOGBUFFER_WRITE_AND_COUNT(ENCD);
 		}
+		*/
 
 		/* AA241x messages */
 
