@@ -43,15 +43,15 @@
 #define FIRES_H_
 
 
-const int NUM_FIRES = 1;
+const int NUM_FIRES = 8;
 const int NUM_STARTS = 2;
 
-int8_t fire_wind_dir[NUM_FIRES] = {0};
+int8_t fire_wind_dir[NUM_FIRES] = {0, 1, 2, 3, 4, 5, 6, 7};
 
-int8_t i_start[NUM_FIRES][NUM_STARTS] = {{15, -1}};
-int8_t j_start[NUM_FIRES][NUM_STARTS] = {{8, -1}};
+int8_t i_start[NUM_FIRES][NUM_STARTS] = {{15, -1}, {15, 8}, {8, -1}, {3, 8}, {2, -1}, {2, 6}, {8, 4}, {12, -1}};
+int8_t j_start[NUM_FIRES][NUM_STARTS] = {{8, -1}, {8, 3}, {3, -1}, {3, 9}, {8, -1}, {12, 8}, {15, 8}, {15, -1}};
 
-unsigned int seed_start[NUM_FIRES] = {100};
+unsigned int seed_start[NUM_FIRES] = {100, 101, 102, 103, 104, 105, 106, 107};
 
 
 #endif /* FIRES_H_ */

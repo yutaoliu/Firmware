@@ -295,8 +295,6 @@ main_state_transition(struct vehicle_status_s *status, main_state_t new_main_sta
 		break;
 
 	case vehicle_status_s::MAIN_STATE_AUTO_MISSION:
-		ret = TRANSITION_CHANGED;
-		break;
 	case vehicle_status_s::MAIN_STATE_AUTO_RTL:
 		/* need global position and home position */
 		if (status->condition_global_position_valid && status->condition_home_position_valid) {

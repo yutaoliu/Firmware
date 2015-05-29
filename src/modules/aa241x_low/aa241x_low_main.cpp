@@ -744,6 +744,9 @@ LowPriorityLoop::set_aux_values()
 	// wind direction
 	mission_parameters.wind_dir = _mis_status.wind_direction;
 
+	// mission time
+	mission_time = _mis_status.mission_time;
+
 }
 
 void

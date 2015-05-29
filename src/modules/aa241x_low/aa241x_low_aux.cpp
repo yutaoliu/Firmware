@@ -130,6 +130,7 @@ float yaw_trim = 0.0f;
 uint64_t timestamp = 0; 				// timestamp of microseconds since boot (set at the beginning of loop)
 uint64_t utc_timestamp = 0; 			// GPS UTC timestamp in microseconds
 uint64_t previous_loop_timestamp = 0;	// timestamp of start of previous loop
+float mission_time;						// the mission time in minutes
 
 // picture result
 bool new_pic = false;
