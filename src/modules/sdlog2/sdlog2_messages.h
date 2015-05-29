@@ -494,6 +494,15 @@ struct log_PICD_s {
 	int8_t state[5];
 };
 
+/* --- AA241x PICTURE RESULT DETAILS 2 --- */
+#define LOG_PIC2_MSG 72
+struct log_PIC2_s {
+	uint8_t msg_number;
+	uint8_t i[4];
+	uint8_t j[4];
+	int8_t state[4];
+};
+
 /* --- AA241x WATER DROP --- */
 #define LOG_WDRP_MSG 68
 struct log_WDRP_s {
@@ -635,6 +644,7 @@ static const struct log_format_s log_formats[] = {
 	LOG_FORMAT(PROP, "QBB", "PropTime,PropsLeft,NumNew"),
 	LOG_FORMAT(PICR, "BQffffB", "Success,T,CntrN,CntrE,CntrD,PicD,nCell"),
 	LOG_FORMAT(PICD, "BBBBBBBBBBBbbbbb", "n,i1,i2,i3,i4,i5,j1,j2,j3,j4,j5,s1,s2,s3,s4,s5"),
+	LOG_FORMAT(PIC2, "BBBBBBBBBbbbb", "n,i1,i2,i3,i4,j1,j2,j3,j4,s1,s2,s3,s4"),
 	LOG_FORMAT(WDRP, "BQBB", "Success,T,i,j"),
 	LOG_FORMAT(HIGH, "ffffffffffffffff", HIGH_DATA_LABELS),
 	LOG_FORMAT(LOW, "ffffffffffffffff", LOW_DATA_LABELS),

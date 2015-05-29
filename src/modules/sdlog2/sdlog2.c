@@ -1073,6 +1073,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 			struct log_PROP_s log_PROP;
 			struct log_PICR_s log_PICR;
 			struct log_PICD_s log_PICD;
+			struct log_PIC2_s log_PIC2;
 			struct log_WDRP_s log_WDRP;
 			struct log_HIGH_s log_HIGH;
 			struct log_LOW_s log_LOW;
@@ -1925,11 +1926,31 @@ int sdlog2_thread_main(int argc, char *argv[])
 			LOGBUFFER_WRITE_AND_COUNT(PICR);
 
 			// may need to split up the message (depending on how many cells in view)
-			uint8_t msg_num = 0;
 			uint8_t size = buf.pic_result.num_cells;
-			uint8_t i_max = 0;
-			uint8_t remaining = size;
 
+			// write the first 5 cells to the PICD messages
+			for (int i = 0; i < 5; i++) {
+				log_msg.body.log_PICD.msg_number = 1;
+				log_msg.body.log_PICD.i[i] = buf.pic_result.i[i];
+				log_msg.body.log_PICD.j[i] = buf.pic_result.j[i];
+				log_msg.body.log_PICD.state[i] = buf.pic_result.state[i];
+			}
+			LOGBUFFER_WRITE_AND_COUNT(PICD);
+
+			if (size > 5) { // need to write to both the PICD and PIC2 messages
+
+				// write the additional sights to PIC2
+				for (int i = 5; i < 9; i++) {
+					log_msg.body.log_PICD.msg_number = 2;
+					log_msg.body.log_PIC2.i[i-5] = buf.pic_result.i[i];
+					log_msg.body.log_PIC2.j[i-5] = buf.pic_result.j[i];
+					log_msg.body.log_PIC2.state[i-5] = buf.pic_result.state[i];
+				}
+				LOGBUFFER_WRITE_AND_COUNT(PICD);
+			}
+
+
+			/*
 			while (remaining > 0) {
 
 				log_msg.msg_type = LOG_PICD_MSG;
@@ -1941,16 +1962,12 @@ int sdlog2_thread_main(int argc, char *argv[])
 					i_max = remaining;
 				}
 
-				for (int i = 0; i < i_max; i++) {
-					log_msg.body.log_PICD.i[i] = buf.pic_result.i[i];
-					log_msg.body.log_PICD.j[i] = buf.pic_result.j[i];
-					log_msg.body.log_PICD.state[i] = buf.pic_result.state[i];
-				}
-				LOGBUFFER_WRITE_AND_COUNT(PICD);
+
 
 				remaining = size - i_max;
 				msg_num++;
 			}
+			*/
 		}
 
 		/* --- WATER DROP RESULT --- */
