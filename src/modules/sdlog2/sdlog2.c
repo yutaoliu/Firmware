@@ -1860,7 +1860,6 @@ int sdlog2_thread_main(int argc, char *argv[])
 			log_msg.body.log_ENCD.vel1 = buf.encoders.velocity[1];
 			LOGBUFFER_WRITE_AND_COUNT(ENCD);
 		} */
-		*/
 
 		/* AA241x messages */
 
