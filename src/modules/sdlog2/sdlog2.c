@@ -1929,6 +1929,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 			uint8_t size = buf.pic_result.num_cells;
 
 			// write the first 5 cells to the PICD messages
+			log_msg.msg_type = LOG_PICD_MSG;
 			for (int i = 0; i < 5; i++) {
 				log_msg.body.log_PICD.msg_number = 1;
 				log_msg.body.log_PICD.i[i] = buf.pic_result.i[i];
@@ -1940,13 +1941,14 @@ int sdlog2_thread_main(int argc, char *argv[])
 			if (size > 5) { // need to write to both the PICD and PIC2 messages
 
 				// write the additional sights to PIC2
+				log_msg.msg_type = LOG_PIC2_MSG;
 				for (int i = 5; i < 9; i++) {
-					log_msg.body.log_PICD.msg_number = 2;
+					log_msg.body.log_PIC2.msg_number = 2;
 					log_msg.body.log_PIC2.i[i-5] = buf.pic_result.i[i];
 					log_msg.body.log_PIC2.j[i-5] = buf.pic_result.j[i];
 					log_msg.body.log_PIC2.state[i-5] = buf.pic_result.state[i];
 				}
-				LOGBUFFER_WRITE_AND_COUNT(PICD);
+				LOGBUFFER_WRITE_AND_COUNT(PIC2);
 			}
 
 
