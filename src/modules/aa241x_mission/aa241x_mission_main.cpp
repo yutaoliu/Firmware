@@ -354,9 +354,9 @@ void
 LakeFire::get_fire_info(picture_result_s *pic_result)
 {
 
-	int i_view[MAX_POSSIBLE_VIEW];
-	int j_view[MAX_POSSIBLE_VIEW];
-	int state[MAX_POSSIBLE_VIEW];
+	int i_view[MAX_POSSIBLE_VIEW] = {0};
+	int j_view[MAX_POSSIBLE_VIEW] = {0};
+	int state[MAX_POSSIBLE_VIEW] = {0};
 
 	/* explicit clean up (should not be necessary) */
 	pic_result->num_cells = 0;
