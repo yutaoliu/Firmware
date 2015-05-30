@@ -197,6 +197,7 @@ private:
 	bool		_mission_failed;		/**< if true terminating mission entirely with a score of 0 */
 	float		_score;					/**< the current mission score */
 	float		_unattended_count;		/**< the count of an unattended spread of the fire */
+	bool		_cross_min;				/**< if plane has crossed the minimum altitude (to delay checks between takeoff and first cross) */
 
 	hrt_abstime _last_picture;			/**< timestamp of when the last picture was taken */
 
