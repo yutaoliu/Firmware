@@ -1033,11 +1033,11 @@ LakeFire::calculate_score()
 void
 LakeFire::task_main_trampoline(int argc, char **argv)
 {
-	 //aa241x_mission::g_aa241x_mission->task_main();
+	aa241x_mission::g_aa241x_mission->task_main();
 	//aa241x_mission::g_aa241x_mission->mission_creator(); // CREATING
 	//aa241x_mission::g_aa241x_mission->prop_testing(); // DEBUG
 	//aa241x_mission::g_aa241x_mission->testing(); // DEBUG
-	aa241x_mission::g_aa241x_mission->sim_main(); // DEBUG
+	//aa241x_mission::g_aa241x_mission->sim_main(); // DEBUG
 }
 
 void
