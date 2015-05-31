@@ -891,7 +891,7 @@ LakeFire::initialize_mission()
 	// send message that mission has started
 	mavlink_log_info(_mavlink_fd, "#audio: AA241x mission started");
 
-	ioctl(_buzzer, TONE_SET_ALARM, TONE_TRAINER_BATTLE_TUNE);
+	ioctl(_buzzer, TONE_SET_ALARM, TONE_IMPERIAL_MARCH_TUNE);
 
 	// trigger the buzzer audio for mission start
 	/*
@@ -903,7 +903,7 @@ LakeFire::initialize_mission()
 
 		break;
 	case 3:
-		// ioctl(_buzzer, TONE_SET_ALARM, TONE_TRAINER_BATTLE_TUNE);
+		//ioctl(_buzzer, TONE_SET_ALARM, TONE_TRAINER_BATTLE_TUNE);
 		break;
 	case 4:
 
