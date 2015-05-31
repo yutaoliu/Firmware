@@ -572,7 +572,7 @@ struct log_ADAT_s {
 };
 
 /* --- AA241x CONDENSED GRID --- */
-#define LOG_GRID_MSG 72
+#define LOG_GRID_MSG 74
 struct log_GRID_s {
 	uint32_t r1;
 	uint32_t r2;
