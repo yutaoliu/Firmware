@@ -1033,10 +1033,11 @@ LakeFire::calculate_score()
 void
 LakeFire::task_main_trampoline(int argc, char **argv)
 {
-	 aa241x_mission::g_aa241x_mission->task_main();
+	 //aa241x_mission::g_aa241x_mission->task_main();
+	//aa241x_mission::g_aa241x_mission->mission_creator(); // CREATING
 	//aa241x_mission::g_aa241x_mission->prop_testing(); // DEBUG
-	// aa241x_mission::g_aa241x_mission->testing(); // DEBUG
-	// aa241x_mission::g_aa241x_mission->sim_testing(); // DEBUG
+	//aa241x_mission::g_aa241x_mission->testing(); // DEBUG
+	aa241x_mission::g_aa241x_mission->sim_main(); // DEBUG
 }
 
 void
@@ -1152,6 +1153,71 @@ LakeFire::prop_testing()
 	_exit(0);
 }
 
+void
+LakeFire::mission_creator()
+{
+
+	// 2 start missions
+
+	// create random wind direction
+	int windDir = (int) round(7.0f*((float) rand() / ((float) MAX_RAND)));
+
+
+	int iStart[2] = {-1};
+	int jStart[2] = {-1};
+
+	// create starting points
+	for (int k = 0; k < 2; k++) {
+		iStart[k] = (int) round(16.0f*((float) rand() / ((float) MAX_RAND)));
+		jStart[k] = (int) round(16.0f*((float) rand() / ((float) MAX_RAND)));
+	}
+
+	int seed = rand();
+	srand(seed);
+
+	printf("Wind direction: %d\n", windDir);
+	printf("Starting coords: (%d,%d) (%d,%d)\n",iStart[0], jStart[0], iStart[1], jStart[1]);
+	printf("Random seed: %d\n", seed);
+
+	// the world
+	int8_t temp_grid[17][17] = {{0}};
+
+	// initialize the fire
+	for (int k = 0; k < 2; k++) {
+		temp_grid[iStart[k]][jStart[k]] = ON_FIRE;
+	}
+
+	// now propagate the fire
+	int props = int(_parameters.duration*60.0f/_parameters.timestep);
+	while (props > 0) {
+		propagate_temp_fire(temp_grid);
+		props--;
+	}
+
+	// check to make sure enough of it is on fire by the end
+	int count = 0;
+	printf("\n");
+	for (int i = 0; i < GRID_WIDTH; i++) {
+		for (int j = 0;j < GRID_WIDTH; j++) {
+			printf("%d ", temp_grid[i][j]);
+			if (temp_grid[i][j] == ON_FIRE) {
+				count++;
+			}
+		}
+		printf("\n");
+	}
+	printf("\n");
+
+	printf("Total coverage: %d\n", count);
+
+	warnx("exiting.\n");
+
+	_control_task = -1;
+	_task_running = false;
+	_exit(0);
+
+}
+
 
 void
 LakeFire::sim_main()
@@ -1166,7 +1232,8 @@ LakeFire::sim_main()
 	/* open buzzer */
 	_buzzer = open(TONEALARM0_DEVICE_PATH, O_WRONLY);
 
-	_in_mission = true;
+	// initialize a mission (for testing puposes)
+	initialize_mission();
 
 	/*
 	 * do subscriptions
@@ -1300,6 +1367,7 @@ LakeFire::sim_main()
 				propagate_fire();
 				_propagations_remaining--;
 				publish_fire_prop();
+				publish_condensed_grid();
 
 				/* calculate the new score */
 				calculate_score();

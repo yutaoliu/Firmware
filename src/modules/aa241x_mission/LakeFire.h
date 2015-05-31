@@ -383,6 +383,8 @@ private:
 
 	void prop_testing();
 
+	void mission_creator();
+
 	void sim_testing();
 
 	void print_grid();
