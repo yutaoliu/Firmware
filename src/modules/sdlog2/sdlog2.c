@@ -1013,7 +1013,6 @@ int sdlog2_thread_main(int argc, char *argv[])
 		struct servorail_status_s servorail_status;
 		//struct satellite_info_s sat_info;					// AA241x REMOVED
 		struct wind_estimate_s wind_estimate;
-		//struct encoders_s encoders;
 		//struct vtol_vehicle_status_s vtol_status;			// AA241x REMOVED
 		/* AA241x */
 		struct aa241x_mission_status_s mis_status;
@@ -1120,7 +1119,6 @@ int sdlog2_thread_main(int argc, char *argv[])
 		int system_power_sub;
 		int servorail_status_sub;
 		int wind_sub;
-		//int encoders_sub;
 		/* AA241x */
 		int mis_sub;
 		//int fire_sub;
@@ -1165,7 +1163,6 @@ int sdlog2_thread_main(int argc, char *argv[])
 
 	/* we need to rate-limit wind, as we do not need the full update rate */
 	orb_set_interval(subs.wind_sub, 90);
-	//subs.encoders_sub = orb_subscribe(ORB_ID(encoders));
 
 	/* add new topics HERE */
 
@@ -1860,7 +1857,6 @@ int sdlog2_thread_main(int argc, char *argv[])
 			log_msg.body.log_ENCD.vel1 = buf.encoders.velocity[1];
 			LOGBUFFER_WRITE_AND_COUNT(ENCD);
 		} */
-		*/
 
 		/* AA241x messages */
 
@@ -1935,6 +1931,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 			uint8_t size = buf.pic_result.num_cells;
 
 			// write the first 5 cells to the PICD messages
+			log_msg.msg_type = LOG_PICD_MSG;
 			for (int i = 0; i < 5; i++) {
 				log_msg.body.log_PICD.msg_number = 1;
 				log_msg.body.log_PICD.i[i] = buf.pic_result.i[i];
@@ -1946,13 +1943,14 @@ int sdlog2_thread_main(int argc, char *argv[])
 			if (size > 5) { // need to write to both the PICD and PIC2 messages
 
 				// write the additional sights to PIC2
+				log_msg.msg_type = LOG_PIC2_MSG;
 				for (int i = 5; i < 9; i++) {
-					log_msg.body.log_PICD.msg_number = 2;
+					log_msg.body.log_PIC2.msg_number = 2;
 					log_msg.body.log_PIC2.i[i-5] = buf.pic_result.i[i];
 					log_msg.body.log_PIC2.j[i-5] = buf.pic_result.j[i];
 					log_msg.body.log_PIC2.state[i-5] = buf.pic_result.state[i];
 				}
-				LOGBUFFER_WRITE_AND_COUNT(PICD);
+				LOGBUFFER_WRITE_AND_COUNT(PIC2);
 			}
 
 
