@@ -467,7 +467,7 @@ struct log_FIRE_s {
 }; */
 
 /* --- AA241x FIRE PROPAGATION --- */
-#define LOG_PROP_MSG 72
+#define LOG_PROP_MSG 66
 struct log_PROP_s {
 	uint64_t time_us;
 	uint8_t props_remaining;
@@ -475,7 +475,7 @@ struct log_PROP_s {
 };
 
 /* --- AA241x PICTURE RESULT OVERVIEW --- */
-#define LOG_PICR_MSG 66
+#define LOG_PICR_MSG 67
 struct log_PICR_s {
 	uint8_t pic_taken;
 	uint64_t time_us;
@@ -487,7 +487,7 @@ struct log_PICR_s {
 };
 
 /* --- AA241x PICTURE RESULT DETAILS --- */
-#define LOG_PICD_MSG 67
+#define LOG_PICD_MSG 68
 struct log_PICD_s {
 	uint8_t msg_number;
 	uint8_t i[5];
@@ -496,7 +496,7 @@ struct log_PICD_s {
 };
 
 /* --- AA241x PICTURE RESULT DETAILS 2 --- */
-#define LOG_PIC2_MSG 72
+#define LOG_PIC2_MSG 69
 struct log_PIC2_s {
 	uint8_t msg_number;
 	uint8_t i[4];
@@ -505,7 +505,7 @@ struct log_PIC2_s {
 };
 
 /* --- AA241x WATER DROP --- */
-#define LOG_WDRP_MSG 68
+#define LOG_WDRP_MSG 70
 struct log_WDRP_s {
 	uint8_t success;
 	uint64_t time_us;
@@ -514,7 +514,7 @@ struct log_WDRP_s {
 };
 
 /* --- AA241x HIGH DATA --- */
-#define LOG_HIGH_MSG 69
+#define LOG_HIGH_MSG 71
 struct log_HIGH_s {
 	float field1;
 	float field2;
@@ -536,7 +536,7 @@ struct log_HIGH_s {
 
 
 /* --- AA241x LOW DATA --- */
-#define LOG_LOW_MSG 70
+#define LOG_LOW_MSG 72
 struct log_LOW_s {
 	float field1;
 	float field2;
@@ -557,7 +557,7 @@ struct log_LOW_s {
 };
 
 /* --- AA241x LOCAL DATA --- */
-#define LOG_ADAT_MSG 71
+#define LOG_ADAT_MSG 73
 struct log_ADAT_s {
 	float N;
 	float E;
