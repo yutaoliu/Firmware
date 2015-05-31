@@ -1355,6 +1355,7 @@ LakeFire::task_main()
 				propagate_fire();
 				_propagations_remaining--;
 				publish_fire_prop();
+				publish_condensed_grid();
 
 				/* calculate the new score */
 				calculate_score();
@@ -1388,6 +1389,7 @@ LakeFire::task_main()
 					publish_fire_prop();
 				}
 
+				publish_condensed_grid();
 				calculate_score();
 			}
 
