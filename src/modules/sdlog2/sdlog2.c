@@ -110,6 +110,7 @@
 #include <uORB/topics/aa241x_high_data.h>
 #include <uORB/topics/aa241x_low_data.h>
 #include <uORB/topics/aa241x_local_data.h>
+#include <uORB/topics/aa241x_condensed_grid.h>
 
 #include <systemlib/systemlib.h>
 #include <systemlib/param/param.h>
@@ -1023,6 +1024,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 		struct aa241x_high_data_s high_data;
 		struct aa241x_low_data_s low_data;
 		struct aa241x_local_data_s local_data;
+		struct aa241x_cgrid_s cgrid;
 	} buf;
 
 	memset(&buf, 0, sizeof(buf));
@@ -1078,6 +1080,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 			struct log_HIGH_s log_HIGH;
 			struct log_LOW_s log_LOW;
 			struct log_ADAT_s log_ADAT;
+			struct log_GRID_s log_GRID;
 		} body;
 	} log_msg = {
 		LOG_PACKET_HEADER_INIT(0)
@@ -1127,6 +1130,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 		int high_data_sub;
 		int low_data_sub;
 		int local_data_sub;
+		int grid_sub;
 	} subs;
 
 	subs.cmd_sub = orb_subscribe(ORB_ID(vehicle_command));
@@ -1174,6 +1178,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 	subs.high_data_sub = orb_subscribe(ORB_ID(aa241x_high_data));
 	subs.low_data_sub = orb_subscribe(ORB_ID(aa241x_low_data));
 	subs.local_data_sub = orb_subscribe(ORB_ID(aa241x_local_data));
+	subs.grid_sub = orb_subscribe(ORB_ID(aa241x_cgrid));
 
 	orb_set_interval(subs.mis_sub, 1000); // rate limit the mission subscription to only listen to the updates once a second
 
@@ -2038,6 +2043,24 @@ int sdlog2_thread_main(int argc, char *argv[])
 			log_msg.body.log_ADAT.body_w = buf.local_data.body_w;
 			log_msg.body.log_ADAT.ground_speed = buf.local_data.ground_speed;
 			LOGBUFFER_WRITE_AND_COUNT(ADAT);
+		}
+
+		/* -- GRID --- */
+		if (copy_if_updated(ORB_ID(aa241x_cgrid), subs.grid_sub, &buf.cgrid)) {
+			log_msg.msg_type = LOG_GRID_MSG;
+			log_msg.body.log_GRID.r1 = buf.cgrid.cells[0];
+			log_msg.body.log_GRID.r2 = buf.cgrid.cells[1];
+			log_msg.body.log_GRID.r3 = buf.cgrid.cells[2];
+			log_msg.body.log_GRID.r4 = buf.cgrid.cells[3];
+			log_msg.body.log_GRID.r5 = buf.cgrid.cells[4];
+			log_msg.body.log_GRID.r6 = buf.cgrid.cells[5];
+			log_msg.body.log_GRID.r7 = buf.cgrid.cells[6];
+			log_msg.body.log_GRID.r8 = buf.cgrid.cells[7];
+			log_msg.body.log_GRID.r9 = buf.cgrid.cells[8];
+			log_msg.body.log_GRID.r10 = buf.cgrid.cells[9];
+			log_msg.body.log_GRID.r11 = buf.cgrid.cells[10];
+			log_msg.body.log_GRID.r12 = buf.cgrid.cells[11];
+			LOGBUFFER_WRITE_AND_COUNT(GRID);
 		}
 
 		/* signal the other thread new data, but not yet unlock */
