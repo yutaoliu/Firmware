@@ -560,6 +560,15 @@ LakeFire::publish_mission_status()
 
 	}
 
+	if (_early_termination) {
+		mis_stat.ending = 2;
+	} else if (_mission_failed) {
+		mis_stat.ending = 3;
+	} else {
+		mis_stat.ending = 0;
+	}
+
+
 	/* publish the mission status */
 	if (_mission_status_pub > 0) {
 		orb_publish(ORB_ID(aa241x_mission_status), _mission_status_pub, &mis_stat);

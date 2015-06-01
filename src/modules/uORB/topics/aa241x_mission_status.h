@@ -21,6 +21,7 @@ struct aa241x_mission_status_s {
 	float score;			/**< current mission score */
 	int wind_direction;		/**< the wind direction for this mission */
 	int mission_index;		/**< the index of the currently running mission */
+	int ending;				/**< the state in which the mission ended */
 };
 
 /* register this as object request broker structure */
