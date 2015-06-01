@@ -109,7 +109,7 @@ LakeFire::LakeFire() :
 	_in_mission(false),
 	_can_start(true),
 	_early_termination(false),
-	_mission_failed(true),
+	_mission_failed(false),
 	_score(0.0f),
 	_unattended_count(0.0f),
 	_cross_min(false),
