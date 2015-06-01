@@ -94,6 +94,7 @@ MODULES 	+= modules/vtol_att_control
 MODULES		+= modules/aa241x_mission
 MODULES		+= modules/aa241x_high
 MODULES		+= modules/aa241x_low
+MODULES		+= modules/aa241x_mission_creator
 
 #
 # Logging
