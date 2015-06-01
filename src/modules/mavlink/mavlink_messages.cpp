@@ -2679,7 +2679,7 @@ private:
 
 protected:
 	explicit MavlinkStreamAA241xAuxData(Mavlink *mavlink) : MavlinkStream(mavlink),
-	_local_data_sub(_mavlink->add_orb_subscription(ORB_ID(aa241x_water_drop_result))),
+	_local_data_sub(_mavlink->add_orb_subscription(ORB_ID(aa241x_local_data))),
 	_local_time(0)
 	{}
 

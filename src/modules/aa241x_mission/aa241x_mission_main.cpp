@@ -1580,23 +1580,14 @@ LakeFire::task_main()
 				_cross_min = true;
 			}
 
+			// ---- Check soft terminations first ---- //
+
 			/* check auto requirements */
 			if (!_vcontrol_mode.flag_control_auto_enabled) {
 				// end mission and set score to 0 if switch to manual mode
 				_in_mission = false;
 				_early_termination = true;
 				mavlink_log_info(_mavlink_fd, "#audio: AA241x mission termination: control mode violation");
-			}
-
-			/* check strict requirements (max alt and radius) (with 10 and 5 m buffers, respectively) */
-			float r2 = _local_data.N*_local_data.N + _local_data.E*_local_data.E;
-			float max_r2 = _parameters.max_radius*_parameters.max_radius + 5.0f*5.0f; // with additional 5 meter buffer
-			if (-_local_data.D_gps >= (_parameters.max_alt + 10.0f) || r2 > max_r2) {
-				// end mission and set score to 0 if violate max altitude
-				_in_mission = false;
-				_mission_failed = true;
-				_score = 0.0f;
-				mavlink_log_info(_mavlink_fd, "#audio: AA241x mission failed: boundary violation");
 			}
 
 			/* check min altitude requirements (with 10m buffer) only if plane has gotten above it already */
@@ -1614,6 +1605,35 @@ LakeFire::task_main()
 				mavlink_log_info(_mavlink_fd, "#audio: AA241x mission termination: max battery discharge reached");
 			}
 
+			// propagate through the rest of the fire as needed
+			if (_early_termination) {
+
+				/* propagate the rest of the time */
+				while (_propagations_remaining > 0) {
+					propagate_fire();
+					_propagations_remaining--;
+					publish_fire_prop();
+				}
+
+				publish_condensed_grid();
+				calculate_score();
+			}
+
+			// ---- Check hard failures ---- //
+
+			/* check strict requirements (max alt and radius) (with 10 and 5 m buffers, respectively) */
+			float r2 = _local_data.N*_local_data.N + _local_data.E*_local_data.E;
+			float max_r2 = _parameters.max_radius*_parameters.max_radius + 5.0f*5.0f; // with additional 5 meter buffer
+			if (-_local_data.D_gps >= (_parameters.max_alt + 10.0f) || r2 > max_r2) {
+				// end mission and set score to 0 if violate max altitude
+				_in_mission = false;
+				_mission_failed = true;
+				_score = 0.0f;
+				mavlink_log_info(_mavlink_fd, "#audio: AA241x mission failed: boundary violation");
+			}
+
+
+			// --- Time related checks --- //
 
 			/* get the current time needed for further calculations */
 			hrt_abstime current_time = hrt_absolute_time();
@@ -1633,8 +1653,7 @@ LakeFire::task_main()
 			}
 
 			/* check to see if mission time has elapsed */
-			if ((current_time - _mission_start_time)/1000000.0f >= _parameters.duration*60.0f) {
-				// TODO: would be nice to send a message that mission is over
+			if (_in_mission && (current_time - _mission_start_time)/1000000.0f >= _parameters.duration*60.0f) {
 				_in_mission = false;
 				_can_start = false;
 				mavlink_log_info(_mavlink_fd, "#audio: AA241x mission completed");
@@ -1645,24 +1664,10 @@ LakeFire::task_main()
 					propagate_fire();
 				}
 
-				calculate_score();
-				// TODO: end mission gracefully and report final score
-			}
-
-			// TODO: if early termination, want to propagate the fire for the rest of the duration quickly
-			// to be able to give a score
-			if (_early_termination && !_mission_failed) {
-
-				/* propagate the rest of the time */
-				while (_propagations_remaining > 0) {
-					propagate_fire();
-					_propagations_remaining--;
-					publish_fire_prop();
-				}
-
-				publish_condensed_grid();
+				// calculate the final score
 				calculate_score();
 			}
+
 
 		}
 
