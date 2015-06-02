@@ -833,6 +833,8 @@ LakeFire::propagate_temp_fire(int8_t temp_grid[GRID_WIDTH][GRID_WIDTH])
 	for (int i = 0; i < GRID_WIDTH; i++) {
 		for (int j = 0; j < GRID_WIDTH; j++) {
 
+			prop_dir = roundf(generate_normal_random(_wind_direction));
+
 			/* make sure this cell isn't a new fire cell */
 			if (std::find(i_new.begin(), i_new.end(), i) != i_new.end() && std::find(j_new.begin(), j_new.end(), i) != j_new.end()) {
 				continue;
@@ -842,8 +844,6 @@ LakeFire::propagate_temp_fire(int8_t temp_grid[GRID_WIDTH][GRID_WIDTH])
 			cell_val = temp_grid[i][j];
 			if (cell_val != ON_FIRE) continue;
 			count++;
-
-			prop_dir = roundf(generate_normal_random(_wind_direction));
 
 			/* wrap the propagation direction to be within (0,8) */
 			if (prop_dir < 0) prop_dir += 8;
@@ -960,6 +960,8 @@ LakeFire::propagate_fire()
 	for (int i = 0; i < GRID_WIDTH; i++) {
 		for (int j = 0; j < GRID_WIDTH; j++) {
 
+			prop_dir = roundf(generate_normal_random(_wind_direction));
+
 			/* make sure this cell isn't a new fire cell */
 			if (std::find(i_new.begin(), i_new.end(), i) != i_new.end() && std::find(j_new.begin(), j_new.end(), i) != j_new.end()) {
 				continue;
@@ -969,8 +971,6 @@ LakeFire::propagate_fire()
 			cell_val = _grid[i][j];
 			if (cell_val != ON_FIRE) continue;
 			count++;
-
-			prop_dir = roundf(generate_normal_random(_wind_direction));
 
 			/* wrap the propagation direction to be within (0,8) */
 			if (prop_dir < 0) prop_dir += 8;
