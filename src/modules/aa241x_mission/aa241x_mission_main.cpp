@@ -1352,7 +1352,7 @@ LakeFire::task_main()
 
 			/* check strict requirements (max alt and radius) (with 10 and 5 m buffers, respectively) */
 			float r2 = _local_data.N*_local_data.N + _local_data.E*_local_data.E;
-			float max_r2 = _parameters.max_radius*_parameters.max_radius + 5.0f*5.0f; // with additional 5 meter buffer
+			float max_r2 = (_parameters.max_radius + 5.0f)*(_parameters.max_radius + 5.0f); // with additional 5 meter buffer
 			if (-_local_data.D_gps >= (_parameters.max_alt + 10.0f) || r2 > max_r2) {
 				// end mission and set score to 0 if violate max altitude
 				_in_mission = false;
