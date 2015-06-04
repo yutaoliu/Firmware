@@ -63,6 +63,7 @@ int8_t	_grid[GRID_WIDTH][GRID_WIDTH] = {{0}};
 
 extern "C" __EXPORT int aa241x_mission_creator_main(int argc, char *argv[]);
 
+void print_grid();
 void propagate_fire();
 float generate_normal_random(const float &mean);
 void get_prop_coords(int *i_prop, int *j_prop, const int &prop_dir);
@@ -211,7 +212,15 @@ propagate_fire()
 		for (int j = 0; j < GRID_WIDTH; j++) {
 
 			/* make sure this cell isn't a new fire cell */
-			if (std::find(i_new.begin(), i_new.end(), i) != i_new.end() && std::find(j_new.begin(), j_new.end(), i) != j_new.end()) {
+			/*
+			int ai = std::find(i_new.begin(), i_new.end(), i);
+			int aj = std::find(j_new.begin(), j_new.end(), i);
+			if ( ai != i_new.end() &&  aj != j_new.end()) {
+				printf("new prop found: (%d, %d)\n", ai, aj);
+				continue;
+			}
+			*/
+			if ( std::find(i_new.begin(), i_new.end(), i) != i_new.end() &&  std::find(j_new.begin(), j_new.end(), j) != j_new.end()) {
 				continue;
 			}
 
@@ -242,11 +251,14 @@ propagate_fire()
 			if (cell_val == OPEN_LAND) {
 				/* add fire to this cell */
 				_grid[i_prop][j_prop] = ON_FIRE;
+				printf("prop to: (%d, %d)\n", i_prop, j_prop);
 				i_new.push_back(i_prop);
 				j_new.push_back(j_prop);
 			}
 		}
 	}
+
+	printf("new fire count: %d\n", count);
 
 	/* clear vectors after having published the info */
 	i_new.clear();
@@ -254,8 +266,35 @@ propagate_fire()
 }
 
 
+void
+print_grid() {
+	printf("\n");
+	for (int i = 0; i < GRID_WIDTH; i++) {
+		for (int j = 0;j < GRID_WIDTH; j++) {
+			printf("%d ", _grid[i][j]);
+		}
+		printf("\n");
+	}
+	printf("\n");
+}
+
 int aa241x_mission_creator_main(int argc, char *argv[])
 {
+
+	if (strcmp(argv[1], "-1")) {
+		// create random wind direction
+		_wind_direction = WIND_DIRECTION((int) round(7.0f*((float) rand() / ((float) MAX_RAND))));
+		_wind_direction = WIND_DIRECTION(3);
+	} else {
+		printf("using a wind direction of: %d\n", atoi(argv[1]));
+		_wind_direction = WIND_DIRECTION(atoi(argv[1]));
+	}
+
+	int numStart = 2;
+	if (!strcmp(argv[2], "-1")) {
+		numStart = atoi(argv[2]);
+		printf("num starts: %d\n", numStart);
+	}
 
 	build_grid_mask();
 
@@ -266,15 +305,12 @@ int aa241x_mission_creator_main(int argc, char *argv[])
 
 	// 2 start missions
 
-	// create random wind direction
-	_wind_direction = WIND_DIRECTION((int) round(7.0f*((float) rand() / ((float) MAX_RAND))));
-
 
 	int iStart[2] = {-1};
 	int jStart[2] = {-1};
 
 	// create starting points
-	for (int k = 0; k < 2; k++) {
+	for (int k = 0; k < numStart; k++) {
 		iStart[k] = (int) round(16.0f*((float) rand() / ((float) MAX_RAND)));
 		jStart[k] = (int) round(16.0f*((float) rand() / ((float) MAX_RAND)));
 
@@ -299,20 +335,15 @@ int aa241x_mission_creator_main(int argc, char *argv[])
 	}
 
 	printf("Starting Grid:\n");
-	printf("\n");
-	for (int i = 0; i < GRID_WIDTH; i++) {
-		for (int j = 0;j < GRID_WIDTH; j++) {
-			printf("%d ", _grid[i][j]);
-		}
-		printf("\n");
-	}
-	printf("\n");
+	print_grid();
 
 	// now propagate the fire
 	int props = (int) duration*60.0f/timeStep;
 
 	while (props > 0) {
 		propagate_fire();
+		print_grid();
+		usleep(2000000);
 		props--;
 	}
 
