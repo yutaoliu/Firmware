@@ -1870,6 +1870,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 			log_msg.body.log_AMIS.score = buf.mis_status.score;
 			log_msg.body.log_AMIS.wind_dir = buf.mis_status.wind_direction;
 			log_msg.body.log_AMIS.index = buf.mis_status.mission_index;
+			log_msg.body.log_AMIS.ending = buf.mis_status.ending;
 			LOGBUFFER_WRITE_AND_COUNT(AMIS);
 		}
 

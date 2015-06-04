@@ -2357,12 +2357,19 @@ protected:
 			mavlink_aa241x_mission_status_t msg;
 
 			msg.can_start = mis_status.can_start;
-			msg.in_mission = mis_status.in_mission;
+			//msg.in_mission = mis_status.in_mission;
 			msg.mission_time = mis_status.mission_time;
 			msg.score = mis_status.score;
 			msg.battery_used = mis_status.battery_used;
 			msg.wind_direction = mis_status.wind_direction;
 			msg.mission_index = mis_status.mission_index;
+
+			// mission status
+			if (mis_status.ending > 0) {
+				msg.in_mission = mis_status.ending;
+			} else {
+				msg.in_mission = mis_status.in_mission;
+			}
 
 			_mavlink->send_message(MAVLINK_MSG_ID_AA241X_MISSION_STATUS, &msg);
 		}
@@ -2679,7 +2686,7 @@ private:
 
 protected:
 	explicit MavlinkStreamAA241xAuxData(Mavlink *mavlink) : MavlinkStream(mavlink),
-	_local_data_sub(_mavlink->add_orb_subscription(ORB_ID(aa241x_water_drop_result))),
+	_local_data_sub(_mavlink->add_orb_subscription(ORB_ID(aa241x_local_data))),
 	_local_time(0)
 	{}
 
