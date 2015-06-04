@@ -251,14 +251,14 @@ propagate_fire()
 			if (cell_val == OPEN_LAND) {
 				/* add fire to this cell */
 				_grid[i_prop][j_prop] = ON_FIRE;
-				printf("prop to: (%d, %d)\n", i_prop, j_prop);
+				//printf("(%d, %d) prop to: (%d, %d)\n", i, j, i_prop, j_prop);
 				i_new.push_back(i_prop);
 				j_new.push_back(j_prop);
 			}
 		}
 	}
 
-	printf("new fire count: %d\n", count);
+	//printf("new fire count: %d\n", count);
 
 	/* clear vectors after having published the info */
 	i_new.clear();
@@ -281,19 +281,14 @@ print_grid() {
 int aa241x_mission_creator_main(int argc, char *argv[])
 {
 
-	if (strcmp(argv[1], "-1")) {
+	int numStart = atoi(argv[1]);
+
+	if (atoi(argv[2]) == -1) {
 		// create random wind direction
 		_wind_direction = WIND_DIRECTION((int) round(7.0f*((float) rand() / ((float) MAX_RAND))));
-		_wind_direction = WIND_DIRECTION(3);
 	} else {
 		printf("using a wind direction of: %d\n", atoi(argv[1]));
 		_wind_direction = WIND_DIRECTION(atoi(argv[1]));
-	}
-
-	int numStart = 2;
-	if (!strcmp(argv[2], "-1")) {
-		numStart = atoi(argv[2]);
-		printf("num starts: %d\n", numStart);
 	}
 
 	build_grid_mask();
@@ -303,8 +298,8 @@ int aa241x_mission_creator_main(int argc, char *argv[])
 	float duration = 10.0f; // in minutes
 	float timeStep = 15.0f; // seconds
 
-	// 2 start missions
-
+	// reset the random seed
+	// srand(112358);
 
 	int iStart[2] = {-1};
 	int jStart[2] = {-1};
@@ -334,16 +329,24 @@ int aa241x_mission_creator_main(int argc, char *argv[])
 		_grid[iStart[k]][jStart[k]] = ON_FIRE;
 	}
 
+	// add some water
+	/*
+	for (int j = 0; j < GRID_WIDTH; j++) {
+		_grid[6][j] = WATER;
+	}
+	*/
+
 	printf("Starting Grid:\n");
 	print_grid();
 
 	// now propagate the fire
 	int props = (int) duration*60.0f/timeStep;
+	printf("props: %d\n", props);
 
 	while (props > 0) {
 		propagate_fire();
-		print_grid();
-		usleep(2000000);
+		//print_grid();
+		//usleep(2000000);
 		props--;
 	}
 
