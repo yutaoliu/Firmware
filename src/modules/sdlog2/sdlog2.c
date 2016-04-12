@@ -114,14 +114,13 @@
 /* AA241x includes */
 // #include <vector>
 #include <uORB/topics/aa241x_mission_status.h>
-#include <uORB/topics/aa241x_new_fire.h>
 #include <uORB/topics/aa241x_fire_prop.h>
 #include <uORB/topics/aa241x_picture_result.h>
 #include <uORB/topics/aa241x_water_drop_result.h>
 #include <uORB/topics/aa241x_high_data.h>
 #include <uORB/topics/aa241x_low_data.h>
 #include <uORB/topics/aa241x_local_data.h>
-#include <uORB/topics/aa241x_condensed_grid.h>
+#include <uORB/topics/aa241x_cgrid.h>
 
 #include <systemlib/systemlib.h>
 #include <systemlib/param/param.h>
@@ -1115,8 +1114,8 @@ int sdlog2_thread_main(int argc, char *argv[])
 		struct aa241x_mission_status_s mis_status;
 		//struct aa241x_new_fire_s new_fire;
 		struct aa241x_fire_prop_s fire_prop;
-		struct picture_result_s pic_result;
-		struct water_drop_result_s water_drop_result;
+		struct aa241x_picture_result_s pic_result;
+		struct aa241x_water_drop_result_s water_drop_result;
 		struct aa241x_high_data_s high_data;
 		struct aa241x_low_data_s low_data;
 		struct aa241x_local_data_s local_data;
@@ -1276,7 +1275,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 	subs.tsync_sub = -1;
 	subs.mc_att_ctrl_status_sub = -1;
 	subs.ctrl_state_sub = -1;
-	subs.encoders_sub = -1;
+	//subs.encoders_sub = -1;
 	subs.innov_sub = -1;
 
 	/* add new topics HERE */
@@ -1296,7 +1295,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 		subs.telemetry_subs[i] = -1;
 	}
 	
-	subs.sat_info_sub = -1;
+	//subs.sat_info_sub = -1;
 
 #ifdef __PX4_NUTTX
 	/* close non-needed fd's. We cannot do this for posix since the file
@@ -1423,7 +1422,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 
 			if (copy_if_updated(ORB_ID(satellite_info), &subs.sat_info_sub, &buf.sat_info)) {
 
-				/* log the SNR of each satellite for a detailed view of signal quality */
+				// log the SNR of each satellite for a detailed view of signal quality 
 				unsigned sat_info_count = SDLOG_MIN(buf.sat_info.count, sizeof(buf.sat_info.snr) / sizeof(buf.sat_info.snr[0]));
 				unsigned log_max_snr = sizeof(log_msg.body.log_GS0A.satellite_snr) / sizeof(log_msg.body.log_GS0A.satellite_snr[0]);
 
@@ -1431,16 +1430,16 @@ int sdlog2_thread_main(int argc, char *argv[])
 				memset(&log_msg.body.log_GS0A, 0, sizeof(log_msg.body.log_GS0A));
 				snr_mean = 0.0f;
 
-				/* fill set A and calculate mean SNR */
+				// fill set A and calculate mean SNR 
 				for (unsigned i = 0; i < sat_info_count; i++) {
 
 					snr_mean += buf.sat_info.snr[i];
 
 					int satindex = buf.sat_info.svid[i] - 1;
 
-					/* handles index exceeding and wraps to to arithmetic errors */
+					// handles index exceeding and wraps to to arithmetic errors 
 					if ((satindex >= 0) && (satindex < (int)log_max_snr)) {
-						/* map satellites by their ID so that logs from two receivers can be compared */
+						// map satellites by their ID so that logs from two receivers can be compared 
 						log_msg.body.log_GS0A.satellite_snr[satindex] = buf.sat_info.snr[i];
 					}
 				}
@@ -1450,15 +1449,15 @@ int sdlog2_thread_main(int argc, char *argv[])
 				log_msg.msg_type = LOG_GS0B_MSG;
 				memset(&log_msg.body.log_GS0B, 0, sizeof(log_msg.body.log_GS0B));
 
-				/* fill set B */
+				// fill set B 
 				for (unsigned i = 0; i < sat_info_count; i++) {
 
-					/* get second bank of satellites, thus deduct bank size from index */
+					// get second bank of satellites, thus deduct bank size from index 
 					int satindex = buf.sat_info.svid[i] - 1 - log_max_snr;
 
-					/* handles index exceeding and wraps to to arithmetic errors */
+					// handles index exceeding and wraps to to arithmetic errors 
 					if ((satindex >= 0) && (satindex < (int)log_max_snr)) {
-						/* map satellites by their ID so that logs from two receivers can be compared */
+						// map satellites by their ID so that logs from two receivers can be compared 
 						log_msg.body.log_GS0B.satellite_snr[satindex] = buf.sat_info.snr[i];
 					}
 				}

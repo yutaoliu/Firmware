@@ -97,12 +97,12 @@ LakeFire::LakeFire() :
 	_water_drop_request_sub(-1),
 	_local_data_sub(-1),
 	_battery_status_sub(-1),
-	_mission_status_pub(-1),
-	_new_fire_pub(-1),
-	_fire_prop_pub(-1),
-	_pic_result_pub(-1),
-	_water_drop_result_pub(-1),
-	_cgrid_pub(-1),
+	_mission_status_pub(nullptr),
+	_new_fire_pub(nullptr),
+	_fire_prop_pub(nullptr),
+	_pic_result_pub(nullptr),
+	_water_drop_result_pub(nullptr),
+	_cgrid_pub(nullptr),
 	_mission_start_time(-1),
 	_last_propagation_time(-1),
 	_mission_start_battery(0),
@@ -181,10 +181,10 @@ LakeFire::~LakeFire() {
 }
 
 
-picture_result_s
+aa241x_picture_result_s
 LakeFire::take_picture()
 {
-	picture_result_s pic_result = {};
+	aa241x_picture_result_s pic_result = {};
 
 	pic_result.center_n = _pic_request.pos_N; // _local_pos.x;
 	pic_result.center_e = _pic_request.pos_E; // _local_pos.y;
@@ -224,10 +224,10 @@ LakeFire::take_picture()
 	return pic_result;
 }
 
-water_drop_result_s
+aa241x_water_drop_result_s
 LakeFire::drop_water()
 {
-	water_drop_result_s water_drop;
+	aa241x_water_drop_result_s water_drop;
 
 	water_drop.time_us = _water_drop_request.time_us; // hrt_absolute_time();
 	float n = _water_drop_request.pos_N; // _local_pos.x;
@@ -351,12 +351,12 @@ LakeFire::ij2ne(const float &i, const float &j)
 }
 
 void
-LakeFire::get_fire_info(picture_result_s *pic_result)
+LakeFire::get_fire_info(aa241x_picture_result_s *pic_result)
 {
 
-	int i_view[MAX_POSSIBLE_VIEW] = {0};
-	int j_view[MAX_POSSIBLE_VIEW] = {0};
-	int state[MAX_POSSIBLE_VIEW] = {0};
+	int i_view[9] = {0};
+	int j_view[9] = {0};
+	int state[9] = {0};
 
 	/* explicit clean up (should not be necessary) */
 	pic_result->num_cells = 0;
@@ -510,7 +510,7 @@ LakeFire::handle_picture_request()
 	orb_copy(ORB_ID(aa241x_picture_request), _pic_request_sub, &_pic_request);
 
 	/* do the taking of the picture */
-	picture_result_s pic_result = take_picture();
+	aa241x_picture_result_s pic_result = take_picture();
 
 	/* only publish the result if the picture was successful,
 	 * this ensures that there is no erasing of a picture result before
@@ -528,7 +528,7 @@ LakeFire::handle_water_drop_request()
 	orb_copy(ORB_ID(aa241x_water_drop_request), _water_drop_request_sub, &_water_drop_request);
 
 	/* do the dropping of water */
-	water_drop_result_s water_drop_res = drop_water();
+	aa241x_water_drop_result_s water_drop_res = drop_water();
 
 	/* only publish the result if the was drop was successful,
 	 * this ensures that there is no erasing of a water drop result before
@@ -561,7 +561,7 @@ LakeFire::publish_mission_status()
 	}
 
 	/* publish the mission status */
-	if (_mission_status_pub > 0) {
+	if (_mission_status_pub != nullptr) {
 		orb_publish(ORB_ID(aa241x_mission_status), _mission_status_pub, &mis_stat);
 	} else {
 		_mission_status_pub = orb_advertise(ORB_ID(aa241x_mission_status), &mis_stat);
@@ -621,7 +621,7 @@ LakeFire::publish_condensed_grid()
 	}
 
 	/* publish the mission status */
-	if (_cgrid_pub > 0) {
+	if (_cgrid_pub != nullptr) {
 		orb_publish(ORB_ID(aa241x_cgrid), _cgrid_pub, &cgrid);
 	} else {
 		_cgrid_pub = orb_advertise(ORB_ID(aa241x_cgrid), &cgrid);
@@ -631,6 +631,8 @@ LakeFire::publish_condensed_grid()
 void
 LakeFire::publish_new_fire(const std::vector<int> &i_new, const std::vector<int> &j_new)
 {
+	/* 
+	// THIS ALL DOESN'T WORK ANYWAY
 	std::vector<int> i_fire = i_new;
 	std::vector<int> j_fire = j_new;
 
@@ -640,12 +642,13 @@ LakeFire::publish_new_fire(const std::vector<int> &i_new, const std::vector<int>
 	new_fire.i_new = &i_fire[0];
 	new_fire.j_new = &j_fire[0];
 
-	/* publish the new fire cells */
-	if (_new_fire_pub > 0) {
+	// publish the new fire cells 
+	if (_new_fire_pub != nullptr) {
 		orb_publish(ORB_ID(aa241x_new_fire), _new_fire_pub, &new_fire);
 	} else {
 		_new_fire_pub = orb_advertise(ORB_ID(aa241x_new_fire), &new_fire);
 	}
+	*/
 }
 
 void
@@ -657,7 +660,7 @@ LakeFire::publish_fire_prop()
 	fire_prop.props_remaining = _propagations_remaining;
 
 	/* publish the info on this fire prop step */
-	if (_fire_prop_pub > 0) {
+	if (_fire_prop_pub != nullptr) {
 		orb_publish(ORB_ID(aa241x_fire_prop), _fire_prop_pub, &fire_prop);
 	} else {
 		_fire_prop_pub = orb_advertise(ORB_ID(aa241x_fire_prop), &fire_prop);
@@ -665,10 +668,10 @@ LakeFire::publish_fire_prop()
 }
 
 void
-LakeFire::publish_picture_result(const picture_result_s &pic_result)
+LakeFire::publish_picture_result(const aa241x_picture_result_s &pic_result)
 {
 	/* publish the picture result */
-	if (_pic_result_pub > 0) {
+	if (_pic_result_pub != nullptr) {
 		orb_publish(ORB_ID(aa241x_picture_result), _pic_result_pub, &pic_result);
 	} else {
 		_pic_result_pub = orb_advertise(ORB_ID(aa241x_picture_result), &pic_result);
@@ -676,10 +679,10 @@ LakeFire::publish_picture_result(const picture_result_s &pic_result)
 }
 
 void
-LakeFire::publish_water_drop(const water_drop_result_s &water_drop_result)
+LakeFire::publish_water_drop(const aa241x_water_drop_result_s &water_drop_result)
 {
 	/* publish the picture result */
-	if (_water_drop_result_pub > 0) {
+	if (_water_drop_result_pub != nullptr) {
 		orb_publish(ORB_ID(aa241x_water_drop_result), _water_drop_result_pub, &water_drop_result);
 	} else {
 		_water_drop_result_pub = orb_advertise(ORB_ID(aa241x_water_drop_result), &water_drop_result);
@@ -1000,7 +1003,7 @@ LakeFire::propagate_fire()
 	}
 
 	/* publish the new fire cells */
-	publish_new_fire(i_new, j_new);
+	//publish_new_fire(i_new, j_new);
 
 	/* clear vectors after having published the info */
 	i_new.clear();
@@ -1421,7 +1424,7 @@ LakeFire::start()
 	ASSERT(_control_task == -1);
 
 	/* start the task */
-	_control_task = task_spawn_cmd("aa241x_mission",
+	_control_task = px4_task_spawn_cmd("aa241x_mission",
 			SCHED_DEFAULT,
 			SCHED_PRIORITY_DEFAULT + 20,
 			1800,

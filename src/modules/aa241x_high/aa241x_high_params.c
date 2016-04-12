@@ -57,8 +57,6 @@
  * The default value of this float parameter will be 10.0.
  *
  * @unit meter 						(the unit attribute (not required, just helps for sanity))
- * @min 0 							(optional minimum value for displaying in the ground station)
- * @max 100 						(optional max)
  * @group AA241x High Params		(always include this)
  */
 PARAM_DEFINE_FLOAT(AAH_EXAMPLE, 10.0f);

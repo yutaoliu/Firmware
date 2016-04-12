@@ -50,6 +50,9 @@
 
 #include "aa241x_high_aux.h"
 
+// need to use a specific namespace
+namespace aa241x_high {
+
 // set these variables for help in debugging (these will be sent to the ground station)
 float roll_desired = 0.0f;
 float pitch_desired = 0.0f;
@@ -139,7 +142,7 @@ float mission_time;						// the mission time in minutes
 
 // picture result
 bool new_pic = false;
-picture_result_s pic_result = {};
+aa241x_picture_result_s pic_result = {};
 
 // data from low priority thread
 struct aa241x_low_data_s low_data = {};
@@ -151,23 +154,23 @@ struct aah_params aah_parameters = {};		// struct containing all of the user edi
 struct mis_params mission_parameters = {};
 
 
-orb_advert_t	_attitude_sp_pub = -1;
-orb_advert_t	_picture_request_pub = -1;
-orb_advert_t	_water_drop_request_pub = -1;
+orb_advert_t	_attitude_sp_pub = nullptr;
+orb_advert_t	_picture_request_pub = nullptr;
+orb_advert_t	_water_drop_request_pub = nullptr;
 
 
 /* functions */
 
 void take_picture()
 {
-	picture_request_s pic_request;
+	aa241x_picture_request_s pic_request;
 	pic_request.time_us = hrt_absolute_time();
 	pic_request.pos_N = position_N;
 	pic_request.pos_E = position_E;
 	pic_request.pos_D = position_D_gps;
 
 	/* publish the picture request */
-	if (_picture_request_pub > 0) {
+	if (_picture_request_pub != nullptr) {
 		orb_publish(ORB_ID(aa241x_picture_request), _picture_request_pub, &pic_request);
 	} else {
 		_picture_request_pub = orb_advertise(ORB_ID(aa241x_picture_request), &pic_request);
@@ -177,18 +180,20 @@ void take_picture()
 
 void drop_water()
 {
-	water_drop_request_s water_drop_request;
+	aa241x_water_drop_request_s water_drop_request;
 	water_drop_request.time_us = hrt_absolute_time();
 	water_drop_request.pos_N = position_N;
 	water_drop_request.pos_E = position_E;
 	water_drop_request.pos_D = position_D_gps;
 
 	/* publish the picture request */
-	if (_water_drop_request_pub > 0) {
+	if (_water_drop_request_pub != nullptr) {
 		orb_publish(ORB_ID(aa241x_water_drop_request), _water_drop_request_pub, &water_drop_request);
 	} else {
 		_water_drop_request_pub = orb_advertise(ORB_ID(aa241x_water_drop_request), &water_drop_request);
 	}
+}
+
 }
 
 

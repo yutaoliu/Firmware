@@ -71,7 +71,7 @@ PARAM_DEFINE_FLOAT(AAMIS_RAD_MAX, 170.0f);
  * Width of a grid cell in [m].
  *
  * @unit meters
- * @min 0
+ * @min 0.
  * @group AA241x Mission
  */
 PARAM_DEFINE_FLOAT(AAMIS_CELL_W, 20.0f);
@@ -113,7 +113,7 @@ PARAM_DEFINE_FLOAT(AAMIS_STD, 0.3f);
 /**
  * Minimum time in [sec] required between successive pictures.
  *
- * @min 0
+ * @min 0.
  * @unit seconds
  * @group AA241x Mission
  */
@@ -139,7 +139,7 @@ PARAM_DEFINE_FLOAT(AAMIS_FOV_MAX, 60.0f);
  * Grams of water per drop.
  *
  * @unit grams/drop
- * @min 0
+ * @min 0.
  * @group AA241x Mission
  */
 PARAM_DEFINE_FLOAT(AAMIS_WGHT_DRP, 10.0f);
@@ -195,7 +195,7 @@ PARAM_DEFINE_FLOAT(AAMIS_BATT_MAX, 650.0f);
  * The amount of weight in [grams] of "water" being carried by this UAV.
  *
  * @unit grams
- * @min 0
+ * @min 0.
  * @group AA241x Student Params
  */
 PARAM_DEFINE_FLOAT(AA_WATER_WGHT, 100.0f);
@@ -203,7 +203,7 @@ PARAM_DEFINE_FLOAT(AA_WATER_WGHT, 100.0f);
 /**
  * Index (0 based) of the mission to be executed.
  *
- * @min 0
+ * @min 0.
  * @group AA241x Student Params
  */
 PARAM_DEFINE_INT32(AA_MIS_INDEX, 0);

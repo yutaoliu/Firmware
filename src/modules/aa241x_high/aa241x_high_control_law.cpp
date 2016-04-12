@@ -48,6 +48,8 @@
 #include "aa241x_high_control_law.h"
 #include "aa241x_high_aux.h"
 
+// needed for variable names
+using namespace aa241x_high;
 
 /**
  * Main function in which your code should be written.

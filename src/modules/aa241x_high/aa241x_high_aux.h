@@ -54,6 +54,9 @@
 
 #include "aa241x_high_params.h"
 
+// wrap everything into a namespace for allowing for common variable names
+namespace aa241x_high {
+
 // set these variables for help in debugging (these will be sent to the ground station)
 extern float roll_desired;
 extern float pitch_desired;
@@ -141,7 +144,7 @@ extern float mission_time;					// the mission time in minutes
 
 // picture result
 extern bool new_pic;
-extern picture_result_s pic_result;
+extern aa241x_picture_result_s pic_result;
 
 // communication data
 extern aa241x_low_data_s low_data;
@@ -193,6 +196,8 @@ void	take_picture();
  */
 void	drop_water();
 
+}
+
 /**
  * Main function in which your code should be written.
  *
@@ -201,6 +206,7 @@ void	drop_water();
  * the code you'd like executed on a loop is in this function.
  */
 void flight_control();
+
 
 
 

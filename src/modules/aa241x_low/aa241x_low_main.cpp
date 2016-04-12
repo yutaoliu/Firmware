@@ -87,6 +87,8 @@
 #include "aa241x_low_params.h"
 #include "aa241x_low_aux.h"
 
+using namespace aa241x_low;
+
 /**
  * Fixedwing attitude control app start / stop handling function
  *
@@ -164,8 +166,8 @@ private:
 	struct sensor_combined_s			_sensor_combined;	/**< raw / minimal filtered sensor data (for some accelerations) */
 	struct battery_status_s				_battery_status;	/**< battery status */
 
-	struct picture_result_s				_pic_result;		/**< picture result MAY JUST USER AUX FILE ONE */
-	struct water_drop_result_s			_water_drop_result;	/**< water drop result MAY NOT BE NEEDED HERE */
+	struct aa241x_picture_result_s				_pic_result;		/**< picture result MAY JUST USER AUX FILE ONE */
+	struct aa241x_water_drop_result_s			_water_drop_result;	/**< water drop result MAY NOT BE NEEDED HERE */
 	struct aa241x_mission_status_s		_mis_status;		/**< current mission status */
 	// low data struct is in attached aux header file
 
@@ -355,7 +357,7 @@ LowPriorityLoop::LowPriorityLoop() :
 	_high_data_sub(-1),
 
 /* publications */
-	_low_data_pub(-1),
+	_low_data_pub(nullptr),
 
 /* states */
 	_setpoint_valid(false),
@@ -637,7 +639,7 @@ void
 LowPriorityLoop::publish_low_data()
 {
 	/* publish the low priority loop data */
-	if (_low_data_pub > 0) {
+	if (_low_data_pub != nullptr) {
 		orb_publish(ORB_ID(aa241x_low_data), _low_data_pub, &low_data);
 	} else {
 		_low_data_pub = orb_advertise(ORB_ID(aa241x_low_data), &low_data);
@@ -930,9 +932,9 @@ LowPriorityLoop::start()
 	ASSERT(_control_task == -1);
 
 	/* start the task */
-	_control_task = task_spawn_cmd("aa241x_low",
+	_control_task = px4_task_spawn_cmd("aa241x_low",
 				       SCHED_DEFAULT,
-				       SCHED_PRIORITY_DEFAULT + 20,
+				       SCHED_PRIORITY_DEFAULT - 10,
 				       1800,
 				       (main_t)&LowPriorityLoop::task_main_trampoline,
 				       nullptr);

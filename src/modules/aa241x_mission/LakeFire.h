@@ -53,14 +53,13 @@
 #include <uORB/topics/vehicle_local_position.h>
 #include <uORB/topics/vehicle_status.h>
 #include <uORB/topics/aa241x_mission_status.h>
-#include <uORB/topics/aa241x_new_fire.h>
 #include <uORB/topics/aa241x_fire_prop.h>
 #include <uORB/topics/aa241x_water_drop_result.h>
 #include <uORB/topics/aa241x_water_drop_request.h>
 #include <uORB/topics/aa241x_picture_result.h>
 #include <uORB/topics/aa241x_picture_request.h>
 #include <uORB/topics/aa241x_local_data.h>
-#include <uORB/topics/aa241x_condensed_grid.h>
+#include <uORB/topics/aa241x_cgrid.h>
 #include <uORB/topics/battery_status.h>
 
 #define GRID_WIDTH 17		/**< the number of cells wide and tall the grid is */
@@ -98,14 +97,14 @@ public:
 	 *
 	 * @return struct containing the success and information from the camera.
 	 */
-	picture_result_s	take_picture();
+	aa241x_picture_result_s	take_picture();
 
 	/**
 	 * Trigger the virtual water dropping.
 	 *
 	 * @return struct containing the success and details of the water drop.
 	 */
-	water_drop_result_s	drop_water();
+	aa241x_water_drop_result_s	drop_water();
 
 private:
 
@@ -132,8 +131,8 @@ private:
 	struct vehicle_global_position_s	_global_pos;		/**< global position */
 	struct vehicle_local_position_s		_local_pos;			/**< local position */
 	struct vehicle_status_s				_vehicle_status;	/**< vehicle status */
-	struct picture_request_s			_pic_request;		/**< picture taking request */
-	struct water_drop_request_s			_water_drop_request; /**< water drop request */
+	struct aa241x_picture_request_s			_pic_request;		/**< picture taking request */
+	struct aa241x_water_drop_request_s		_water_drop_request; /**< water drop request */
 	struct aa241x_local_data_s			_local_data;		/**< custom calc data */
 	struct battery_status_s				_batt_stat;			/**< battery status */
 
@@ -256,7 +255,7 @@ private:
 	 * Determine which grid cells are in view and populate the information
 	 * into the picture_result struct.
 	 */
-	void	get_fire_info(picture_result_s *pic_result);
+	void	get_fire_info(aa241x_picture_result_s *pic_result);
 
 	/**
 	 * Update our local parameter cache.
@@ -321,12 +320,12 @@ private:
 	/**
 	 * Publish the picture result data when a picture is taken.
 	 */
-	void	publish_picture_result(const picture_result_s &pic_result);
+	void	publish_picture_result(const aa241x_picture_result_s &pic_result);
 
 	/**
 	 * Publish the water drop data when a drop is requested.
 	 */
-	void	publish_water_drop(const water_drop_result_s &water_drop);
+	void	publish_water_drop(const aa241x_water_drop_result_s &water_drop);
 
 	/**
 	 * Publish the condensed version of the grid for sending to the ground.

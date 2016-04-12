@@ -92,6 +92,8 @@
 #include "aa241x_high_params.h"
 #include "aa241x_high_aux.h"
 
+using namespace aa241x_high;
+
 /**
  * Fixedwing attitude control app start / stop handling function
  *
@@ -179,8 +181,8 @@ private:
 	struct sensor_combined_s			_sensor_combined;	/**< raw / minimal filtered sensor data (for some accelerations) */
 	struct battery_status_s				_battery_status;	/**< battery status */
 
-	struct picture_result_s				_pic_result;		/**< picture result MAY JUST USER AUX FILE ONE */
-	struct water_drop_result_s			_water_drop_result;	/**< water drop result MAY NOT BE NEEDED HERE */
+	struct aa241x_picture_result_s				_pic_result;		/**< picture result MAY JUST USER AUX FILE ONE */
+	struct aa241x_water_drop_result_s			_water_drop_result;	/**< water drop result MAY NOT BE NEEDED HERE */
 	struct aa241x_mission_status_s		_mis_status;		/**< current mission status */
 	// low data struct is in attached aux header file
 
@@ -386,11 +388,11 @@ FixedwingControl::FixedwingControl() :
 	_low_data_sub(-1),
 
 /* publications */
-	_rate_sp_pub(-1),
-	_attitude_sp_pub(-1),
-	_actuators_0_pub(-1),
-	_high_data_pub(-1),
-	_local_data_pub(-1),
+	_rate_sp_pub(nullptr),
+	_attitude_sp_pub(nullptr),
+	_actuators_0_pub(nullptr),
+	_high_data_pub(nullptr),
+	_local_data_pub(nullptr),
 
 	_rates_sp_id(0),
 	_actuators_id(0),
@@ -685,7 +687,7 @@ void
 FixedwingControl::publish_high_data()
 {
 	/* publish the high priority loop data */
-	if (_high_data_pub > 0) {
+	if (_high_data_pub != nullptr) {
 		orb_publish(ORB_ID(aa241x_high_data), _high_data_pub, &high_data);
 	} else {
 		_high_data_pub = orb_advertise(ORB_ID(aa241x_high_data), &high_data);
@@ -706,7 +708,7 @@ FixedwingControl::publish_local_data()
 	local_data.ground_speed = ground_speed;
 
 	/* publish the high priority loop data */
-	if (_local_data_pub > 0) {
+	if (_local_data_pub != nullptr) {
 		orb_publish(ORB_ID(aa241x_local_data), _local_data_pub, &local_data);
 	} else {
 		_local_data_pub = orb_advertise(ORB_ID(aa241x_local_data), &local_data);
@@ -1053,14 +1055,14 @@ FixedwingControl::task_main()
 
 
 			/* publish the actuator controls */
-			if (_actuators_0_pub > 0) {
+			if (_actuators_0_pub != nullptr) {
 				orb_publish(_actuators_id, _actuators_0_pub, &_actuators);
 			} else if (_actuators_id) {
 				_actuators_0_pub= orb_advertise(_actuators_id, &_actuators);
 			}
 
 			/* publish the attitude setpoint (the targeted roll, pitch and yaw angles) */
-			if (_attitude_sp_pub > 0) {
+			if (_attitude_sp_pub != nullptr) {
 				orb_publish(ORB_ID(vehicle_attitude_setpoint), _attitude_sp_pub, &_att_sp);
 			} else {
 				_attitude_sp_pub = orb_advertise(ORB_ID(vehicle_attitude_setpoint), &_att_sp);
@@ -1084,7 +1086,7 @@ FixedwingControl::start()
 	ASSERT(_control_task == -1);
 
 	/* start the task */
-	_control_task = task_spawn_cmd("aa241x_high",
+	_control_task = px4_task_spawn_cmd("aa241x_high",
 				       SCHED_DEFAULT,
 				       SCHED_PRIORITY_MAX - 5,
 				       2048,

@@ -82,7 +82,7 @@
 #include <uORB/topics/aa241x_high_data.h>
 #include <uORB/topics/aa241x_low_data.h>
 #include <uORB/topics/aa241x_local_data.h>
-#include <uORB/topics/aa241x_condensed_grid.h>
+#include <uORB/topics/aa241x_cgrid.h>
 
 #include <drivers/drv_rc_input.h>
 #include <drivers/drv_pwm_output.h>
@@ -2852,7 +2852,7 @@ protected:
 
 	void send(const hrt_abstime t)
 	{
-		struct picture_result_s pic_result;
+		struct aa241x_picture_result_s pic_result;
 
 		if (_pic_result_sub->update(&_pic_time, &pic_result)) {
 			mavlink_aa241x_picture_result_t msg;
@@ -2920,7 +2920,7 @@ protected:
 
 	void send(const hrt_abstime t)
 	{
-		struct water_drop_result_s water_result;
+		struct aa241x_water_drop_result_s water_result;
 
 		if (_water_result_sub->update(&_water_time, &water_result)) {
 			mavlink_aa241x_water_drop_result_t msg;

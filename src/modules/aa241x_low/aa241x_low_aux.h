@@ -57,6 +57,8 @@
 // set these variables for help in debugging (these will be sent to the ground station)
 // TODO: add local position setpoint variables
 
+namespace aa241x_low {
+
 // Tait-Bryan Euler angles in radian
 extern float roll;		// -pi .. pi
 extern float pitch;		// -pi/2 .. pi/2
@@ -138,7 +140,7 @@ extern float mission_time;					// the mission time in minutes
 
 // picture result
 extern bool new_pic;
-extern picture_result_s pic_result;
+extern aa241x_picture_result_s pic_result;
 
 // communication data
 extern aa241x_low_data_s low_data;
@@ -190,6 +192,7 @@ void	take_picture();
  */
 void	drop_water();
 
+}
 
 /**
  * Main function in which your code should be written.
