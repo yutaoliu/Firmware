@@ -277,26 +277,10 @@ ORB_DEFINE(vehicle_command_ack, struct vehicle_command_ack_s);
 #include "topics/ekf2_innovations.h"
 ORB_DEFINE(ekf2_innovations, struct ekf2_innovations_s);
 
+
+/* AA241x topics */
 #include "topics/aa241x_mission_status.h"
 ORB_DEFINE(aa241x_mission_status, struct aa241x_mission_status_s);
-
-//#include "topics/aa241x_new_fire.h"
-//ORB_DEFINE(aa241x_new_fire, struct aa241x_new_fire_s);
-
-#include "topics/aa241x_fire_prop.h"
-ORB_DEFINE(aa241x_fire_prop, struct aa241x_fire_prop_s);
-
-#include "topics/aa241x_water_drop_result.h"
-ORB_DEFINE(aa241x_water_drop_result, struct aa241x_water_drop_result_s);
-
-#include "topics/aa241x_picture_result.h"
-ORB_DEFINE(aa241x_picture_result, struct aa241x_picture_result_s);
-
-#include "topics/aa241x_picture_request.h"
-ORB_DEFINE(aa241x_picture_request, struct aa241x_picture_request_s);
-
-#include "topics/aa241x_water_drop_request.h"
-ORB_DEFINE(aa241x_water_drop_request, struct aa241x_water_drop_request_s);
 
 #include "topics/aa241x_low_data.h"
 ORB_DEFINE(aa241x_low_data, struct aa241x_low_data_s);
@@ -306,6 +290,3 @@ ORB_DEFINE(aa241x_high_data, struct aa241x_high_data_s);
 
 #include "topics/aa241x_local_data.h"
 ORB_DEFINE(aa241x_local_data, struct aa241x_local_data_s);
-
-#include "topics/aa241x_cgrid.h"
-ORB_DEFINE(aa241x_cgrid, struct aa241x_cgrid_s);

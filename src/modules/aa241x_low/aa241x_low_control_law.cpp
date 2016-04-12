@@ -47,7 +47,6 @@
 #include "aa241x_low_aux.h"
 
 #include <uORB/uORB.h>
-#include <uORB/topics/aa241x_picture_result.h>
 
 using namespace aa241x_low;
 

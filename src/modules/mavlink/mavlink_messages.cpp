@@ -77,12 +77,9 @@
 #include <uORB/topics/estimator_status.h>
 
 #include <uORB/topics/aa241x_mission_status.h>
-#include <uORB/topics/aa241x_picture_result.h>
-#include <uORB/topics/aa241x_water_drop_result.h>
 #include <uORB/topics/aa241x_high_data.h>
 #include <uORB/topics/aa241x_low_data.h>
 #include <uORB/topics/aa241x_local_data.h>
-#include <uORB/topics/aa241x_cgrid.h>
 
 #include <drivers/drv_rc_input.h>
 #include <drivers/drv_pwm_output.h>
@@ -2800,7 +2797,6 @@ protected:
 			msg.mission_time = mis_status.mission_time;
 			msg.score = mis_status.score;
 			msg.battery_used = mis_status.battery_used;
-			msg.wind_direction = mis_status.wind_direction;
 			msg.mission_index = mis_status.mission_index;
 
 			_mavlink->send_message(MAVLINK_MSG_ID_AA241X_MISSION_STATUS, &msg);
@@ -2808,132 +2804,6 @@ protected:
 	}
 };
 
-class MavlinkStreamAA241xPicResult : public MavlinkStream
-{
-public:
-	const char *get_name() const
-	{
-		return MavlinkStreamAA241xPicResult::get_name_static();
-	}
-
-	static const char *get_name_static()
-	{
-		return "AA241X_PICTURE_RESULT";
-	}
-
-	uint8_t get_id()
-	{
-		return MAVLINK_MSG_ID_AA241X_PICTURE_RESULT;
-	}
-
-	static MavlinkStream *new_instance(Mavlink *mavlink)
-	{
-		return new MavlinkStreamAA241xPicResult(mavlink);
-	}
-
-	unsigned get_size()
-	{
-		return MAVLINK_MSG_ID_AA241X_PICTURE_RESULT_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES;
-	}
-
-private:
-	MavlinkOrbSubscription *_pic_result_sub;
-	uint64_t _pic_time;
-
-	/* do not allow top copying this class */
-	MavlinkStreamAA241xPicResult(MavlinkStreamAA241xPicResult &);
-	MavlinkStreamAA241xPicResult& operator = (const MavlinkStreamAA241xPicResult &);
-
-protected:
-	explicit MavlinkStreamAA241xPicResult(Mavlink *mavlink) : MavlinkStream(mavlink),
-		_pic_result_sub(_mavlink->add_orb_subscription(ORB_ID(aa241x_picture_result))),
-				_pic_time(0)
-	{}
-
-	void send(const hrt_abstime t)
-	{
-		struct aa241x_picture_result_s pic_result;
-
-		if (_pic_result_sub->update(&_pic_time, &pic_result)) {
-			mavlink_aa241x_picture_result_t msg;
-
-			msg.mission_time = pic_result.time_us;
-			msg.success = pic_result.pic_taken;
-
-			msg.center_d = pic_result.center_d;
-			msg.center_e = pic_result.center_e;
-			msg.center_n = pic_result.center_n;
-			msg.pic_d = pic_result.pic_d;
-
-			msg.num_cells = pic_result.num_cells;
-			memcpy(msg.i, pic_result.i, sizeof(pic_result.i));
-			memcpy(msg.j, pic_result.j, sizeof(pic_result.j));
-			memcpy(msg.state, pic_result.state, sizeof(pic_result.state));
-
-			_mavlink->send_message(MAVLINK_MSG_ID_AA241X_PICTURE_RESULT, &msg);
-		}
-	}
-};
-
-
-class MavlinkStreamAA241xWaterDropResult : public MavlinkStream
-{
-public:
-	const char *get_name() const
-	{
-		return MavlinkStreamAA241xWaterDropResult::get_name_static();
-	}
-
-	static const char *get_name_static()
-	{
-		return "AA241X_WATER_DROP_RESULT";
-	}
-
-	uint8_t get_id()
-	{
-		return MAVLINK_MSG_ID_AA241X_WATER_DROP_RESULT;
-	}
-
-	static MavlinkStream *new_instance(Mavlink *mavlink)
-	{
-		return new MavlinkStreamAA241xWaterDropResult(mavlink);
-	}
-
-	unsigned get_size()
-	{
-		return MAVLINK_MSG_ID_AA241X_WATER_DROP_RESULT_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES;
-	}
-
-private:
-	MavlinkOrbSubscription *_water_result_sub;
-	uint64_t _water_time;
-
-	/* do not allow top copying this class */
-	MavlinkStreamAA241xWaterDropResult(MavlinkStreamAA241xWaterDropResult &);
-	MavlinkStreamAA241xWaterDropResult& operator = (const MavlinkStreamAA241xWaterDropResult &);
-
-protected:
-	explicit MavlinkStreamAA241xWaterDropResult(Mavlink *mavlink) : MavlinkStream(mavlink),
-		_water_result_sub(_mavlink->add_orb_subscription(ORB_ID(aa241x_water_drop_result))),
-				_water_time(0)
-	{}
-
-	void send(const hrt_abstime t)
-	{
-		struct aa241x_water_drop_result_s water_result;
-
-		if (_water_result_sub->update(&_water_time, &water_result)) {
-			mavlink_aa241x_water_drop_result_t msg;
-
-			msg.mission_time = water_result.time_us;
-			msg.success = water_result.success;
-			msg.i = water_result.i;
-			msg.j = water_result.j;
-
-			_mavlink->send_message(MAVLINK_MSG_ID_AA241X_WATER_DROP_RESULT, &msg);
-		}
-	}
-};
 
 class MavlinkStreamAA241xHighData : public MavlinkStream
 {
@@ -3145,63 +3015,6 @@ protected:
 };
 
 
-class MavlinkStreamAA241xCGrid : public MavlinkStream
-{
-public:
-	const char *get_name() const
-	{
-		return MavlinkStreamAA241xCGrid::get_name_static();
-	}
-
-	static const char *get_name_static()
-	{
-		return "AA241X_GRID_COMBINED";
-	}
-
-	uint8_t get_id()
-	{
-		return MAVLINK_MSG_ID_AA241X_GRID_COMBINED;
-	}
-
-	static MavlinkStream *new_instance(Mavlink *mavlink)
-	{
-		return new MavlinkStreamAA241xCGrid(mavlink);
-	}
-
-	unsigned get_size()
-	{
-		return MAVLINK_MSG_ID_AA241X_GRID_COMBINED_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES;
-	}
-
-private:
-	MavlinkOrbSubscription *_cgrid_sub;
-	uint64_t _grid_time;
-
-	/* do not allow top copying this class */
-	MavlinkStreamAA241xCGrid(MavlinkStreamAA241xCGrid &);
-	MavlinkStreamAA241xCGrid& operator = (const MavlinkStreamAA241xCGrid &);
-
-protected:
-	explicit MavlinkStreamAA241xCGrid(Mavlink *mavlink) : MavlinkStream(mavlink),
-	_cgrid_sub(_mavlink->add_orb_subscription(ORB_ID(aa241x_cgrid))),
-	_grid_time(0)
-	{}
-
-	void send(const hrt_abstime t)
-	{
-		struct aa241x_cgrid_s cgrid;
-
-		if (_cgrid_sub->update(&_grid_time, &cgrid)) {
-			mavlink_aa241x_grid_combined_t msg;
-
-			msg.mission_time = cgrid.time_us;
-			memcpy(&msg.cell, &cgrid.cells, sizeof(msg.cell));
-
-			_mavlink->send_message(MAVLINK_MSG_ID_AA241X_GRID_COMBINED, &msg);
-		}
-	}
-};
-
 const StreamListItem *streams_list[] = {
 	new StreamListItem(&MavlinkStreamHeartbeat::new_instance, &MavlinkStreamHeartbeat::get_name_static),
 	new StreamListItem(&MavlinkStreamStatustext::new_instance, &MavlinkStreamStatustext::get_name_static),
@@ -3242,11 +3055,8 @@ const StreamListItem *streams_list[] = {
 	new StreamListItem(&MavlinkStreamExtendedSysState::new_instance, &MavlinkStreamExtendedSysState::get_name_static),
 	new StreamListItem(&MavlinkStreamAltitude::new_instance, &MavlinkStreamAltitude::get_name_static),
 	new StreamListItem(&MavlinkStreamAA241xMissionStatus::new_instance, &MavlinkStreamAA241xMissionStatus::get_name_static),
-	new StreamListItem(&MavlinkStreamAA241xPicResult::new_instance, &MavlinkStreamAA241xPicResult::get_name_static),
-	new StreamListItem(&MavlinkStreamAA241xWaterDropResult::new_instance, &MavlinkStreamAA241xWaterDropResult::get_name_static),
 	new StreamListItem(&MavlinkStreamAA241xHighData::new_instance, &MavlinkStreamAA241xHighData::get_name_static),
 	new StreamListItem(&MavlinkStreamAA241xLowData::new_instance, &MavlinkStreamAA241xLowData::get_name_static),
 	new StreamListItem(&MavlinkStreamAA241xAuxData::new_instance, &MavlinkStreamAA241xAuxData::get_name_static),
-	new StreamListItem(&MavlinkStreamAA241xCGrid::new_instance, &MavlinkStreamAA241xCGrid::get_name_static),
 	nullptr
 };

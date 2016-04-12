@@ -42,7 +42,6 @@
  */
 
 #include <uORB/uORB.h>
-#include <uORB/topics/aa241x_picture_result.h>
 
 // include header file
 #include "aa241x_high_control_law.h"

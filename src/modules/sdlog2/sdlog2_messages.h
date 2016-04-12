@@ -518,68 +518,12 @@ struct log_AMIS_s {
 	float mission_time;
 	float battery_discharge;
 	float score;
-	int8_t wind_dir;
 	int8_t index;
 };
 
-/* --- AA241x NEW FIRE --- */
-#define LOG_FIRE_MSG 65
-struct log_FIRE_s {
-	uint64_t time_us;
-	uint8_t msg_number;
-	uint8_t i[7];
-	uint8_t j[7];
-};
-
-/* --- AA241x FIRE PROPAGATION --- */
-#define LOG_PROP_MSG 66
-struct log_PROP_s {
-	uint64_t time_us;
-	uint8_t props_remaining;
-	uint8_t num_new;
-};
-
-/* --- AA241x PICTURE RESULT OVERVIEW --- */
-#define LOG_PICR_MSG 67
-struct log_PICR_s {
-	uint8_t pic_taken;
-	uint64_t time_us;
-	float center_n;
-	float center_e;
-	float center_d;
-	float pic_d;
-	uint8_t num_cells;
-};
-
-/* --- AA241x PICTURE RESULT DETAILS --- */
-#define LOG_PICD_MSG 68
-struct log_PICD_s {
-	uint8_t msg_number;
-	uint8_t i[5];
-	uint8_t j[5];
-	int8_t state[5];
-};
-
-/* --- AA241x PICTURE RESULT DETAILS 2 --- */
-#define LOG_PIC2_MSG 69
-struct log_PIC2_s {
-	uint8_t msg_number;
-	uint8_t i[4];
-	uint8_t j[4];
-	int8_t state[4];
-};
-
-/* --- AA241x WATER DROP --- */
-#define LOG_WDRP_MSG 70
-struct log_WDRP_s {
-	uint8_t success;
-	uint64_t time_us;
-	uint8_t i;
-	uint8_t j;
-};
 
 /* --- AA241x HIGH DATA --- */
-#define LOG_HIGH_MSG 71
+#define LOG_HIGH_MSG 65
 struct log_HIGH_s {
 	float field1;
 	float field2;
@@ -601,7 +545,7 @@ struct log_HIGH_s {
 
 
 /* --- AA241x LOW DATA --- */
-#define LOG_LOW_MSG 72
+#define LOG_LOW_MSG 66
 struct log_LOW_s {
 	float field1;
 	float field2;
@@ -622,7 +566,7 @@ struct log_LOW_s {
 };
 
 /* --- AA241x LOCAL DATA --- */
-#define LOG_ADAT_MSG 73
+#define LOG_ADAT_MSG 67
 struct log_ADAT_s {
 	float N;
 	float E;
@@ -634,22 +578,8 @@ struct log_ADAT_s {
 	float ground_speed;
 };
 
-/* --- AA241x CONDENSED GRID --- */
-#define LOG_GRID_MSG 74
-struct log_GRID_s {
-	uint32_t r1;
-	uint32_t r2;
-	uint32_t r3;
-	uint32_t r4;
-	uint32_t r5;
-	uint32_t r6;
-	uint32_t r7;
-	uint32_t r8;
-	uint32_t r9;
-	uint32_t r10;
-	uint32_t r11;
-	uint32_t r12;
-};
+// TODO: ADD ADDITIONAL LOGGING STRUCTS HERE
+
 
 /********** SYSTEM MESSAGES, ID > 0x80 **********/
 
@@ -729,17 +659,10 @@ static const struct log_format_s log_formats[] = {
 
 	/* AA241x logging */
 	LOG_FORMAT(AMIS, "BBfffbb", "InMission,CanStart,MisTime,BattDis,Score,WindDir,Ind"),
-	//LOG_FORMAT(FIRE, "QBBBBBBBBBBBBBBB", "T,n,i1,i2,i3,i4,i5,i6,i7,j1,j2,j3,j4,j5,j6,j7"),
-	LOG_FORMAT(PROP, "QBB", "PropTime,PropsLeft,NumNew"),
-	LOG_FORMAT(PICR, "BQffffB", "Success,T,CntrN,CntrE,CntrD,PicD,nCell"),
-	LOG_FORMAT(PICD, "BBBBBBBBBBBbbbbb", "n,i1,i2,i3,i4,i5,j1,j2,j3,j4,j5,s1,s2,s3,s4,s5"),
-	LOG_FORMAT(PIC2, "BBBBBBBBBbbbb", "n,i1,i2,i3,i4,j1,j2,j3,j4,s1,s2,s3,s4"),
-	LOG_FORMAT(WDRP, "BQBB", "Success,T,i,j"),
 	LOG_FORMAT(HIGH, "ffffffffffffffff", HIGH_DATA_LABELS),
 	LOG_FORMAT(LOW, "ffffffffffffffff", LOW_DATA_LABELS),
 	LOG_FORMAT(ADAT, "ffffffff", "N,E,Dbaro,Dgps,u,v,w,GrndSpd"),
-	LOG_FORMAT(GRID, "IIIIIIIIIIII", "r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12"),
-
+	// TODO: ADD FORMAT FOR ADDITIONAL LOGGING HERE
 
 	/* system-level messages, ID >= 0x80 */
 	/* FMT: don't write format of format message, it's useless */
