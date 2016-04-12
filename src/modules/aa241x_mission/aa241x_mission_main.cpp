@@ -64,8 +64,8 @@
 #include <mavlink/mavlink_log.h>
 #include <drivers/drv_tone_alarm.h>
 
-#include "LakeFire.h"
-#include "fires.h"
+#include "AA241xMission.h"
+#include "missions.h"
 
 
 /**
@@ -79,10 +79,10 @@ extern "C" __EXPORT int aa241x_mission_main(int argc, char *argv[]);
 namespace aa241x_mission
 {
 
-LakeFire	*g_aa241x_mission = nullptr;
+AA241xMission	*g_aa241x_mission = nullptr;
 }
 
-LakeFire::LakeFire() :
+AA241xMission::AA241xMission() :
 	_task_should_exit(false),
 	_task_running(false),
 	_control_task(-1),
@@ -93,54 +93,30 @@ LakeFire::LakeFire() :
 	_local_pos_sub(-1),
 	_vehicle_status_sub(-1),
 	_params_sub(-1),
-	_pic_request_sub(-1),
-	_water_drop_request_sub(-1),
 	_local_data_sub(-1),
 	_battery_status_sub(-1),
 	_mission_status_pub(nullptr),
-	_new_fire_pub(nullptr),
-	_fire_prop_pub(nullptr),
-	_pic_result_pub(nullptr),
-	_water_drop_result_pub(nullptr),
-	_cgrid_pub(nullptr),
 	_mission_start_time(-1),
-	_last_propagation_time(-1),
 	_mission_start_battery(0),
 	_in_mission(false),
 	_can_start(true),
 	_early_termination(false),
 	_mission_failed(false),
 	_score(0.0f),
-	_unattended_count(0.0f),
-	_cross_min(false),
-	_last_picture(0),
-	_new_fire_count(0),
-	_wind_direction(WIND_OTHER),
-	_grid{{0}},
-	_grid_mask{{false}}
+	_cross_min(false)
 {
 	_vcontrol_mode = {};
 	_global_pos = {};
 	_local_pos = {};
 	_vehicle_status = {};
-	_pic_request = {};
-	_water_drop_request = {};
 	_batt_stat = {};
 
 	_parameter_handles.min_alt = param_find("AAMIS_ALT_MIN");
 	_parameter_handles.max_alt = param_find("AAMIS_ALT_MAX");
 	_parameter_handles.auto_alt = param_find("AAMIS_ALT_AUTO");
-	_parameter_handles.cell_width = param_find("AAMIS_CELL_W");
 	_parameter_handles.duration = param_find("AAMIS_DURATION");
 	_parameter_handles.max_radius = param_find("AAMIS_RAD_MAX");
-	_parameter_handles.timestep = param_find("AAMIS_TSTEP");
-	_parameter_handles.std = param_find("AAMIS_STD");
-	_parameter_handles.t_pic = param_find("AAMIS_TPIC");
-	_parameter_handles.min_fov = param_find("AAMIS_FOV_MIN");
-	_parameter_handles.max_fov = param_find("AAMIS_FOV_MAX");
 	_parameter_handles.index = param_find("AA_MIS_INDEX");
-	_parameter_handles.water_weight = param_find("AA_WATER_WGHT");
-	_parameter_handles.weight_per_drop = param_find("AAMIS_WGHT_DRP");
 	_parameter_handles.ctr_lat = param_find("AAMIS_CTR_LAT");
 	_parameter_handles.ctr_lon = param_find("AAMIS_CTR_LON");
 	_parameter_handles.ctr_alt = param_find("AAMIS_CTR_ALT");
@@ -149,14 +125,9 @@ LakeFire::LakeFire() :
 
 	parameters_update();
 
-	build_grid_mask();
-
-	_water_drops_remaining = int(_parameters.water_weight/_parameters.weight_per_drop);
-	_propagations_remaining = int(_parameters.duration*60.0f/_parameters.timestep);
-
 }
 
-LakeFire::~LakeFire() {
+AA241xMission::~AA241xMission() {
 	if (_control_task != -1) {
 
 		/* task wakes up every 100ms or so at the longest */
@@ -180,258 +151,29 @@ LakeFire::~LakeFire() {
 	aa241x_mission::g_aa241x_mission = nullptr;
 }
 
-
-aa241x_picture_result_s
-LakeFire::take_picture()
-{
-	aa241x_picture_result_s pic_result = {};
-
-	pic_result.center_n = _pic_request.pos_N; // _local_pos.x;
-	pic_result.center_e = _pic_request.pos_E; // _local_pos.y;
-	pic_result.center_d = _pic_request.pos_D; // _local_pos.z;
-
-	hrt_abstime curr_time = _pic_request.time_us; // hrt_absolute_time();
-	pic_result.time_us = curr_time;
-	float time_diff = (curr_time - _last_picture)/1000000.0f;
-
-	/* check mission logic */
-	if (!_in_mission || time_diff <= _parameters.t_pic) {
-		/* do not take a picture */
-		pic_result.pic_taken = false;
-		return pic_result;
-	}
-
-	/* check position */
-	float d = pic_result.center_d;
-	float n = pic_result.center_n;
-	float e = pic_result.center_e;
-	if (-d < _parameters.min_alt || -d > _parameters.max_alt || (n*n + e*e) >= _parameters.max_radius*_parameters.max_radius) {
-		pic_result.pic_taken = false;
-		return pic_result;
-	}
-
-	pic_result.pic_taken = true;
-
-	float pic_d = get_fov_d(-pic_result.center_d);
-	pic_result.pic_d = pic_d;
-
-	/* populate the i, j and state vectors */
-	get_fire_info(&pic_result);
-
-	/* set the last picture time to this time */
-	_last_picture = curr_time;
-
-	return pic_result;
-}
-
-aa241x_water_drop_result_s
-LakeFire::drop_water()
-{
-	aa241x_water_drop_result_s water_drop;
-
-	water_drop.time_us = _water_drop_request.time_us; // hrt_absolute_time();
-	float n = _water_drop_request.pos_N; // _local_pos.x;
-	float e = _water_drop_request.pos_E; // _local_pos.y;
-	float d = _water_drop_request.pos_D; // _local_pos.z;
-
-	/* mission logic checks */
-	if (!_in_mission || _water_drops_remaining <= 0) {
-		water_drop.success = false;
-		return water_drop;
-	}
-
-	/* position checks */
-	if (-d < _parameters.min_alt || -d > _parameters.max_alt || (n*n + e*e) >= _parameters.max_radius*_parameters.max_radius) {
-		water_drop.success = false;
-		return water_drop;
-	}
-
-	int i = n2i(n);
-	int j = e2j(e);
-
-	// TODO: need to check to make sure these are a valid (i,j) pair
-	/* water this grid cell */
-	_grid[i][j] = WATER;
-
-	water_drop.success = true;
-	water_drop.i = i;
-	water_drop.j = j;
-
-	/* reduce the number of water drops remaining */
-	_water_drops_remaining--;
-
-	/* publish the info */
-	publish_water_drop(water_drop);
-
-	return water_drop;
-}
-
-void
-LakeFire::build_grid_mask()
-{
-	float hw = _parameters.cell_width/2.0f;
-	math::Vector<2> center;
-
-	math::Vector<2> left = math::Vector<2>(-hw, -hw);
-	math::Vector<2> right = math::Vector<2>(hw, hw);
-	math::Vector<2> top = math::Vector<2>(-hw, hw);
-	math::Vector<2> bottom = math::Vector<2>(hw, -hw);
-
-	math::Vector<2> sides[4] = {left, right, top, bottom};
-
-	float r2 = _parameters.max_radius * _parameters.max_radius;
-	bool valid = true;
-
-	for (int i = 0; i < GRID_WIDTH; i++) {
-		for (int j = 0; j < GRID_WIDTH; j++) {
-			valid = true;
-
-			// get center coord
-			center = ij2ne((float) i, (float) j);
-
-			// if center isn't valid, definite not a valid cell
-			if (center.length_squared() >= r2) {
-				continue;
-			}
-
-			// check each of the sides
-			for (int k = 0; k < 4; k++) {
-				if ((center + sides[k]).length_squared() > r2) {
-					valid = false;
-					break;
-				}
-			}
-
-			// set mask to true if an inbound cell
-			if (valid) {
-				_grid_mask[i][j] = true;
-			}
-		}
-	}
-}
-
-float
-LakeFire::get_fov_d(const float &alt)
-{
-	return _parameters.min_fov + (alt - _parameters.min_alt)*(_parameters.max_fov - _parameters.min_fov)/(_parameters.max_alt - _parameters.min_alt);
-}
-
 int
-LakeFire::n2i(const float &n)
-{
-	int i = GRID_CENTER - (int) roundf(n/_parameters.cell_width);
-
-	if (i < 0) i = 0;
-	if (i >= GRID_WIDTH) i = GRID_WIDTH - 1;
-
-	return i;
-}
-
-int
-LakeFire::e2j(const float &e)
-{
-	int j = GRID_CENTER + (int) roundf(e/_parameters.cell_width);
-
-	if (j < 0) j = 0;
-	if (j >= GRID_WIDTH) j = GRID_WIDTH - 1;
-
-	return j;
-}
-
-math::Vector<2>
-LakeFire::ij2ne(const float &i, const float &j)
-{
-	math::Vector<2> ne;
-
-	ne(0) = (GRID_CENTER - i)*_parameters.cell_width;
-	ne(1) = (j - GRID_CENTER)*_parameters.cell_width;
-
-	return ne;
-
-}
-
-void
-LakeFire::get_fire_info(aa241x_picture_result_s *pic_result)
-{
-
-	int i_view[9] = {0};
-	int j_view[9] = {0};
-	int state[9] = {0};
-
-	/* explicit clean up (should not be necessary) */
-	pic_result->num_cells = 0;
-
-	float pic_r = pic_result->pic_d/2.0f;
-	float center_n = pic_result->center_n;
-	float center_e = pic_result->center_e;
-
-	int i_min = n2i(center_n + pic_r);
-	int i_max = n2i(center_n - pic_r);
-
-	int j_min = e2j(center_e - pic_r);
-	int j_max = e2j(center_e + pic_r);
-
-	float d2 = (1.0f/4.0f) * (pic_result->pic_d) * (pic_result->pic_d);
-
-	math::Vector<2> center;
-	center(0) = center_n;
-	center(1) = center_e;
-
-	int loc = 0;
-	for (int i = i_min; i <= i_max; i++) {
-		for (int j = j_min; j <= j_max; j++) {
-
-			/*check to ensure the grid cell is in bounds */
-			if (!_grid_mask[i][j]) continue;
-
-			/* check to ensure center of cell is within fov */
-			if ((ij2ne(i,j) - center).length_squared() <= d2) {
-				i_view[loc] = i;
-				j_view[loc] = j;
-				state[loc] = _grid[i][j];
-				loc++;
-			}
-
-		}
-	}
-
-	pic_result->num_cells = loc;
-	memcpy(&pic_result->i, &i_view, sizeof(i_view));
-	memcpy(&pic_result->j, &j_view, sizeof(j_view));
-	memcpy(&pic_result->state, &state, sizeof(state));
-
-	return;
-}
-
-int
-LakeFire::parameters_update()
+AA241xMission::parameters_update()
 {
 	param_get(_parameter_handles.min_alt, &(_parameters.min_alt));
 	param_get(_parameter_handles.max_alt, &(_parameters.max_alt));
-	param_get(_parameter_handles.min_fov, &(_parameters.min_fov));
-	param_get(_parameter_handles.max_fov, &(_parameters.max_fov));
 	param_get(_parameter_handles.auto_alt, &(_parameters.auto_alt));
-	param_get(_parameter_handles.cell_width, &(_parameters.cell_width));
 	param_get(_parameter_handles.duration, &(_parameters.duration));
 	param_get(_parameter_handles.max_radius, &(_parameters.max_radius));
-	param_get(_parameter_handles.timestep, &(_parameters.timestep));
-	param_get(_parameter_handles.std, &(_parameters.std));
-	param_get(_parameter_handles.t_pic, &(_parameters.t_pic));
 	param_get(_parameter_handles.index, &(_parameters.index));
-	param_get(_parameter_handles.water_weight, &(_parameters.water_weight));
-	param_get(_parameter_handles.weight_per_drop, &(_parameters.weight_per_drop));
 	param_get(_parameter_handles.ctr_lat, &(_parameters.ctr_lat));
 	param_get(_parameter_handles.ctr_lon, &(_parameters.ctr_lon));
 	param_get(_parameter_handles.ctr_alt, &(_parameters.ctr_alt));
 	param_get(_parameter_handles.max_discharge, &(_parameters.max_discharge));
 	param_get(_parameter_handles.team_num, &(_parameters.team_num));
 
+	// TODO: HANDLE ADDITIONAL PARAMETERS HERE
+
 	return OK;
 }
 
 
 void
-LakeFire::vehicle_control_mode_update()
+AA241xMission::vehicle_control_mode_update()
 {
 	/* Check if vehicle control mode has changed */
 	bool vcontrol_mode_updated;
@@ -443,7 +185,7 @@ LakeFire::vehicle_control_mode_update()
 }
 
 void
-LakeFire::global_pos_update()
+AA241xMission::global_pos_update()
 {
 	/* check if there is a new global position */
 	bool global_pos_updated;
@@ -455,7 +197,7 @@ LakeFire::global_pos_update()
 }
 
 void
-LakeFire::local_pos_update()
+AA241xMission::local_pos_update()
 {
 	/* check if there is a new local position */
 	bool local_pos_updated;
@@ -467,7 +209,7 @@ LakeFire::local_pos_update()
 }
 
 void
-LakeFire::vehicle_status_update()
+AA241xMission::vehicle_status_update()
 {
 	/* check if there is new status information */
 	bool vehicle_status_updated;
@@ -479,7 +221,7 @@ LakeFire::vehicle_status_update()
 }
 
 void
-LakeFire::local_data_update()
+AA241xMission::local_data_update()
 {
 	/* check if there is new status information */
 	bool local_data_updated;
@@ -491,7 +233,7 @@ LakeFire::local_data_update()
 }
 
 void
-LakeFire::battery_status_update()
+AA241xMission::battery_status_update()
 {
 	/* check if there is new status information */
 	bool battery_status_updated;
@@ -504,49 +246,12 @@ LakeFire::battery_status_update()
 
 
 void
-LakeFire::handle_picture_request()
-{
-	/* copy the picture request */
-	orb_copy(ORB_ID(aa241x_picture_request), _pic_request_sub, &_pic_request);
-
-	/* do the taking of the picture */
-	aa241x_picture_result_s pic_result = take_picture();
-
-	/* only publish the result if the picture was successful,
-	 * this ensures that there is no erasing of a picture result before
-	 * it can be used in the case of someone spaming the take picture function */
-	// TODO: maybe always publish the result...
-	if (pic_result.pic_taken) {
-		publish_picture_result(pic_result);
-	}
-}
-
-void
-LakeFire::handle_water_drop_request()
-{
-	/* copy the water drop request */
-	orb_copy(ORB_ID(aa241x_water_drop_request), _water_drop_request_sub, &_water_drop_request);
-
-	/* do the dropping of water */
-	aa241x_water_drop_result_s water_drop_res = drop_water();
-
-	/* only publish the result if the was drop was successful,
-	 * this ensures that there is no erasing of a water drop result before
-	 * it can be used */
-	// TODO: maybe always publish the result...
-	if (water_drop_res.success) {
-		publish_water_drop(water_drop_res);
-	}
-}
-
-void
-LakeFire::publish_mission_status()
+AA241xMission::publish_mission_status()
 {
 	aa241x_mission_status_s mis_stat;
 	mis_stat.can_start = _can_start;
 	mis_stat.in_mission = _in_mission;
 	mis_stat.score = _score;
-	mis_stat.wind_direction = (int) _wind_direction;
 	mis_stat.mission_index = _parameters.index;
 
 	if (_in_mission) {
@@ -568,323 +273,12 @@ LakeFire::publish_mission_status()
 	}
 }
 
-void
-LakeFire::publish_condensed_grid()
-{
-	/*// IF 16 x 16 GRID
-	uint16_t fire_row[16] = {0};
-	uint16_t water_row[16] = {0};
-
-	for (int i = 0; i < GRID_WIDTH; i++) {
-		for (int j = 0; j < GRID_WIDTH; j++) {
-			if (_grid[i][j] == ON_FIRE) {
-				fire_row[i] |= 1 << (16 - j);
-				water_row[i] |= 0 << (16 - j);
-			} else if (_grid[i][j] == WATER) {
-				water_row[i] |= 1 << (16 - j);
-				fire_row[i] |= 0 << (16 - j);
-			} else {
-				fire_row[i] |= 0 << (16 - j);
-				water_row[i] |= 0 << (16 - j);
-			}
-		}
-	} */
-
-	aa241x_cgrid_s cgrid;
-
-	// general grid
-	cgrid.time_us = hrt_absolute_time();
-	memset(&cgrid.cells, 0, sizeof(cgrid.cells));
-
-	int row_id = 0;
-	int shift_id = 30;
-
-	for (int i = 0; i < GRID_WIDTH; i++) {
-		for (int j = 0; j < GRID_WIDTH; j++) {
-			if (_grid_mask[i][j]) {
-				if (shift_id < 0) {
-					row_id++;
-					shift_id = 30;
-				}
-
-				if (_grid[i][j] == ON_FIRE) {
-					cgrid.cells[row_id] |= 1 << shift_id;
-				} else if (_grid[i][j] == WATER) {
-					cgrid.cells[row_id] |= 2 << shift_id;
-				} else {
-					cgrid.cells[row_id] |= 0 << shift_id;
-				}
-
-				shift_id -= 2;
-			}
-		}
-	}
-
-	/* publish the mission status */
-	if (_cgrid_pub != nullptr) {
-		orb_publish(ORB_ID(aa241x_cgrid), _cgrid_pub, &cgrid);
-	} else {
-		_cgrid_pub = orb_advertise(ORB_ID(aa241x_cgrid), &cgrid);
-	}
-}
 
 void
-LakeFire::publish_new_fire(const std::vector<int> &i_new, const std::vector<int> &j_new)
-{
-	/* 
-	// THIS ALL DOESN'T WORK ANYWAY
-	std::vector<int> i_fire = i_new;
-	std::vector<int> j_fire = j_new;
-
-	aa241x_new_fire_s new_fire;
-	new_fire.mission_time = _last_propagation_time;
-	new_fire.num_new = i_fire.size();
-	new_fire.i_new = &i_fire[0];
-	new_fire.j_new = &j_fire[0];
-
-	// publish the new fire cells 
-	if (_new_fire_pub != nullptr) {
-		orb_publish(ORB_ID(aa241x_new_fire), _new_fire_pub, &new_fire);
-	} else {
-		_new_fire_pub = orb_advertise(ORB_ID(aa241x_new_fire), &new_fire);
-	}
-	*/
-}
-
-void
-LakeFire::publish_fire_prop()
-{
-	aa241x_fire_prop_s fire_prop;
-	fire_prop.time_us = _last_propagation_time;
-	fire_prop.num_new = _new_fire_count;
-	fire_prop.props_remaining = _propagations_remaining;
-
-	/* publish the info on this fire prop step */
-	if (_fire_prop_pub != nullptr) {
-		orb_publish(ORB_ID(aa241x_fire_prop), _fire_prop_pub, &fire_prop);
-	} else {
-		_fire_prop_pub = orb_advertise(ORB_ID(aa241x_fire_prop), &fire_prop);
-	}
-}
-
-void
-LakeFire::publish_picture_result(const aa241x_picture_result_s &pic_result)
-{
-	/* publish the picture result */
-	if (_pic_result_pub != nullptr) {
-		orb_publish(ORB_ID(aa241x_picture_result), _pic_result_pub, &pic_result);
-	} else {
-		_pic_result_pub = orb_advertise(ORB_ID(aa241x_picture_result), &pic_result);
-	}
-}
-
-void
-LakeFire::publish_water_drop(const aa241x_water_drop_result_s &water_drop_result)
-{
-	/* publish the picture result */
-	if (_water_drop_result_pub != nullptr) {
-		orb_publish(ORB_ID(aa241x_water_drop_result), _water_drop_result_pub, &water_drop_result);
-	} else {
-		_water_drop_result_pub = orb_advertise(ORB_ID(aa241x_water_drop_result), &water_drop_result);
-	}
-}
-
-
-float
-LakeFire::generate_normal_random(const float &mean)
-{
-	// TODO: it is never actually using the spare, would need to make params global
-	bool have_spare = false;
-
-	/* get uniform random values on interval (0,1) */
-	float rand1 = (float) rand() / ((float) MAX_RAND);
-	float rand2 = (float) rand() / ((float) MAX_RAND);
-
-	float R;
-	float theta;
-
-	/* generate 2 random numbers at a time, but only use 1, check for leftover from previous request */
-	if (have_spare) {
-		have_spare = false;
-		return (_parameters.std * sqrtf(R) * sinf(theta)) + mean;
-	}
-
-	have_spare = true;
-	R = -2*logf(rand1);
-	theta = rand2 * 2.0f * (float) M_PI;
-
-	/* return Box-Muller transform for normal random */
-	return (_parameters.std * sqrtf(R) * cosf(theta)) + mean;
-}
-
-
-void
-LakeFire::get_prop_coords(int *i_prop, int *j_prop, const int &prop_dir)
+AA241xMission::initialize_mission()
 {
 
-	/* adjust new fire cell coords based on propagation direction */
-	switch (WIND_DIRECTION(prop_dir)) {
-	case NORTH:
-		(*i_prop)--;
-		break;
-	case NORTH_EAST:
-		(*i_prop)--;
-		(*j_prop)++;
-		break;
-	case EAST:
-		(*j_prop)++;
-		break;
-	case SOUTH_EAST:
-		(*i_prop)++;
-		(*j_prop)++;
-		break;
-	case SOUTH:
-		(*i_prop)++;
-		break;
-	case SOUTH_WEST:
-		(*i_prop)++;
-		(*j_prop)--;
-		break;
-	case WEST:
-		(*j_prop)--;
-		break;
-	case NORTH_WEST:
-		(*i_prop)--;
-		(*j_prop)--;
-		break;
-	default:
-		break;
-	}
-}
-
-void
-LakeFire::calculate_unattended_score()
-{
-	int8_t temp_grid[GRID_WIDTH][GRID_WIDTH] = {{0}};
-
-	// initialize the random seed
-	srand(seed_start[_parameters.index]);
-
-	// load up of the initial fire cells to the temp grid
-	int i_s;
-	int j_s;
-	for (int i = 0; i < NUM_STARTS; i++) {
-		i_s = i_start[_parameters.index][i];
-		j_s = j_start[_parameters.index][i];
-
-		/* check to see if reached the end of valid locations */
-		if (i_s < 0 || j_s < 0) {
-			break;
-		}
-
-		/* set this starting grid on fire */
-		temp_grid[i_s][j_s] = ON_FIRE;
-	}
-
-	int temp_props_remaining = int(_parameters.duration*60.0f/_parameters.timestep);
-
-	while (temp_props_remaining > 0) {
-		propagate_temp_fire(temp_grid);
-		temp_props_remaining--;
-	}
-
-	// print out the grid
-	/*
-	printf("\n");
-	printf("Printing temp grid: \n");
-	for (int i = 0; i < GRID_WIDTH; i++) {
-		for (int j = 0;j < GRID_WIDTH; j++) {
-			printf("%d ", temp_grid[i][j]);
-		}
-		printf("\n");
-	}
-	printf("\n");
-	*/
-
-	// count the number of cells on fire
-	int count = 0;
-	int8_t cell_val;
-
-	for (int i = 0; i < GRID_WIDTH; i++) {
-		for (int j = 0; j < GRID_WIDTH; j++) {
-
-			/* check for fire in cell */
-			cell_val = temp_grid[i][j];
-			if (cell_val == ON_FIRE) {
-				count++;
-			}
-		}
-	}
-
-	_unattended_count = count;
-}
-
-
-void
-LakeFire::propagate_temp_fire(int8_t temp_grid[GRID_WIDTH][GRID_WIDTH])
-{
-	float prop_dir;
-	int8_t cell_val;
-	int i_prop;
-	int j_prop;
-
-	std::vector<int> i_new;
-	std::vector<int> j_new;
-
-	int count = 0;
-
-	for (int i = 0; i < GRID_WIDTH; i++) {
-		for (int j = 0; j < GRID_WIDTH; j++) {
-
-			prop_dir = roundf(generate_normal_random(_wind_direction));
-
-			/* make sure this cell isn't a new fire cell */
-			if (std::find(i_new.begin(), i_new.end(), i) != i_new.end() && std::find(j_new.begin(), j_new.end(), j) != j_new.end()) {
-				continue;
-			}
-
-			/* check for fire in cell, continue if no fire in cell */
-			cell_val = temp_grid[i][j];
-			if (cell_val != ON_FIRE) continue;
-			count++;
-
-			/* wrap the propagation direction to be within (0,8) */
-			if (prop_dir < 0) prop_dir += 8;
-			if (prop_dir > 7) prop_dir -= 8;
-
-			i_prop = i;
-			j_prop = j;
-
-			get_prop_coords(&i_prop, &j_prop, (int) prop_dir);
-
-			/* check to make sure new fire cell is a valid location */
-			if (i_prop >= GRID_WIDTH || i_prop < 0 || j_prop >= GRID_WIDTH || j_prop < 0) continue;
-
-			/* check that the new cell is in bounds */
-			if (!_grid_mask[i_prop][j_prop]) continue;
-
-			/* check for new fire cell value */
-			cell_val = temp_grid[i_prop][j_prop];
-			if (cell_val == OPEN_LAND) {
-				/* add fire to this cell */
-				temp_grid[i_prop][j_prop] = ON_FIRE;
-				i_new.push_back(i_prop);
-				j_new.push_back(j_prop);
-			}
-		}
-	}
-
-	/* clear vectors after having published the info */
-	i_new.clear();
-	j_new.clear();
-}
-
-
-void
-LakeFire::initialize_mission()
-{
-
-	if (_parameters.index >= NUM_FIRES) {
+	if (_parameters.index >= NUM_MISSIONS) {
 		// TODO: throw a system warning
 		_can_start = false;
 		mavlink_log_info(_mavlink_fd, "#audio: AA241x invalid mission index");
@@ -920,242 +314,29 @@ LakeFire::initialize_mission()
 	_last_propagation_time = hrt_absolute_time();
 	_mission_start_battery = _batt_stat.discharged_mah;
 
-	// TODO: need to ensure that the wind direction is valid
-	_wind_direction = WIND_DIRECTION(fire_wind_dir[_parameters.index]);
-
-	int i_s;
-	int j_s;
-	for (int i = 0; i < NUM_STARTS; i++) {
-		i_s = i_start[_parameters.index][i];
-		j_s = j_start[_parameters.index][i];
-
-		/* check to see if reached the end of valid locations */
-		if (i_s < 0 || j_s < 0) {
-			break;
-		}
-
-		/* set this starting grid on fire */
-		_grid[i_s][j_s] = ON_FIRE;
-	}
-
-	// calculate the unattended score
-	calculate_unattended_score();
-
-	// reinitialize the random seed
-	srand(seed_start[_parameters.index]);
+	// TODO: ADD ANY ADDITIONAL INITIALIZATION REQUIRED
 }
 
 
+
 void
-LakeFire::propagate_fire()
+AA241xMission::calculate_score()
 {
-	float prop_dir;
-	int8_t cell_val;
-	int i_prop;
-	int j_prop;
+	
+	// TODO: WRITE YOUR SCORE FUNCTION HERE
 
-	std::vector<int> i_new;
-	std::vector<int> j_new;
-
-	int count = 0;
-	_new_fire_count = 0;
-
-	for (int i = 0; i < GRID_WIDTH; i++) {
-		for (int j = 0; j < GRID_WIDTH; j++) {
-
-			prop_dir = roundf(generate_normal_random(_wind_direction));
-
-			/* make sure this cell isn't a new fire cell */
-			if (std::find(i_new.begin(), i_new.end(), i) != i_new.end() && std::find(j_new.begin(), j_new.end(), j) != j_new.end()) {
-				continue;
-			}
-
-			/* check for fire in cell, continue if no fire in cell */
-			cell_val = _grid[i][j];
-			if (cell_val != ON_FIRE) continue;
-			count++;
-
-			/* wrap the propagation direction to be within (0,8) */
-			if (prop_dir < 0) prop_dir += 8;
-			if (prop_dir > 7) prop_dir -= 8;
-
-			i_prop = i;
-			j_prop = j;
-
-			get_prop_coords(&i_prop, &j_prop, (int) prop_dir);
-
-			/* check to make sure new fire cell is a valid location */
-			if (i_prop >= GRID_WIDTH || i_prop < 0 || j_prop >= GRID_WIDTH || j_prop < 0) continue;
-
-			/* check that the new cell is in bounds */
-			if (!_grid_mask[i_prop][j_prop]) continue;
-
-			/* check for new fire cell value */
-			cell_val = _grid[i_prop][j_prop];
-			if (cell_val == OPEN_LAND) {
-				/* add fire to this cell */
-				_grid[i_prop][j_prop] = ON_FIRE;
-				_new_fire_count++;		// increase new fire tally
-				i_new.push_back(i_prop);
-				j_new.push_back(j_prop);
-			}
-		}
-	}
-
-	/* publish the new fire cells */
-	//publish_new_fire(i_new, j_new);
-
-	/* clear vectors after having published the info */
-	i_new.clear();
-	j_new.clear();
-
+	_score = 0.0f;
 }
 
 void
-LakeFire::calculate_score()
-{
-	int count = 0;
-	int8_t cell_val;
-
-	for (int i = 0; i < GRID_WIDTH; i++) {
-		for (int j = 0; j < GRID_WIDTH; j++) {
-
-			/* check for fire in cell */
-			cell_val = _grid[i][j];
-			if (cell_val == ON_FIRE) {
-				count++;
-			}
-		}
-	}
-
-	_score = (1.0f - (float) count / _unattended_count)*100.0f;
-}
-
-void
-LakeFire::task_main_trampoline(int argc, char **argv)
+AA241xMission::task_main_trampoline(int argc, char **argv)
 {
 	 aa241x_mission::g_aa241x_mission->task_main();
-	//aa241x_mission::g_aa241x_mission->prop_testing(); // DEBUG
-	// aa241x_mission::g_aa241x_mission->testing(); // DEBUG
-	// aa241x_mission::g_aa241x_mission->sim_testing(); // DEBUG
-}
-
-void
-LakeFire::print_grid() {
-	printf("\n");
-	for (int i = 0; i < GRID_WIDTH; i++) {
-		for (int j = 0;j < GRID_WIDTH; j++) {
-			printf("%d ", _grid[i][j]);
-		}
-		printf("\n");
-	}
-	printf("\n");
-}
-
-void
-LakeFire::print_mask() {
-	printf("\n");
-	for (int i = 0; i < GRID_WIDTH; i++) {
-		for (int j = 0;j < GRID_WIDTH; j++) {
-			printf("%d ", _grid_mask[i][j]);
-		}
-		printf("\n");
-	}
-	printf("\n");
-}
-
-void
-LakeFire::testing()
-{
-	parameters_update();
-
-	printf("min alt: %0.5f\n", (double) _parameters.min_alt);
-	printf("max alt: %0.5f\n", (double) _parameters.max_alt);
-	printf("min fov: %0.5f\n", (double) _parameters.min_fov);
-	printf("max fov: %0.5f\n", (double) _parameters.max_fov);
-	printf("alt auto: %0.5f\n", (double) _parameters.auto_alt);
-
-	printf("cell width: %0.5f\n", (double) _parameters.cell_width);
-	printf("duration: %0.5f\n", (double) _parameters.duration);
-	printf("max radius: %0.5f\n", (double) _parameters.max_radius);
-	printf("timestep: %0.5f\n", (double) _parameters.timestep);
-	printf("std: %0.5f\n", (double) _parameters.std);
-	printf("t pic: %0.5f\n", (double) _parameters.t_pic);
-	printf("index: %i\n", _parameters.index);
-	printf("h2o wght: %0.5f\n", (double) _parameters.water_weight);
-	printf("wght / drop: %0.5f\n", (double) _parameters.weight_per_drop);
-
-	printf("ctr lat: %0.5f\n", (double) _parameters.ctr_lat);
-	printf("ctr lon: %0.5f\n", (double) _parameters.ctr_lon);
-	printf("ctr alt: %0.5f\n", (double) _parameters.ctr_alt);
-
-	float fov = 0.0f;
-	for (int i=31; i<122; i += 5) {
-		fov = get_fov_d((float) i);
-
-
-		printf("%f -> %0.5f\n", (double) i, (double) fov);
-	}
-
-
-	warnx("exiting.\n");
-
-	_control_task = -1;
-	_task_running = false;
-	_exit(0);
-}
-
-void
-LakeFire::prop_testing()
-{
-	const int nrolls=10000;  // number of experiments
-	const int nstars=100;    // maximum number of stars to distribute
-	int mean = 5;
-
-	int p[10]={};
-
-	for (int i=0; i<nrolls; ++i) {
-		float number = roundf(generate_normal_random(mean));
-
-		if ((number>=0.0f)&&(number<10.0f)) ++p[int(number)];
-	}
-
-	printf("normal_distribution (5):\n");
-
-	for (int i=0; i<10; ++i) {
-		printf("%i: ", i);
-		int num_stars = p[i]*nstars/nrolls;
-		for (int j= 0; j < num_stars; j++) {
-			printf("*");
-		}
-		printf("\n");
-	}
-
-	printf("grid mask\n");
-	print_mask();
-
-	initialize_mission();
-	print_grid();
-
-	for (int i = 0; i < _propagations_remaining; i++) {
-		propagate_fire();
-		// usleep(500000);
-	}
-
-	print_grid();
-
-	printf("\nUnattended count: %f\n", (double) _unattended_count);
-
-	warnx("exiting.\n");
-
-	_control_task = -1;
-	_task_running = false;
-	_exit(0);
 }
 
 
 void
-LakeFire::task_main()
+AA241xMission::task_main()
 {
 	/* inform about start */
 	warnx("Initializing..");
@@ -1175,8 +356,6 @@ LakeFire::task_main()
 	_local_pos_sub = orb_subscribe(ORB_ID(vehicle_local_position));
 	_vehicle_status_sub = orb_subscribe(ORB_ID(vehicle_status));
 	_params_sub = orb_subscribe(ORB_ID(parameter_update));
-	_water_drop_request_sub = orb_subscribe(ORB_ID(aa241x_water_drop_request));
-	_pic_request_sub = orb_subscribe(ORB_ID(aa241x_picture_request));
 	_local_data_sub = orb_subscribe(ORB_ID(aa241x_local_data));
 	_battery_status_sub = orb_subscribe(ORB_ID(battery_status));
 
@@ -1208,14 +387,10 @@ LakeFire::task_main()
 	fds[3].events = POLLIN;
 	fds[4].fd = _vehicle_status_sub;
 	fds[4].events = POLLIN;
-	fds[5].fd = _pic_request_sub;
+	fds[5].fd = _local_data_sub;
 	fds[5].events = POLLIN;
-	fds[6].fd = _water_drop_request_sub;
+	fds[6].fd = _battery_status_sub;
 	fds[6].events = POLLIN;
-	fds[7].fd = _local_data_sub;
-	fds[7].events = POLLIN;
-	fds[8].fd = _battery_status_sub;
-	fds[8].events = POLLIN;
 
 	_task_running = true;
 
@@ -1263,16 +438,6 @@ LakeFire::task_main()
 		/* vehicle status updated */
 		if (fds[4].revents & POLLIN) {
 			vehicle_status_update();
-		}
-
-		/* picture request */
-		if (fds[5].revents & POLLIN) {
-			handle_picture_request();
-		}
-
-		/* water drop request */
-		if (fds[6].revents & POLLIN) {
-			handle_water_drop_request();
 		}
 
 		/* local data updated */
@@ -1340,14 +505,8 @@ LakeFire::task_main()
 			// propagate through the rest of the fire as needed
 			if (_early_termination) {
 
-				/* propagate the rest of the time */
-				while (_propagations_remaining > 0) {
-					propagate_fire();
-					_propagations_remaining--;
-					publish_fire_prop();
-				}
+				// TODO: DO ANYTHING YOU WANT FOR A VIOLATION
 
-				publish_condensed_grid();
 				calculate_score();
 			}
 
@@ -1370,19 +529,6 @@ LakeFire::task_main()
 			/* get the current time needed for further calculations */
 			hrt_abstime current_time = hrt_absolute_time();
 
-			/* ensure we are still in mission and check if timestep has advanced */
-			if (_in_mission && (current_time - _last_propagation_time) >= _parameters.timestep*1E6f) {
-				_last_propagation_time = current_time;
-
-				/* propagate the fire for this next timestep */
-				propagate_fire();
-				_propagations_remaining--;
-				publish_fire_prop();
-				publish_condensed_grid();
-
-				/* calculate the new score */
-				calculate_score();
-			}
 
 			/* check to see if mission time has elapsed */
 			if (_in_mission && (current_time - _mission_start_time)/1000000.0f >= _parameters.duration*60.0f) {
@@ -1390,11 +536,7 @@ LakeFire::task_main()
 				_can_start = false;
 				mavlink_log_info(_mavlink_fd, "#audio: AA241x mission completed");
 
-				/* make sure that have done all fire propagations */
-				if (_propagations_remaining > 0) {
-					// TODO: check to make sure there is only ever 1 left here
-					propagate_fire();
-				}
+				// TODO: ADD ANY END OF TIME CODE
 
 				// calculate the final score
 				calculate_score();
@@ -1419,7 +561,7 @@ LakeFire::task_main()
 }
 
 int
-LakeFire::start()
+AA241xMission::start()
 {
 	ASSERT(_control_task == -1);
 
@@ -1428,7 +570,7 @@ LakeFire::start()
 			SCHED_DEFAULT,
 			SCHED_PRIORITY_DEFAULT + 20,
 			1800,
-			(main_t)&LakeFire::task_main_trampoline,
+			(main_t)&AA241xMission::task_main_trampoline,
 			nullptr);
 
 	if (_control_task < 0) {
@@ -1450,7 +592,7 @@ int aa241x_mission_main(int argc, char *argv[])
 		if (aa241x_mission::g_aa241x_mission != nullptr)
 			errx(1, "already running");
 
-		aa241x_mission::g_aa241x_mission = new LakeFire;
+		aa241x_mission::g_aa241x_mission = new AA241xMission;
 
 		if (aa241x_mission::g_aa241x_mission == nullptr)
 			errx(1, "alloc failed");

@@ -68,16 +68,6 @@ PARAM_DEFINE_FLOAT(AAMIS_ALT_MAX, 121.92f);
 PARAM_DEFINE_FLOAT(AAMIS_RAD_MAX, 170.0f);
 
 /**
- * Width of a grid cell in [m].
- *
- * @unit meters
- * @min 0.
- * @group AA241x Mission
- */
-PARAM_DEFINE_FLOAT(AAMIS_CELL_W, 20.0f);
-
-
-/**
  * Altitude in [m] by which autopilot needs to be engaged in order
  * to be eligible for a mission start.
  *
@@ -87,7 +77,7 @@ PARAM_DEFINE_FLOAT(AAMIS_CELL_W, 20.0f);
 PARAM_DEFINE_FLOAT(AAMIS_ALT_AUTO, 15.24f);
 
 /**
- * Total duration in [mins] that the fire will spread for once
+ * Total duration before mission termination, once
  * mission clock starts.
  *
  * @unit minutes
@@ -95,54 +85,6 @@ PARAM_DEFINE_FLOAT(AAMIS_ALT_AUTO, 15.24f);
  */
 PARAM_DEFINE_FLOAT(AAMIS_DURATION, 10.0f);
 
-/**
- * Timestep in [sec] for each propagation of the fire.
- *
- * @unit seconds
- * @group AA241x Mission
- */
-PARAM_DEFINE_FLOAT(AAMIS_TSTEP, 15.0f);
-
-/**
- * Standard deviation for fire propagation.
- *
- * @group AA241x Mission
- */
-PARAM_DEFINE_FLOAT(AAMIS_STD, 0.3f);
-
-/**
- * Minimum time in [sec] required between successive pictures.
- *
- * @min 0.
- * @unit seconds
- * @group AA241x Mission
- */
-PARAM_DEFINE_FLOAT(AAMIS_TPIC, 3.0f);
-
-/**
- * Minimum camera field of view diameter in [m].
- *
- * @unit meters
- * @group AA241x Mission
- */
-PARAM_DEFINE_FLOAT(AAMIS_FOV_MIN, 30.0f);
-
-/**
- * Maximum camera field of view diameter in [m].
- *
- * @unit meters
- * @group AA241x Mission
- */
-PARAM_DEFINE_FLOAT(AAMIS_FOV_MAX, 60.0f);
-
-/**
- * Grams of water per drop.
- *
- * @unit grams/drop
- * @min 0.
- * @group AA241x Mission
- */
-PARAM_DEFINE_FLOAT(AAMIS_WGHT_DRP, 10.0f);
 
 /**
  * Origin latitude for local position.
@@ -192,15 +134,6 @@ PARAM_DEFINE_FLOAT(AAMIS_CTR_ALT, 40.0f);
 PARAM_DEFINE_FLOAT(AAMIS_BATT_MAX, 650.0f);
 
 /**
- * The amount of weight in [grams] of "water" being carried by this UAV.
- *
- * @unit grams
- * @min 0.
- * @group AA241x Student Params
- */
-PARAM_DEFINE_FLOAT(AA_WATER_WGHT, 100.0f);
-
-/**
  * Index (0 based) of the mission to be executed.
  *
  * @min 0.
@@ -214,3 +147,6 @@ PARAM_DEFINE_INT32(AA_MIS_INDEX, 0);
  * @group AA241x Student Params
  */
 PARAM_DEFINE_INT32(AA_TEAM, 0);
+
+
+// TODO: DEFINE ADDITIONAL GLOBAL MISSION PARAMETERS HERE

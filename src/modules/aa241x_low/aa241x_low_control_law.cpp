@@ -65,12 +65,6 @@ void low_loop()
 
 	float my_float_variable = 0.0f;		/**< example float variable */
 
-	if (new_pic) {
-		// TODO: run picture result logic here......
-
-		// set new_pic to false, as just processed this pic result, DO NOT REMOVE
-		new_pic = false;
-	}
 
 	// getting high data value example
 	// float my_high_data = high_data.variable_name1;

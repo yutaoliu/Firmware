@@ -60,8 +60,6 @@
 #include <arch/board/board.h>
 #include <uORB/uORB.h>
 #include <uORB/topics/aa241x_mission_status.h>
-#include <uORB/topics/aa241x_picture_result.h>
-#include <uORB/topics/aa241x_water_drop_result.h>
 #include <uORB/topics/aa241x_low_data.h>
 #include <uORB/topics/aa241x_high_data.h>
 #include <uORB/topics/aa241x_local_data.h>
@@ -150,10 +148,9 @@ private:
 	int		_sensor_combined_sub;	/**< sensor data subscription */
 	int		_battery_status_sub;	/**< battery status subscription */
 
-	int		_pic_result_sub;		/**< picture result subscription */
-	int		_water_drop_result_sub;	/**< water drop result subscription NOT SURE NEEDED HERE */
 	int		_mission_status_sub;	/**< aa241x mission status subscription */
 	int		_low_data_sub;			/**< low priority loop data subscription */
+	// TODO: DEFINE ADDITIONAL SUBSCRIBERS HERE
 
 	// the data that will be published from this controller
 	orb_advert_t	_rate_sp_pub;			/**< rate setpoint publication */
@@ -181,8 +178,6 @@ private:
 	struct sensor_combined_s			_sensor_combined;	/**< raw / minimal filtered sensor data (for some accelerations) */
 	struct battery_status_s				_battery_status;	/**< battery status */
 
-	struct aa241x_picture_result_s				_pic_result;		/**< picture result MAY JUST USER AUX FILE ONE */
-	struct aa241x_water_drop_result_s			_water_drop_result;	/**< water drop result MAY NOT BE NEEDED HERE */
 	struct aa241x_mission_status_s		_mis_status;		/**< current mission status */
 	// low data struct is in attached aux header file
 
@@ -294,16 +289,6 @@ private:
 	void	battery_status_poll();
 
 	/**
-	 * Check for a picture result.
-	 */
-	void	picture_result_poll();
-
-	/**
-	 * Check for a water drop result.
-	 */
-	void	water_drop_result_poll();
-
-	/**
 	 * Check for a mission status update.
 	 */
 	void	mission_status_poll();
@@ -312,6 +297,8 @@ private:
 	 * Check for an update of the low priority loop data.
 	 */
 	void	low_data_poll();
+
+	// TODO: DEFINE ADDITIONAL POLL FUNCTIONS HERE, MODEL AGAINST EXISTING POLL FUNCTIONS
 
 	/**
 	 * Publish the data fields from this module (high priority thread).
@@ -382,8 +369,6 @@ FixedwingControl::FixedwingControl() :
 	_vehicle_status_sub(-1),
 	_sensor_combined_sub(-1),
 	_battery_status_sub(-1),
-	_pic_result_sub(-1),
-	_water_drop_result_sub(-1),
 	_mission_status_sub(-1),
 	_low_data_sub(-1),
 
@@ -418,8 +403,6 @@ FixedwingControl::FixedwingControl() :
 	_sensor_combined = {};
 	_battery_status = {};
 
-	_pic_result = {};
-	_water_drop_result = {};
 	_mis_status = {};
 
 	_lake_lag_proj_ref = {};
@@ -432,20 +415,14 @@ FixedwingControl::FixedwingControl() :
 	_parameter_handles.min_alt = param_find("AAMIS_ALT_MIN");
 	_parameter_handles.max_alt = param_find("AAMIS_ALT_MAX");
 	_parameter_handles.auto_alt = param_find("AAMIS_ALT_AUTO");
-	_parameter_handles.cell_width = param_find("AAMIS_CELL_W");
 	_parameter_handles.duration = param_find("AAMIS_DURATION");
 	_parameter_handles.max_radius = param_find("AAMIS_RAD_MAX");
-	_parameter_handles.timestep = param_find("AAMIS_TSTEP");
-	_parameter_handles.std = param_find("AAMIS_STD");
-	_parameter_handles.t_pic = param_find("AAMIS_TPIC");
-	_parameter_handles.min_fov = param_find("AAMIS_FOV_MIN");
-	_parameter_handles.max_fov = param_find("AAMIS_FOV_MAX");
 	_parameter_handles.index = param_find("AA_MIS_INDEX");
-	_parameter_handles.weight_per_drop = param_find("AAMIS_WGHT_DROP");
-	_parameter_handles.water_weight = param_find("AA_WATER_WGHT");
 	_parameter_handles.ctr_lat = param_find("AAMIS_CTR_LAT");
 	_parameter_handles.ctr_lon = param_find("AAMIS_CTR_LON");
 	_parameter_handles.ctr_alt = param_find("AAMIS_CTR_ALT");
+
+	// TODO: ADD ADDITIONAL MISSION SPECIFIC PARAMETERS HERE (THOSE DECLARED IN aa241x_mission/aa241x_mission_params.c)
 
 	// initialize the aa241x control parameters
 	aah_parameters_init(&_aah_parameter_handles);
@@ -496,18 +473,14 @@ FixedwingControl::parameters_update()
 	param_get(_parameter_handles.min_alt, &(mission_parameters.min_alt));
 	param_get(_parameter_handles.max_alt, &(mission_parameters.max_alt));
 	param_get(_parameter_handles.auto_alt, &(mission_parameters.auto_alt));
-	param_get(_parameter_handles.cell_width, &(mission_parameters.cell_width));
 	param_get(_parameter_handles.duration, &(mission_parameters.duration));
 	param_get(_parameter_handles.max_radius, &(mission_parameters.max_radius));
-	param_get(_parameter_handles.timestep, &(mission_parameters.timestep));
-	param_get(_parameter_handles.std, &(mission_parameters.std));
-	param_get(_parameter_handles.t_pic, &(mission_parameters.t_pic));
 	param_get(_parameter_handles.index, &(mission_parameters.index));
-	param_get(_parameter_handles.weight_per_drop, &(mission_parameters.weight_per_drop));
-	param_get(_parameter_handles.water_weight, &(mission_parameters.water_weight));
 	param_get(_parameter_handles.ctr_lat, &(mission_parameters.ctr_lat));
 	param_get(_parameter_handles.ctr_lon, &(mission_parameters.ctr_lon));
 	param_get(_parameter_handles.ctr_alt, &(mission_parameters.ctr_alt));
+
+	// TODO: UPDATE ADDITIONAL PARAMS HERE, FOLLOW EXISITING EXAMPLES
 
 	// update the aa241x control parameters
 	aah_parameters_update(&_aah_parameter_handles, &aah_parameters);
@@ -628,34 +601,6 @@ FixedwingControl::battery_status_poll()
 
 	if (battery_status_updated) {
 		orb_copy(ORB_ID(battery_status), _battery_status_sub, &_battery_status);
-	}
-}
-
-void
-FixedwingControl::picture_result_poll()
-{
-	/* check if there is a new picture result */
-	bool pic_result_updated;
-	orb_check(_pic_result_sub, &pic_result_updated);
-
-	if (pic_result_updated) {
-		orb_copy(ORB_ID(aa241x_picture_result), _pic_result_sub, &_pic_result);
-
-		/* set the data to be used by students */
-		new_pic = true;
-		pic_result = _pic_result;
-	}
-}
-
-void
-FixedwingControl::water_drop_result_poll()
-{
-	/* check if there is a new water drop result */
-	bool water_drop_result_updated;
-	orb_check(_water_drop_result_sub, &water_drop_result_updated);
-
-	if (water_drop_result_updated) {
-		orb_copy(ORB_ID(battery_status), _water_drop_result_sub, &_water_drop_result);
 	}
 }
 
@@ -815,9 +760,6 @@ FixedwingControl::set_aux_values()
 	timestamp = hrt_absolute_time();
 	utc_timestamp = _global_pos.time_utc_usec;
 
-	// wind direction info
-	mission_parameters.wind_dir = _mis_status.wind_direction;
-
 	// mission time
 	mission_time = _mis_status.mission_time;
 
@@ -900,10 +842,10 @@ FixedwingControl::task_main()
 	_sensor_combined_sub = orb_subscribe(ORB_ID(sensor_combined));
 	_battery_status_sub = orb_subscribe(ORB_ID(battery_status));
 
-	_pic_result_sub = orb_subscribe(ORB_ID(aa241x_picture_result));
-	_water_drop_result_sub = orb_subscribe(ORB_ID(aa241x_water_drop_result));
 	_mission_status_sub = orb_subscribe(ORB_ID(aa241x_mission_status));
 	_low_data_sub = orb_subscribe(ORB_ID(aa241x_low_data));
+
+	// TODO: SET SUBSCRIBERS HERE
 
 	/* rate limit vehicle status updates to 5Hz */
 	orb_set_interval(_vcontrol_mode_sub, 200);
@@ -922,6 +864,7 @@ FixedwingControl::task_main()
 	vehicle_status_poll();
 	sensor_combined_poll();
 	battery_status_poll();
+
 
 	/* initialize projection reference */
 	map_projection_init(&_lake_lag_proj_ref, (double) mission_parameters.ctr_lat, (double) mission_parameters.ctr_lon);
@@ -996,8 +939,6 @@ FixedwingControl::task_main()
 			battery_status_poll();
 
 			// update aa241x data structs as needed
-			picture_result_poll();
-			water_drop_result_poll();
 			mission_status_poll();
 			low_data_poll();
 

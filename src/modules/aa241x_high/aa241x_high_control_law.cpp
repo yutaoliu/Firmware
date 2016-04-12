@@ -62,14 +62,6 @@ void flight_control() {
 
 	float my_float_variable = 0.0f;		/**< example float variable */
 
-	if (new_pic) {
-
-		// TODO: run picture result logic here......
-
-		// set new_pic to false, as just processed this pic result, DO NOT REMOVE
-		new_pic = false;
-	}
-
 
 	// TODO: write all of your flight control here...
 

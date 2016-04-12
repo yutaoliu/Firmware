@@ -48,7 +48,6 @@
 #include <stdlib.h>
 #include <vector>
 #include <uORB/uORB.h>
-#include <uORB/topics/aa241x_picture_result.h>
 #include <uORB/topics/aa241x_low_data.h>
 #include <uORB/topics/aa241x_high_data.h>
 
@@ -142,13 +141,11 @@ extern uint64_t utc_timestamp; 				// GPS UTC timestamp in microseconds
 extern uint64_t previous_loop_timestamp; 	// timestamp of start of previous loop
 extern float mission_time;					// the mission time in minutes
 
-// picture result
-extern bool new_pic;
-extern aa241x_picture_result_s pic_result;
-
 // communication data
 extern aa241x_low_data_s low_data;
 extern aa241x_high_data_s high_data;
+
+// TODO: DECLARE ADDITION VARIABLES TO EXPOSE TO STUDENTS HERE
 
 // user config parameters structure
 extern struct aah_params aah_parameters;		// struct containing parameters for high priority loop
@@ -158,26 +155,20 @@ struct mis_params {
 	float min_alt;
 	float max_alt;
 	float auto_alt;
-	float cell_width;
 	float duration;
 	float max_radius;
-	float timestep;
-	float std;
-	float t_pic;
-	float min_fov;
-	float max_fov;
 	int index;
-	float weight_per_drop;
-	float water_weight;
 	float ctr_lat;
 	float ctr_lon;
 	float ctr_alt;
-	int wind_dir;
 };
 extern struct mis_params mission_parameters;			/**< local copies of mission parameters */
 
 
 /* functions */
+
+// DECLARE CUSTOM FUNCTIONS TO EXPOSE TO STUDENTS HERE
+// (see example below)
 
 /**
  * Function to call in order to take a picture from the current location of the UAV.
@@ -189,12 +180,8 @@ extern struct mis_params mission_parameters;			/**< local copies of mission para
  * so if you spam the take picture function, do not expect new_pic to trigger after every time
  * you call take_picture(), there is a rate limit for picture taking.
  */
-void	take_picture();
+//void	take_picture();
 
-/**
- * Function to call in order to drop water from the current location of the UAV.
- */
-void	drop_water();
 
 }
 
@@ -206,7 +193,6 @@ void	drop_water();
  * the code you'd like executed on a loop is in this function.
  */
 void flight_control();
-
 
 
 
