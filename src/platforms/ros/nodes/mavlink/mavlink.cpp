@@ -46,7 +46,7 @@
 
 using namespace px4;
 
-Mavlink::Mavlink() :
+Mavlink::Mavlink(std::string mavlink_fcu_url) :
 	_n(),
 	_v_att_sub(_n.subscribe("vehicle_attitude", 1, &Mavlink::VehicleAttitudeCallback, this)),
 	_v_local_pos_sub(_n.subscribe("vehicle_local_position", 1, &Mavlink::VehicleLocalPositionCallback, this)),
@@ -55,15 +55,20 @@ Mavlink::Mavlink() :
 	_offboard_control_mode_pub(_n.advertise<offboard_control_mode>("offboard_control_mode", 1)),
 	_force_sp_pub(_n.advertise<vehicle_force_setpoint>("vehicle_force_setpoint", 1))
 {
-	_link = mavconn::MAVConnInterface::open_url("udp://localhost:14565@localhost:14560");
+	_link = mavconn::MAVConnInterface::open_url(mavlink_fcu_url);
 	_link->message_received.connect(boost::bind(&Mavlink::handle_msg, this, _1, _2, _3));
-
+	_att_sp = {};
+	_offboard_control_mode = {};
 }
 
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "mavlink");
-	Mavlink m;
+	ros::NodeHandle privateNh("~");
+	std::string mavlink_fcu_url;
+	privateNh.param<std::string>("mavlink_fcu_url",      mavlink_fcu_url,
+				     std::string("udp://localhost:14565@localhost:14560"));
+	Mavlink m(mavlink_fcu_url);
 	ros::spin();
 	return 0;
 }
@@ -72,18 +77,18 @@ void Mavlink::VehicleAttitudeCallback(const vehicle_attitudeConstPtr &msg)
 {
 	mavlink_message_t msg_m;
 	mavlink_msg_attitude_quaternion_pack_chan(
-			_link->get_system_id(),
-			_link->get_component_id(),
-			_link->get_channel(),
-			&msg_m,
-			get_time_micros() / 1000,
-			msg->q[0],
-			msg->q[1],
-			msg->q[2],
-			msg->q[3],
-			msg->rollspeed,
-			msg->pitchspeed,
-			msg->yawspeed);
+		_link->get_system_id(),
+		_link->get_component_id(),
+		_link->get_channel(),
+		&msg_m,
+		get_time_micros() / 1000,
+		msg->q[0],
+		msg->q[1],
+		msg->q[2],
+		msg->q[3],
+		msg->rollspeed,
+		msg->pitchspeed,
+		msg->yawspeed);
 	_link->send_message(&msg_m);
 }
 
@@ -91,33 +96,36 @@ void Mavlink::VehicleLocalPositionCallback(const vehicle_local_positionConstPtr 
 {
 	mavlink_message_t msg_m;
 	mavlink_msg_local_position_ned_pack_chan(
-			_link->get_system_id(),
-			_link->get_component_id(),
-			_link->get_channel(),
-			&msg_m,
-			get_time_micros() / 1000,
-			msg->x,
-			msg->y,
-			msg->z,
-			msg->vx,
-			msg->vy,
-			msg->vz);
+		_link->get_system_id(),
+		_link->get_component_id(),
+		_link->get_channel(),
+		&msg_m,
+		get_time_micros() / 1000,
+		msg->x,
+		msg->y,
+		msg->z,
+		msg->vx,
+		msg->vy,
+		msg->vz);
 	_link->send_message(&msg_m);
 }
 
-void Mavlink::handle_msg(const mavlink_message_t *mmsg, uint8_t sysid, uint8_t compid) {
+void Mavlink::handle_msg(const mavlink_message_t *mmsg, uint8_t sysid, uint8_t compid)
+{
 	(void)sysid;
 	(void)compid;
 
-	switch(mmsg->msgid) {
-		case MAVLINK_MSG_ID_SET_ATTITUDE_TARGET:
-			handle_msg_set_attitude_target(mmsg);
-			break;
-		case MAVLINK_MSG_ID_SET_POSITION_TARGET_LOCAL_NED:
-			handle_msg_set_position_target_local_ned(mmsg);
-			break;
-		default:
-			break;
+	switch (mmsg->msgid) {
+	case MAVLINK_MSG_ID_SET_ATTITUDE_TARGET:
+		handle_msg_set_attitude_target(mmsg);
+		break;
+
+	case MAVLINK_MSG_ID_SET_POSITION_TARGET_LOCAL_NED:
+		handle_msg_set_position_target_local_ned(mmsg);
+		break;
+
+	default:
+		break;
 	}
 
 }
@@ -127,10 +135,8 @@ void Mavlink::handle_msg_set_attitude_target(const mavlink_message_t *mmsg)
 	mavlink_set_attitude_target_t set_attitude_target;
 	mavlink_msg_set_attitude_target_decode(mmsg, &set_attitude_target);
 
-	static offboard_control_mode offboard_control_mode;
-
 	/* set correct ignore flags for thrust field: copy from mavlink message */
-	offboard_control_mode.ignore_thrust = (bool)(set_attitude_target.type_mask & (1 << 6));
+	_offboard_control_mode.ignore_thrust = (bool)(set_attitude_target.type_mask & (1 << 6));
 
 	/*
 	 * if attitude or body rate have been used (not ignored) previously and this message only sends
@@ -140,45 +146,50 @@ void Mavlink::handle_msg_set_attitude_target(const mavlink_message_t *mmsg)
 	bool ignore_bodyrate = (bool)(set_attitude_target.type_mask & 0x7);
 	bool ignore_attitude = (bool)(set_attitude_target.type_mask & (1 << 7));
 
-	if (ignore_bodyrate && ignore_attitude && !offboard_control_mode.ignore_thrust) {
+	if (ignore_bodyrate && ignore_attitude && !_offboard_control_mode.ignore_thrust) {
 		/* Message want's us to ignore everything except thrust: only ignore if previously ignored */
-		offboard_control_mode.ignore_bodyrate = ignore_bodyrate && offboard_control_mode.ignore_bodyrate;
-		offboard_control_mode.ignore_attitude = ignore_attitude && offboard_control_mode.ignore_attitude;
+		_offboard_control_mode.ignore_bodyrate = ignore_bodyrate && _offboard_control_mode.ignore_bodyrate;
+		_offboard_control_mode.ignore_attitude = ignore_attitude && _offboard_control_mode.ignore_attitude;
+
 	} else {
-		offboard_control_mode.ignore_bodyrate = ignore_bodyrate;
-		offboard_control_mode.ignore_attitude = ignore_attitude;
+		_offboard_control_mode.ignore_bodyrate = ignore_bodyrate;
+		_offboard_control_mode.ignore_attitude = ignore_attitude;
 	}
-	offboard_control_mode.ignore_position = true;
-	offboard_control_mode.ignore_velocity = true;
-	offboard_control_mode.ignore_acceleration_force = true;
 
-	offboard_control_mode.timestamp = get_time_micros();
-	_offboard_control_mode_pub.publish(offboard_control_mode);
+	_offboard_control_mode.ignore_position = true;
+	_offboard_control_mode.ignore_velocity = true;
+	_offboard_control_mode.ignore_acceleration_force = true;
 
-	static vehicle_attitude_setpoint att_sp = {};
+	_offboard_control_mode.timestamp = get_time_micros();
+	_offboard_control_mode_pub.publish(_offboard_control_mode);
 
 	/* The real mavlink app has a ckeck at this location which makes sure that the attitude setpoint
 	 * gets published only if in offboard mode. We leave that out for now.
 	 */
 
-	att_sp.timestamp = get_time_micros();
-	mavlink_quaternion_to_euler(set_attitude_target.q, &att_sp.roll_body, &att_sp.pitch_body,
-			&att_sp.yaw_body);
-	mavlink_quaternion_to_dcm(set_attitude_target.q, (float(*)[3])att_sp.R_body.data());
-	att_sp.R_valid = true;
+	_att_sp.timestamp = get_time_micros();
 
-	if (!offboard_control_mode.ignore_thrust) {
-		att_sp.thrust = set_attitude_target.thrust;
+	if (!ignore_attitude) {
+		mavlink_quaternion_to_euler(set_attitude_target.q, &_att_sp.roll_body, &_att_sp.pitch_body,
+					    &_att_sp.yaw_body);
+		mavlink_quaternion_to_dcm(set_attitude_target.q, (float(*)[3])_att_sp.R_body.data());
+		_att_sp.R_valid = true;
 	}
 
-	if (!offboard_control_mode.ignore_attitude) {
+
+	if (!_offboard_control_mode.ignore_thrust) {
+		_att_sp.thrust = set_attitude_target.thrust;
+	}
+
+	if (!ignore_attitude) {
 		for (ssize_t i = 0; i < 4; i++) {
-			att_sp.q_d[i] = set_attitude_target.q[i];
+			_att_sp.q_d[i] = set_attitude_target.q[i];
 		}
-		att_sp.q_d_valid = true;
+
+		_att_sp.q_d_valid = true;
 	}
 
-	_v_att_sp_pub.publish(att_sp);
+	_v_att_sp_pub.publish(_att_sp);
 
 
 	//XXX real mavlink publishes rate sp here
@@ -197,9 +208,9 @@ void Mavlink::handle_msg_set_position_target_local_ned(const mavlink_message_t *
 	/* Only accept messages which are intended for this system */
 	// XXX removed for sitl, makes maybe sense to re-introduce at some point
 	// if ((mavlink_system.sysid == set_position_target_local_ned.target_system ||
-				// set_position_target_local_ned.target_system == 0) &&
-			// (mavlink_system.compid == set_position_target_local_ned.target_component ||
-			 // set_position_target_local_ned.target_component == 0)) {
+	// set_position_target_local_ned.target_system == 0) &&
+	// (mavlink_system.compid == set_position_target_local_ned.target_component ||
+	// set_position_target_local_ned.target_component == 0)) {
 
 	/* convert mavlink type (local, NED) to uORB offboard control struct */
 	offboard_control_mode.ignore_position = (bool)(set_position_target_local_ned.type_mask & 0x7);
@@ -220,7 +231,7 @@ void Mavlink::handle_msg_set_position_target_local_ned(const mavlink_message_t *
 	 * gets published only if in offboard mode. We leave that out for now.
 	 */
 	if (is_force_sp && offboard_control_mode.ignore_position &&
-			offboard_control_mode.ignore_velocity) {
+	    offboard_control_mode.ignore_velocity) {
 		/* The offboard setpoint is a force setpoint only, directly writing to the force
 		 * setpoint topic and not publishing the setpoint triplet topic */
 		vehicle_force_setpoint	force_sp;
@@ -230,6 +241,7 @@ void Mavlink::handle_msg_set_position_target_local_ned(const mavlink_message_t *
 		//XXX: yaw
 
 		_force_sp_pub.publish(force_sp);
+
 	} else {
 		/* It's not a pure force setpoint: publish to setpoint triplet  topic */
 		position_setpoint_triplet pos_sp_triplet;
@@ -244,6 +256,7 @@ void Mavlink::handle_msg_set_position_target_local_ned(const mavlink_message_t *
 			pos_sp_triplet.current.x = set_position_target_local_ned.x;
 			pos_sp_triplet.current.y = set_position_target_local_ned.y;
 			pos_sp_triplet.current.z = set_position_target_local_ned.z;
+
 		} else {
 			pos_sp_triplet.current.position_valid = false;
 		}
@@ -254,6 +267,7 @@ void Mavlink::handle_msg_set_position_target_local_ned(const mavlink_message_t *
 			pos_sp_triplet.current.vx = set_position_target_local_ned.vx;
 			pos_sp_triplet.current.vy = set_position_target_local_ned.vy;
 			pos_sp_triplet.current.vz = set_position_target_local_ned.vz;
+
 		} else {
 			pos_sp_triplet.current.velocity_valid = false;
 		}
@@ -273,7 +287,7 @@ void Mavlink::handle_msg_set_position_target_local_ned(const mavlink_message_t *
 		}
 
 		/* set the yaw sp value */
-		if (!offboard_control_mode.ignore_attitude) {
+		if (!offboard_control_mode.ignore_attitude && !isnan(set_position_target_local_ned.yaw)) {
 			pos_sp_triplet.current.yaw_valid = true;
 			pos_sp_triplet.current.yaw = set_position_target_local_ned.yaw;
 
@@ -282,13 +296,14 @@ void Mavlink::handle_msg_set_position_target_local_ned(const mavlink_message_t *
 		}
 
 		/* set the yawrate sp value */
-		if (!offboard_control_mode.ignore_bodyrate) {
+		if (!offboard_control_mode.ignore_bodyrate && !isnan(set_position_target_local_ned.yaw)) {
 			pos_sp_triplet.current.yawspeed_valid = true;
 			pos_sp_triplet.current.yawspeed = set_position_target_local_ned.yaw_rate;
 
 		} else {
 			pos_sp_triplet.current.yawspeed_valid = false;
 		}
+
 		//XXX handle global pos setpoints (different MAV frames)
 
 		_pos_sp_triplet_pub.publish(pos_sp_triplet);

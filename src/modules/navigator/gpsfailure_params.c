@@ -39,10 +39,6 @@
  * @author Thomas Gubler <thomasgubler@gmail.com>
  */
 
-#include <nuttx/config.h>
-
-#include <systemlib/param/param.h>
-
 /*
  * GPS Failure Navigation Mode parameters, accessible via MAVLink
  */
@@ -55,7 +51,7 @@
  *
  * @unit seconds
  * @min 0.0
- * @group GPSF
+ * @group GPS Failure Navigation
  */
 PARAM_DEFINE_FLOAT(NAV_GPSF_LT, 30.0f);
 
@@ -67,7 +63,7 @@ PARAM_DEFINE_FLOAT(NAV_GPSF_LT, 30.0f);
  * @unit deg
  * @min 0.0
  * @max 30.0
- * @group GPSF
+ * @group GPS Failure Navigation
  */
 PARAM_DEFINE_FLOAT(NAV_GPSF_R, 15.0f);
 
@@ -79,7 +75,7 @@ PARAM_DEFINE_FLOAT(NAV_GPSF_R, 15.0f);
  * @unit deg
  * @min -30.0
  * @max 30.0
- * @group GPSF
+ * @group GPS Failure Navigation
  */
 PARAM_DEFINE_FLOAT(NAV_GPSF_P, 0.0f);
 
@@ -90,7 +86,7 @@ PARAM_DEFINE_FLOAT(NAV_GPSF_P, 0.0f);
  *
  * @min 0.0
  * @max 1.0
- * @group GPSF
+ * @group GPS Failure Navigation
  */
 PARAM_DEFINE_FLOAT(NAV_GPSF_TR, 0.7f);
 

@@ -39,25 +39,20 @@
  * @author Thomas Gubler <thomasgubler@gmail.com>
  */
 
-#include <nuttx/config.h>
-
-#include <systemlib/param/param.h>
-
 /*
  * Geofence parameters, accessible via MAVLink
  */
 
 /**
- * Enable geofence.
+ * Geofence violation action.
  *
- * Set to 1 to enable geofence.
- * Defaults to 1 because geofence is only enabled when the geofence.txt file is present.
+ * 0 = none, 1 = warning (default), 2 = loiter, 3 = return to launch, 4 = fight termination
  *
  * @min 0
- * @max 1
+ * @max 4
  * @group Geofence
  */
-PARAM_DEFINE_INT32(GF_ON, 1);
+PARAM_DEFINE_INT32(GF_ACTION, 1);
 
 /**
  * Geofence altitude mode
@@ -94,3 +89,25 @@ PARAM_DEFINE_INT32(GF_SOURCE, 0);
  * @group Geofence
  */
 PARAM_DEFINE_INT32(GF_COUNT, -1);
+
+/**
+ * Max horizontal distance in meters.
+ *
+ * Set to > 0 to activate a geofence action if horizontal distance to home exceeds this value.
+ *
+ * @unit meters
+ * @min -1
+ * @group Geofence
+ */
+PARAM_DEFINE_INT32(GF_MAX_HOR_DIST, -1);
+
+/**
+ * Max vertical distance in meters.
+ *
+ * Set to > 0 to activate a geofence action if vertical distance to home exceeds this value.
+ *
+ * @unit meters
+ * @min -1
+ * @group Geofence
+ */
+PARAM_DEFINE_INT32(GF_MAX_VER_DIST, -1);

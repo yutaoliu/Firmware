@@ -128,7 +128,7 @@
 #ifndef _SYSTEMLIB_MIXER_MIXER_H
 #define _SYSTEMLIB_MIXER_MIXER_H value
 
-#include <nuttx/config.h>
+#include <px4_config.h>
 #include "drivers/drv_mixer.h"
 
 #include <uORB/topics/multirotor_motor_limits.h>
@@ -174,7 +174,7 @@ public:
 	 * @param space			The number of available entries in the output array;
 	 * @return			The number of entries in the output array that were populated.
 	 */
-	virtual unsigned		mix(float *outputs, unsigned space) = 0;
+	virtual unsigned		mix(float *outputs, unsigned space, uint16_t *status_reg) = 0;
 
 	/**
 	 * Analyses the mix configuration and updates a bitmask of groups
@@ -222,7 +222,7 @@ protected:
 	 * @param buflen		length of the buffer.
 	 * @param tag			character to search for.
 	 */
-	static const char *		findtag(const char *buf, unsigned &buflen, char tag);
+	static const char 		*findtag(const char *buf, unsigned &buflen, char tag);
 
 	/**
 	 * Skip a line
@@ -231,13 +231,13 @@ protected:
 	 * @param buflen		length of the buffer.
 	 * @return			0 / OK if a line could be skipped, 1 else
 	 */
-	static const char *		skipline(const char *buf, unsigned &buflen);
+	static const char 		*skipline(const char *buf, unsigned &buflen);
 
 private:
 
 	/* do not allow to copy due to prt data members */
-	Mixer(const Mixer&);
-	Mixer& operator=(const Mixer&);
+	Mixer(const Mixer &);
+	Mixer &operator=(const Mixer &);
 };
 
 /**
@@ -250,7 +250,7 @@ public:
 	MixerGroup(ControlCallback control_cb, uintptr_t cb_handle);
 	~MixerGroup();
 
-	virtual unsigned		mix(float *outputs, unsigned space);
+	virtual unsigned		mix(float *outputs, unsigned space, uint16_t *status_reg);
 	virtual void			groups_required(uint32_t &groups);
 
 	/**
@@ -316,8 +316,8 @@ private:
 	Mixer				*_first;	/**< linked list of mixers */
 
 	/* do not allow to copy due to pointer data members */
-	MixerGroup(const MixerGroup&);
-	MixerGroup operator=(const MixerGroup&);
+	MixerGroup(const MixerGroup &);
+	MixerGroup operator=(const MixerGroup &);
 };
 
 /**
@@ -346,7 +346,7 @@ public:
 	 */
 	static NullMixer		*from_text(const char *buf, unsigned &buflen);
 
-	virtual unsigned		mix(float *outputs, unsigned space);
+	virtual unsigned		mix(float *outputs, unsigned space, uint16_t *status_reg);
 	virtual void			groups_required(uint32_t &groups);
 };
 
@@ -411,7 +411,7 @@ public:
 			uint16_t mid,
 			uint16_t max);
 
-	virtual unsigned		mix(float *outputs, unsigned space);
+	virtual unsigned		mix(float *outputs, unsigned space, uint16_t *status_reg);
 	virtual void			groups_required(uint32_t &groups);
 
 	/**
@@ -437,8 +437,8 @@ private:
 			uint8_t &control_index);
 
 	/* do not allow to copy due to ptr data members */
-	SimpleMixer(const SimpleMixer&);
-	SimpleMixer operator=(const SimpleMixer&);
+	SimpleMixer(const SimpleMixer &);
+	SimpleMixer operator=(const SimpleMixer &);
 };
 
 /**
@@ -449,13 +449,13 @@ private:
 typedef unsigned int MultirotorGeometryUnderlyingType;
 enum class MultirotorGeometry : MultirotorGeometryUnderlyingType;
 
-/**
- * Multi-rotor mixer for pre-defined vehicle geometries.
- *
- * Collects four inputs (roll, pitch, yaw, thrust) and mixes them to
- * a set of outputs based on the configured geometry.
- */
-class __EXPORT MultirotorMixer : public Mixer
+	/**
+	 * Multi-rotor mixer for pre-defined vehicle geometries.
+	 *
+	 * Collects four inputs (roll, pitch, yaw, thrust) and mixes them to
+	 * a set of outputs based on the configured geometry.
+	 */
+	class __EXPORT MultirotorMixer : public Mixer
 {
 public:
 	/**
@@ -481,7 +481,7 @@ public:
 	 *				compared to thrust.
 	 * @param yaw_wcale		Scaling factor applied to yaw inputs compared
 	 *				to thrust.
-	 * @param deadband		Minumum rotor control output value; usually
+	 * @param idle_speed		Minimum rotor control output value; usually
 	 *				tuned to ensure that rotors never stall at the
 	 * 				low end of their control range.
 	 */
@@ -491,7 +491,7 @@ public:
 			float roll_scale,
 			float pitch_scale,
 			float yaw_scale,
-			float deadband);
+			float idle_speed);
 	~MultirotorMixer();
 
 	/**
@@ -515,7 +515,7 @@ public:
 			const char *buf,
 			unsigned &buflen);
 
-	virtual unsigned		mix(float *outputs, unsigned space);
+	virtual unsigned		mix(float *outputs, unsigned space, uint16_t *status_reg);
 	virtual void			groups_required(uint32_t &groups);
 
 private:
@@ -531,8 +531,8 @@ private:
 	const Rotor			*_rotors;
 
 	/* do not allow to copy due to ptr data members */
-	MultirotorMixer(const MultirotorMixer&);
-	MultirotorMixer operator=(const MultirotorMixer&);
+	MultirotorMixer(const MultirotorMixer &);
+	MultirotorMixer operator=(const MultirotorMixer &);
 };
 
 #endif

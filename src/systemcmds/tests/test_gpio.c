@@ -36,7 +36,8 @@
  * Included Files
  ****************************************************************************/
 
-#include <nuttx/config.h>
+#include <px4_config.h>
+#include <px4_posix.h>
 
 #include <sys/types.h>
 
@@ -45,9 +46,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <debug.h>
 
-#include <nuttx/analog/adc.h>
+#include <px4_adc.h>
 
 #include "tests.h"
 
@@ -89,10 +89,11 @@
 
 int test_gpio(int argc, char *argv[])
 {
-	int		fd;
 	int		ret = 0;
 
-	fd = open(PX4IO_DEVICE_PATH, 0);
+#ifdef PX4IO_DEVICE_PATH
+
+	int fd = px4_open(PX4IO_DEVICE_PATH, 0);
 
 	if (fd < 0) {
 		printf("GPIO: open fail\n");
@@ -100,16 +101,20 @@ int test_gpio(int argc, char *argv[])
 	}
 
 	/* set all GPIOs to default state */
-	ioctl(fd, GPIO_RESET, ~0);
+	px4_ioctl(fd, GPIO_RESET, ~0);
 
 
 	/* XXX need to add some GPIO waving stuff here */
 
 
 	/* Go back to default */
-	ioctl(fd, GPIO_RESET, ~0);
+	px4_ioctl(fd, GPIO_RESET, ~0);
 
+	px4_close(fd);
 	printf("\t GPIO test successful.\n");
+
+#endif
+
 
 	return ret;
 }

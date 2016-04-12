@@ -36,10 +36,11 @@
  *
  * RC calibration check
  */
+#include <stdbool.h>
 
 #pragma once
 
- __BEGIN_DECLS
+__BEGIN_DECLS
 
 /**
  * Check the RC calibration
@@ -47,6 +48,6 @@
  * @return			0 / OK if RC calibration is ok, index + 1 of the first
  *				channel that failed else (so 1 == first channel failed)
  */
-__EXPORT int	rc_calibration_check(int mavlink_fd);
+__EXPORT int	rc_calibration_check(int mavlink_fd, bool report_fail);
 
 __END_DECLS

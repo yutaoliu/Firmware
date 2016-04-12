@@ -37,7 +37,7 @@
  *
  */
 
-#include <nuttx/config.h>
+#include <px4_config.h>
 
 #include <sys/types.h>
 
@@ -46,14 +46,13 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <debug.h>
 #include <time.h>
 
 #include <arch/board/board.h>
 #include <drivers/drv_pwm_output.h>
 #include <systemlib/err.h>
 
-#include <nuttx/spi.h>
+//#include <nuttx/spi.h>
 
 #include "tests.h"
 
@@ -81,6 +80,7 @@ int test_servo(int argc, char *argv[])
 
 	unsigned servo_count;
 	result = ioctl(fd, PWM_SERVO_GET_COUNT, (unsigned long)&servo_count);
+
 	if (result != OK) {
 		warnx("PWM_SERVO_GET_COUNT");
 		return ERROR;
@@ -100,12 +100,17 @@ int test_servo(int argc, char *argv[])
 
 	/* tell safety that its ok to disable it with the switch */
 	result = ioctl(fd, PWM_SERVO_SET_ARM_OK, 0);
-	if (result != OK)
+
+	if (result != OK) {
 		warnx("FAIL: PWM_SERVO_SET_ARM_OK");
+	}
+
 	/* tell output device that the system is armed (it will output values if safety is off) */
 	result = ioctl(fd, PWM_SERVO_ARM, 0);
-	if (result != OK)
+
+	if (result != OK) {
 		warnx("FAIL: PWM_SERVO_ARM");
+	}
 
 	usleep(5000000);
 	printf("Advancing channel 0 to 1500\n");

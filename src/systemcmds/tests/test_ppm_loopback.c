@@ -37,7 +37,7 @@
  *
  */
 
-#include <nuttx/config.h>
+#include <px4_config.h>
 
 #include <sys/types.h>
 
@@ -46,7 +46,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <debug.h>
 
 #include <arch/board/board.h>
 #include <drivers/drv_pwm_output.h>
@@ -77,6 +76,7 @@ int test_ppm_loopback(int argc, char *argv[])
 
 	unsigned servo_count;
 	result = ioctl(servo_fd, PWM_SERVO_GET_COUNT, (unsigned long)&servo_count);
+
 	if (result != OK) {
 		warnx("PWM_SERVO_GET_COUNT");
 		return ERROR;
@@ -97,7 +97,7 @@ int test_ppm_loopback(int argc, char *argv[])
 	// result = ioctl(servo_fd, PWM_SERVO_SET_ARM_OK, 0);
 	// if (result != OK)
 	// 	warnx("FAIL: PWM_SERVO_SET_ARM_OK");
-	//  tell output device that the system is armed (it will output values if safety is off) 
+	//  tell output device that the system is armed (it will output values if safety is off)
 	// result = ioctl(servo_fd, PWM_SERVO_ARM, 0);
 	// if (result != OK)
 	// 	warnx("FAIL: PWM_SERVO_ARM");
@@ -105,16 +105,17 @@ int test_ppm_loopback(int argc, char *argv[])
 	int pwm_values[] = {1200, 1300, 1900, 1700, 1500, 1250, 1800, 1400};
 
 
-	// for (unsigned i = 0; (i < servo_count) && (i < sizeof(pwm_values) / sizeof(pwm_values[0])); i++) {
-	// 	result = ioctl(servo_fd, PWM_SERVO_SET(i), pwm_values[i]);
+	for (unsigned i = 0; (i < servo_count) && (i < sizeof(pwm_values) / sizeof(pwm_values[0])); i++) {
+		result = ioctl(servo_fd, PWM_SERVO_SET(i), pwm_values[i]);
 
-	// 	if (result) {
-	// 		(void)close(servo_fd);
-	// 		return ERROR;
-	// 	} else {
-	// 		warnx("channel %d set to %d", i, pwm_values[i]);
-	// 	}
-	// }
+		if (result) {
+			(void)close(servo_fd);
+			return ERROR;
+
+		} else {
+			warnx("channel %d set to %d", i, pwm_values[i]);
+		}
+	}
 
 	warnx("servo count: %d", servo_count);
 
@@ -160,12 +161,13 @@ int test_ppm_loopback(int argc, char *argv[])
 
 		/* go and check values */
 		for (unsigned i = 0; (i < servo_count) && (i < sizeof(pwm_values) / sizeof(pwm_values[0])); i++) {
-			if (fabsf(rc_input.values[i] - pwm_values[i]) > 10) {
+			if (abs(rc_input.values[i] - pwm_values[i]) > 10) {
 				warnx("comparison fail: RC: %d, expected: %d", rc_input.values[i], pwm_values[i]);
 				(void)close(servo_fd);
 				return ERROR;
 			}
 		}
+
 	} else {
 		warnx("failed reading RC input data");
 		return ERROR;

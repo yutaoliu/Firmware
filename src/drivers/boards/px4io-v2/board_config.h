@@ -43,14 +43,14 @@
  * Included Files
  ******************************************************************************/
 
-#include <nuttx/config.h>
+#include <px4_config.h>
 #include <nuttx/compiler.h>
 #include <stdint.h>
 
 /* these headers are not C++ safe */
 #include <stm32.h>
 #include <arch/board/board.h>
- 
+
 /******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -79,6 +79,8 @@
 #define GPIO_LED3 (GPIO_OUTPUT|GPIO_CNF_OUTOD|GPIO_MODE_50MHz|GPIO_OUTPUT_SET|GPIO_PORTB|GPIO_PIN13)
 #define GPIO_LED4 (GPIO_OUTPUT|GPIO_CNF_OUTOD|GPIO_MODE_50MHz|GPIO_OUTPUT_SET|GPIO_PORTA|GPIO_PIN11)
 
+#define GPIO_USART1_RX_SPEKTRUM		(GPIO_OUTPUT|GPIO_CNF_OUTPP|GPIO_MODE_50MHz|GPIO_OUTPUT_SET|GPIO_PORTA|GPIO_PIN10)
+
 /* Safety switch button *******************************************************/
 
 #define GPIO_BTN_SAFETY (GPIO_INPUT|GPIO_CNF_INFLOAT|GPIO_MODE_INPUT|GPIO_PORTB|GPIO_PIN5)
@@ -86,6 +88,11 @@
 /* Power switch controls ******************************************************/
 
 #define GPIO_SPEKTRUM_PWR_EN (GPIO_OUTPUT|GPIO_CNF_OUTPP|GPIO_MODE_50MHz|GPIO_OUTPUT_SET|GPIO_PORTC|GPIO_PIN13)
+#define POWER_SPEKTRUM(_s)		stm32_gpiowrite(GPIO_SPEKTRUM_PWR_EN, (_s))
+
+#define SPEKTRUM_RX_HIGH(_s)	stm32_gpiowrite(GPIO_USART1_RX_SPEKTRUM, (_s))
+#define SPEKTRUM_RX_AS_UART()		stm32_configgpio(GPIO_USART1_RX)
+#define SPEKTRUM_RX_AS_GPIO()		stm32_configgpio(GPIO_USART1_RX_SPEKTRUM)
 
 #define GPIO_SERVO_FAULT_DETECT (GPIO_INPUT|GPIO_CNF_INPULLUP|GPIO_MODE_INPUT|GPIO_PORTA|GPIO_PIN15)
 
@@ -117,7 +124,7 @@
 #define GPIO_SBUS_OUTPUT  (GPIO_OUTPUT|GPIO_CNF_OUTPP|GPIO_MODE_50MHz|GPIO_OUTPUT_CLEAR|GPIO_PORTB|GPIO_PIN10)
 #define GPIO_SBUS_OENABLE (GPIO_OUTPUT|GPIO_CNF_OUTPP|GPIO_MODE_50MHz|GPIO_OUTPUT_SET|GPIO_PORTB|GPIO_PIN4)
 
-/* 
+/*
  * High-resolution timer
  */
 #define HRT_TIMER		1	/* use timer1 for the HRT */

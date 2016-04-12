@@ -38,7 +38,6 @@
  */
 
 #include "estimator_utilities.h"
-#include <algorithm>
 
 // Define EKF_DEBUG here to enable the debug print calls
 // if the macro is not set, these will be completely
@@ -71,6 +70,9 @@ ekf_debug(const char *fmt, ...)
 
 void ekf_debug(const char *fmt, ...) { while(0){} }
 #endif
+
+/* we don't want to pull in the standard lib just to swap two floats */
+void swap_var(float &d1, float &d2);
 
 float Vector3f::length(void) const
 {
@@ -108,10 +110,31 @@ void Mat3f::identity() {
 Mat3f Mat3f::transpose() const
 {
     Mat3f ret = *this;
-    std::swap(ret.x.y, ret.y.x);
-    std::swap(ret.x.z, ret.z.x);
-    std::swap(ret.y.z, ret.z.y);
+    swap_var(ret.x.y, ret.y.x);
+    swap_var(ret.x.z, ret.z.x);
+    swap_var(ret.y.z, ret.z.y);
     return ret;
+}
+
+void calcvelNED(float (&velNEDr)[3], float gpsCourse, float gpsGndSpd, float gpsVelD)
+{
+    velNEDr[0] = gpsGndSpd*cosf(gpsCourse);
+    velNEDr[1] = gpsGndSpd*sinf(gpsCourse);
+    velNEDr[2] = gpsVelD;
+}
+
+void calcposNED(float (&posNEDr)[3], double lat, double lon, float hgt, double latReference, double lonReference, float hgtReference)
+{
+    posNEDr[0] = earthRadius * (lat - latReference);
+    posNEDr[1] = earthRadius * cos(latReference) * (lon - lonReference);
+    posNEDr[2] = -(hgt - hgtReference);
+}
+
+void calcLLH(float posNEDi[3], double &lat, double &lon, float &hgt, double latRef, double lonRef, float hgtRef)
+{
+    lat = latRef + (double)posNEDi[0] * earthRadiusInv;
+    lon = lonRef + (double)posNEDi[1] * earthRadiusInv / cos(latRef);
+    hgt = hgtRef - posNEDi[2];
 }
 
 // overload + operator to provide a vector addition
@@ -140,7 +163,7 @@ Vector3f operator*(const Mat3f &matIn, const Vector3f &vecIn)
     Vector3f vecOut;
     vecOut.x = matIn.x.x*vecIn.x + matIn.x.y*vecIn.y + matIn.x.z*vecIn.z;
     vecOut.y = matIn.y.x*vecIn.x + matIn.y.y*vecIn.y + matIn.y.z*vecIn.z;
-    vecOut.z = matIn.x.x*vecIn.x + matIn.z.y*vecIn.y + matIn.z.z*vecIn.z;
+    vecOut.z = matIn.z.x*vecIn.x + matIn.z.y*vecIn.y + matIn.z.z*vecIn.z;
     return vecOut;
 }
 
@@ -201,4 +224,11 @@ Vector3f operator/(const Vector3f &vec, const float scalar)
     vecOut.y = vec.y / scalar;
     vecOut.z = vec.z / scalar;
     return vecOut;
+}
+
+void swap_var(float &d1, float &d2)
+{
+    float tmp = d1;
+    d1 = d2;
+    d2 = tmp;
 }

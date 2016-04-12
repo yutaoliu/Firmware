@@ -33,14 +33,14 @@
 
 /**
  * @file mc_mixer.cpp
- * Dummy multicopter mixer for euroc simulator (gazebo)
+ * Dummy multicopter mixer for rotors simulator (gazebo)
  *
  * @author Roman Bapst <romanbapst@yahoo.de>
 */
 #include <ros/ros.h>
 #include <px4.h>
 #include <lib/mathlib/mathlib.h>
-#include <mav_msgs/MotorSpeed.h>
+#include <mav_msgs/CommandMotorSpeed.h>
 #include <string>
 
 class MultirotorMixer
@@ -96,7 +96,7 @@ const MultirotorMixer::Rotor _config_quad_plus[] = {
 	{ -0.000000, -1.000000, -1.00 },
 };
 
-const MultirotorMixer::Rotor _config_quad_plus_euroc[] = {
+const MultirotorMixer::Rotor _config_quad_plus_rotorssim[] = {
 	{  0.000000,  1.000000,  1.00 },
 	{ -0.000000, -1.000000,  1.00 },
 	{  1.000000,  0.000000, -1.00 },
@@ -118,7 +118,7 @@ const MultirotorMixer::Rotor _config_quad_iris[] = {
 const MultirotorMixer::Rotor *_config_index[5] = {
 	&_config_x[0],
 	&_config_quad_plus[0],
-	&_config_quad_plus_euroc[0],
+	&_config_quad_plus_rotorssim[0],
 	&_config_quad_wide[0],
 	&_config_quad_iris[0]
 };
@@ -129,7 +129,7 @@ MultirotorMixer::MultirotorMixer():
 	_rotors(_config_index[0])
 {
 	_sub = _n.subscribe("actuator_controls_0", 1, &MultirotorMixer::actuatorControlsCallback, this);
-	_pub = _n.advertise<mav_msgs::MotorSpeed>("/mixed_motor_commands", 10);
+	_pub = _n.advertise<mav_msgs::CommandMotorSpeed>("command/motor_speed", 10);
 
 	if (!_n.hasParam("motor_scaling_radps")) {
 		_n.setParam("motor_scaling_radps", 150.0);
@@ -221,14 +221,19 @@ void MultirotorMixer::actuatorControlsCallback(const px4::actuator_controls_0 &m
 	// switch mixer if necessary
 	std::string mixer_name;
 	_n.getParamCached("mixer", mixer_name);
+
 	if (mixer_name == "x") {
 		_rotors = _config_index[0];
+
 	} else if (mixer_name == "+") {
 		_rotors = _config_index[1];
+
 	} else if (mixer_name == "e") {
 		_rotors = _config_index[2];
+
 	} else if (mixer_name == "w") {
 		_rotors = _config_index[3];
+
 	} else if (mixer_name == "i") {
 		_rotors = _config_index[4];
 	}
@@ -237,7 +242,7 @@ void MultirotorMixer::actuatorControlsCallback(const px4::actuator_controls_0 &m
 	mix();
 
 	// publish message
-	mav_msgs::MotorSpeed rotor_vel_msg;
+	mav_msgs::CommandMotorSpeed rotor_vel_msg;
 	double scaling;
 	double offset;
 	_n.getParamCached("motor_scaling_radps", scaling);

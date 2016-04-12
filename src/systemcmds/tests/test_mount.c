@@ -63,20 +63,22 @@ test_mount(int argc, char *argv[])
 	const unsigned iterations = 2000;
 	const unsigned alignments = 10;
 
-	const char* cmd_filename = "/fs/microsd/mount_test_cmds.txt";
+	const char *cmd_filename = "/fs/microsd/mount_test_cmds.txt";
 
 
 	/* check if microSD card is mounted */
 	struct stat buffer;
-	if (stat("/fs/microsd/", &buffer)) {
-		warnx("no microSD card mounted, aborting file test");
+
+	if (stat(PX4_ROOTFSDIR "/fs/microsd/", &buffer)) {
+		PX4_ERR("no microSD card mounted, aborting file test");
 		return 1;
 	}
 
 	/* list directory */
 	DIR		*d;
 	struct dirent	*dir;
-	d = opendir("/fs/microsd");
+	d = opendir(PX4_ROOTFSDIR "/fs/microsd");
+
 	if (d) {
 
 		while ((dir = readdir(d)) != NULL) {
@@ -85,11 +87,11 @@ test_mount(int argc, char *argv[])
 
 		closedir(d);
 
-		warnx("directory listing ok (FS mounted and readable)");
+		PX4_INFO("directory listing ok (FS mounted and readable)");
 
 	} else {
 		/* failed opening dir */
-		warnx("FAILED LISTING MICROSD ROOT DIRECTORY");
+		PX4_ERR("FAILED LISTING MICROSD ROOT DIRECTORY");
 
 		if (stat(cmd_filename, &buffer) == OK) {
 			(void)unlink(cmd_filename);
@@ -105,6 +107,7 @@ test_mount(int argc, char *argv[])
 	int it_left_abort = abort_tries;
 
 	int cmd_fd;
+
 	if (stat(cmd_filename, &buffer) == OK) {
 
 		/* command file exists, read off state */
@@ -115,24 +118,28 @@ test_mount(int argc, char *argv[])
 		if (ret > 0) {
 			int count = 0;
 			ret = sscanf(buf, "TEST: %u %u %n", &it_left_fsync, &it_left_abort, &count);
+
 		} else {
 			buf[0] = '\0';
 		}
 
-		if (it_left_fsync > fsync_tries)
+		if (it_left_fsync > fsync_tries) {
 			it_left_fsync = fsync_tries;
+		}
 
-		if (it_left_abort > abort_tries)
+		if (it_left_abort > abort_tries) {
 			it_left_abort = abort_tries;
+		}
 
-		warnx("Iterations left: #%d / #%d of %d / %d\n(%s)", it_left_fsync, it_left_abort,
-			fsync_tries, abort_tries, buf);
+		PX4_INFO("Iterations left: #%d / #%d of %d / %d\n(%s)", it_left_fsync, it_left_abort,
+			 fsync_tries, abort_tries, buf);
 
 		int it_left_fsync_prev = it_left_fsync;
 
 		/* now write again what to do next */
-		if (it_left_fsync > 0)
+		if (it_left_fsync > 0) {
 			it_left_fsync--;
+		}
 
 		if (it_left_fsync == 0 && it_left_abort > 0) {
 
@@ -140,7 +147,7 @@ test_mount(int argc, char *argv[])
 
 			/* announce mode switch */
 			if (it_left_fsync_prev != it_left_fsync && it_left_fsync == 0) {
-				warnx("\n SUCCESSFULLY PASSED FSYNC'ED WRITES, CONTINUTING WITHOUT FSYNC");
+				PX4_INFO("\n SUCCESSFULLY PASSED FSYNC'ED WRITES, CONTINUTING WITHOUT FSYNC");
 				fsync(fileno(stdout));
 				fsync(fileno(stderr));
 				usleep(20000);
@@ -156,9 +163,9 @@ test_mount(int argc, char *argv[])
 	} else {
 
 		/* this must be the first iteration, do something */
-		cmd_fd = open(cmd_filename, O_TRUNC | O_WRONLY | O_CREAT);
+		cmd_fd = open(cmd_filename, O_TRUNC | O_WRONLY | O_CREAT, PX4_O_MODE_666);
 
-		warnx("First iteration of file test\n");
+		PX4_INFO("First iteration of file test\n");
 	}
 
 	char buf[64];
@@ -172,7 +179,8 @@ test_mount(int argc, char *argv[])
 
 	for (unsigned c = 0; c < (sizeof(chunk_sizes) / sizeof(chunk_sizes[0])); c++) {
 
-		printf("\n\n====== FILE TEST: %u bytes chunks (%s) ======\n", chunk_sizes[c], (it_left_fsync > 0) ? "FSYNC" : "NO FSYNC");
+		printf("\n\n====== FILE TEST: %u bytes chunks (%s) ======\n", chunk_sizes[c],
+		       (it_left_fsync > 0) ? "FSYNC" : "NO FSYNC");
 		printf("unpower the system immediately (within 0.5s) when the hash (#) sign appears\n");
 		fsync(fileno(stdout));
 		fsync(fileno(stderr));
@@ -187,22 +195,23 @@ test_mount(int argc, char *argv[])
 			/* fill write buffer with known values */
 			for (unsigned i = 0; i < sizeof(write_buf); i++) {
 				/* this will wrap, but we just need a known value with spacing */
-				write_buf[i] = i+11;
+				write_buf[i] = i + 11;
 			}
 
 			uint8_t read_buf[chunk_sizes[c] + alignments] __attribute__((aligned(64)));
 
-			int fd = open("/fs/microsd/testfile", O_TRUNC | O_WRONLY | O_CREAT);
+			int fd = open(PX4_ROOTFSDIR "/fs/microsd/testfile", O_TRUNC | O_WRONLY | O_CREAT);
 
 			for (unsigned i = 0; i < iterations; i++) {
 
 				int wret = write(fd, write_buf + a, chunk_sizes[c]);
 
 				if (wret != (int)chunk_sizes[c]) {
-					warn("WRITE ERROR!");
+					PX4_ERR("WRITE ERROR!");
 
-					if ((0x3 & (uintptr_t)(write_buf + a)))
-						warnx("memory is unaligned, align shift: %d", a);
+					if ((0x3 & (uintptr_t)(write_buf + a))) {
+						PX4_ERR("memory is unaligned, align shift: %d", a);
+					}
 
 					return 1;
 
@@ -210,6 +219,7 @@ test_mount(int argc, char *argv[])
 
 				if (it_left_fsync > 0) {
 					fsync(fd);
+
 				} else {
 					printf("#");
 					fsync(fileno(stdout));
@@ -227,40 +237,40 @@ test_mount(int argc, char *argv[])
 			usleep(200000);
 
 			close(fd);
-			fd = open("/fs/microsd/testfile", O_RDONLY);
+			fd = open(PX4_ROOTFSDIR "/fs/microsd/testfile", O_RDONLY);
 
 			/* read back data for validation */
 			for (unsigned i = 0; i < iterations; i++) {
 				int rret = read(fd, read_buf, chunk_sizes[c]);
 
 				if (rret != (int)chunk_sizes[c]) {
-					warnx("READ ERROR!");
+					PX4_ERR("READ ERROR!");
 					return 1;
 				}
-				
+
 				/* compare value */
 				bool compare_ok = true;
 
 				for (unsigned j = 0; j < chunk_sizes[c]; j++) {
 					if (read_buf[j] != write_buf[j + a]) {
-						warnx("COMPARISON ERROR: byte %d, align shift: %d", j, a);
+						PX4_WARN("COMPARISON ERROR: byte %d, align shift: %d", j, a);
 						compare_ok = false;
 						break;
 					}
 				}
 
 				if (!compare_ok) {
-					warnx("ABORTING FURTHER COMPARISON DUE TO ERROR");
+					PX4_ERR("ABORTING FURTHER COMPARISON DUE TO ERROR");
 					return 1;
 				}
 
 			}
 
-			int ret = unlink("/fs/microsd/testfile");
+			int ret = unlink(PX4_ROOTFSDIR "/fs/microsd/testfile");
 			close(fd);
 
 			if (ret) {
-				warnx("UNLINKING FILE FAILED");
+				PX4_ERR("UNLINKING FILE FAILED");
 				return 1;
 			}
 
@@ -274,11 +284,11 @@ test_mount(int argc, char *argv[])
 
 
 	/* we always reboot for the next test if we get here */
-	warnx("Iteration done, rebooting..");
+	PX4_INFO("Iteration done, rebooting..");
 	fsync(fileno(stdout));
 	fsync(fileno(stderr));
 	usleep(50000);
-	systemreset(false);
+	px4_systemreset(false);
 
 	/* never going to get here */
 	return 0;

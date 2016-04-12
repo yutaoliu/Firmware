@@ -34,11 +34,12 @@
 /**
  * @file test_sensors.c
  * Tests the onboard sensors.
- * 
+ *
  * @author Lorenz Meier <lm@inf.ethz.ch>
  */
 
-#include <nuttx/config.h>
+#include <px4_config.h>
+#include <px4_posix.h>
 
 #include <sys/types.h>
 
@@ -47,13 +48,12 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <debug.h>
 #include <math.h>
 #include <systemlib/err.h>
 
 #include <arch/board/board.h>
 
-#include <nuttx/spi.h>
+//#include <nuttx/spi.h>
 
 #include "tests.h"
 
@@ -62,10 +62,10 @@
 #include <drivers/drv_mag.h>
 #include <drivers/drv_baro.h>
 
-static int accel(int argc, char *argv[], const char* path);
-static int gyro(int argc, char *argv[], const char* path);
-static int mag(int argc, char *argv[], const char* path);
-static int baro(int argc, char *argv[], const char* path);
+static int accel(int argc, char *argv[], const char *path);
+static int gyro(int argc, char *argv[], const char *path);
+static int mag(int argc, char *argv[], const char *path);
+static int baro(int argc, char *argv[], const char *path);
 
 /****************************************************************************
  * Private Data
@@ -74,7 +74,7 @@ static int baro(int argc, char *argv[], const char* path);
 struct {
 	const char	*name;
 	const char	*path;
-	int	(* test)(int argc, char *argv[], const char* path);
+	int	(* test)(int argc, char *argv[], const char *path);
 } sensors[] = {
 	{"accel0",	ACCEL0_DEVICE_PATH,	accel},
 	{"accel1",	ACCEL1_DEVICE_PATH,	accel},
@@ -86,7 +86,7 @@ struct {
 };
 
 static int
-accel(int argc, char *argv[], const char* path)
+accel(int argc, char *argv[], const char *path)
 {
 	printf("\tACCEL: test start\n");
 	fflush(stdout);
@@ -95,7 +95,7 @@ accel(int argc, char *argv[], const char* path)
 	struct accel_report buf;
 	int		ret;
 
-	fd = open(path, O_RDONLY);
+	fd = px4_open(path, O_RDONLY);
 
 	if (fd < 0) {
 		printf("\tACCEL: open fail, run <mpu6000 start> or <lsm303 start> or <bma180 start> first.\n");
@@ -106,7 +106,7 @@ accel(int argc, char *argv[], const char* path)
 	usleep(100000);
 
 	/* read data - expect samples */
-	ret = read(fd, &buf, sizeof(buf));
+	ret = px4_read(fd, &buf, sizeof(buf));
 
 	if (ret != sizeof(buf)) {
 		printf("\tACCEL: read1 fail (%d)\n", ret);
@@ -130,13 +130,13 @@ accel(int argc, char *argv[], const char* path)
 
 	/* Let user know everything is ok */
 	printf("\tOK: ACCEL passed all tests successfully\n");
-	close(fd);
+	px4_close(fd);
 
 	return OK;
 }
 
 static int
-gyro(int argc, char *argv[], const char* path)
+gyro(int argc, char *argv[], const char *path)
 {
 	printf("\tGYRO: test start\n");
 	fflush(stdout);
@@ -145,7 +145,7 @@ gyro(int argc, char *argv[], const char* path)
 	struct gyro_report buf;
 	int		ret;
 
-	fd = open(path, O_RDONLY);
+	fd = px4_open(path, O_RDONLY);
 
 	if (fd < 0) {
 		printf("\tGYRO: open fail, run <l3gd20 start> or <mpu6000 start> first.\n");
@@ -156,7 +156,7 @@ gyro(int argc, char *argv[], const char* path)
 	usleep(5000);
 
 	/* read data - expect samples */
-	ret = read(fd, &buf, sizeof(buf));
+	ret = px4_read(fd, &buf, sizeof(buf));
 
 	if (ret != sizeof(buf)) {
 		printf("\tGYRO: read fail (%d)\n", ret);
@@ -175,13 +175,13 @@ gyro(int argc, char *argv[], const char* path)
 
 	/* Let user know everything is ok */
 	printf("\tOK: GYRO passed all tests successfully\n");
-	close(fd);
+	px4_close(fd);
 
 	return OK;
 }
 
 static int
-mag(int argc, char *argv[], const char* path)
+mag(int argc, char *argv[], const char *path)
 {
 	printf("\tMAG: test start\n");
 	fflush(stdout);
@@ -190,7 +190,7 @@ mag(int argc, char *argv[], const char* path)
 	struct mag_report buf;
 	int		ret;
 
-	fd = open(path, O_RDONLY);
+	fd = px4_open(path, O_RDONLY);
 
 	if (fd < 0) {
 		printf("\tMAG: open fail, run <hmc5883 start> or <lsm303 start> first.\n");
@@ -201,7 +201,7 @@ mag(int argc, char *argv[], const char* path)
 	usleep(5000);
 
 	/* read data - expect samples */
-	ret = read(fd, &buf, sizeof(buf));
+	ret = px4_read(fd, &buf, sizeof(buf));
 
 	if (ret != sizeof(buf)) {
 		printf("\tMAG: read fail (%d)\n", ret);
@@ -220,13 +220,13 @@ mag(int argc, char *argv[], const char* path)
 
 	/* Let user know everything is ok */
 	printf("\tOK: MAG passed all tests successfully\n");
-	close(fd);
+	px4_close(fd);
 
 	return OK;
 }
 
 static int
-baro(int argc, char *argv[], const char* path)
+baro(int argc, char *argv[], const char *path)
 {
 	printf("\tBARO: test start\n");
 	fflush(stdout);
@@ -235,7 +235,7 @@ baro(int argc, char *argv[], const char* path)
 	struct baro_report buf;
 	int		ret;
 
-	fd = open(path, O_RDONLY);
+	fd = px4_open(path, O_RDONLY);
 
 	if (fd < 0) {
 		printf("\tBARO: open fail, run <ms5611 start> or <lps331 start> first.\n");
@@ -246,19 +246,20 @@ baro(int argc, char *argv[], const char* path)
 	usleep(5000);
 
 	/* read data - expect samples */
-	ret = read(fd, &buf, sizeof(buf));
+	ret = px4_read(fd, &buf, sizeof(buf));
 
 	if (ret != sizeof(buf)) {
 		printf("\tBARO: read fail (%d)\n", ret);
 		return ERROR;
 
 	} else {
-		printf("\tBARO pressure: %8.4f mbar\talt: %8.4f m\ttemp: %8.4f deg C\n", (double)buf.pressure, (double)buf.altitude, (double)buf.temperature);
+		printf("\tBARO pressure: %8.4f mbar\talt: %8.4f m\ttemp: %8.4f deg C\n", (double)buf.pressure, (double)buf.altitude,
+		       (double)buf.temperature);
 	}
 
 	/* Let user know everything is ok */
 	printf("\tOK: BARO passed all tests successfully\n");
-	close(fd);
+	px4_close(fd);
 
 	return OK;
 }

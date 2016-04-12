@@ -75,11 +75,11 @@ bool StateMachineHelperTest::armingStateTransitionTest(void)
     } ArmingTransitionVolatileState_t;
 
     // This structure represents a test case for arming_state_transition. It contains the machine
-    // state prior to transtion, the requested state to transition to and finally the expected
+    // state prior to transition, the requested state to transition to and finally the expected
     // machine state after transition.
     typedef struct {
         const char*                     assertMsg;                              // Text to show when test case fails
-        ArmingTransitionVolatileState_t current_state;                          // Machine state prior to transtion
+        ArmingTransitionVolatileState_t current_state;                          // Machine state prior to transition
         hil_state_t                     hil_state;                              // Current vehicle_status_s.hil_state
         bool                            condition_system_sensors_initialized;   // Current vehicle_status_s.condition_system_sensors_initialized
         bool                            safety_switch_available;                // Current safety_s.safety_switch_available
@@ -255,10 +255,10 @@ bool StateMachineHelperTest::armingStateTransitionTest(void)
 
         // Sensor tests
 
-        { "no transition: init to standby - sensors not initialized",
+        { "transition to standby error: init to standby - sensors not initialized",
             { vehicle_status_s::ARMING_STATE_INIT, ATT_DISARMED, ATT_NOT_READY_TO_ARM }, vehicle_status_s::HIL_STATE_OFF, ATT_SENSORS_NOT_INITIALIZED, ATT_SAFETY_AVAILABLE, ATT_SAFETY_ON,
             vehicle_status_s::ARMING_STATE_STANDBY,
-            { vehicle_status_s::ARMING_STATE_INIT, ATT_DISARMED, ATT_NOT_READY_TO_ARM }, TRANSITION_DENIED },
+            { vehicle_status_s::ARMING_STATE_STANDBY_ERROR, ATT_DISARMED, ATT_NOT_READY_TO_ARM }, TRANSITION_DENIED },
 
         // Safety switch arming tests
 

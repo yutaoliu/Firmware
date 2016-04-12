@@ -39,10 +39,6 @@
  * @author Thomas Gubler <thomasgubler@gmail.com>
  */
 
-#include <nuttx/config.h>
-
-#include <systemlib/param/param.h>
-
 /*
  * OBC RC Loss mode parameters, accessible via MAVLink
  */
@@ -55,6 +51,6 @@
  *
  * @unit seconds
  * @min -1.0
- * @group RCL
+ * @group Radio Signal Loss
  */
 PARAM_DEFINE_FLOAT(NAV_RCL_LT, 120.0f);

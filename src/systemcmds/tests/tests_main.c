@@ -38,7 +38,7 @@
  * @author Lorenz Meier <lm@inf.ethz.ch>
  */
 
-#include <nuttx/config.h>
+#include <px4_config.h>
 
 #include <sys/types.h>
 
@@ -48,13 +48,12 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <debug.h>
 
 #include <arch/board/board.h>
-
-#include <nuttx/spi.h>
-
 #include <systemlib/perf_counter.h>
+
+// Not using Eigen at the moment
+#define TESTS_EIGEN_DISABLE
 
 #include "tests.h"
 
@@ -97,7 +96,9 @@ const struct {
 	{"hott_telemetry",	test_hott_telemetry,	OPT_NOJIGTEST | OPT_NOALLTEST},
 	{"tone",		test_tone,	0},
 	{"sleep",		test_sleep,	OPT_NOJIGTEST},
+#ifdef __PX4_NUTTX
 	{"time",		test_time,	OPT_NOJIGTEST},
+#endif
 	{"perf",		test_perf,	OPT_NOJIGTEST},
 	{"all",			test_all,	OPT_NOALLTEST | OPT_NOJIGTEST},
 	{"jig",			test_jig,	OPT_NOJIGTEST | OPT_NOALLTEST},
@@ -112,6 +113,9 @@ const struct {
 #ifndef TESTS_MATHLIB_DISABLE
 	{"mathlib",		test_mathlib,	0},
 #endif
+#ifndef TESTS_EIGEN_DISABLE
+	{"eigen",		test_eigen,	OPT_NOJIGTEST},
+#endif
 	{"help",		test_help,	OPT_NOALLTEST | OPT_NOHELP | OPT_NOJIGTEST},
 	{NULL,			NULL, 		0}
 };
@@ -125,8 +129,9 @@ test_help(int argc, char *argv[])
 
 	printf("Available tests:\n");
 
-	for (i = 0; tests[i].name; i++)
+	for (i = 0; tests[i].name; i++) {
 		printf("  %s\n", tests[i].name);
+	}
 
 	return 0;
 }
@@ -154,11 +159,13 @@ test_all(int argc, char *argv[])
 				fflush(stderr);
 				failcount++;
 				passed[i] = false;
+
 			} else {
 				printf("  [%s] \t\t\tPASS\n", tests[i].name);
 				fflush(stdout);
 				passed[i] = true;
 			}
+
 			testcount++;
 		}
 	}
@@ -197,7 +204,7 @@ test_all(int argc, char *argv[])
 	printf("\n");
 
 	/* Print failed tests */
-	if (failcount > 0) printf(" Failed tests:\n\n");
+	if (failcount > 0) { printf(" Failed tests:\n\n"); }
 
 	unsigned int k;
 
@@ -253,22 +260,26 @@ int test_jig(int argc, char *argv[])
 	bool		passed[NTESTS];
 
 	printf("\nRunning all tests...\n\n");
+
 	for (i = 0; tests[i].name; i++) {
 		/* Only run tests that are not excluded */
 		if (!(tests[i].options & OPT_NOJIGTEST)) {
 			printf("  [%s] \t\t\tSTARTING TEST\n", tests[i].name);
 			fflush(stdout);
+
 			/* Execute test */
 			if (tests[i].fn(1, args) != 0) {
 				fprintf(stderr, "  [%s] \t\t\tFAIL\n", tests[i].name);
 				fflush(stderr);
 				failcount++;
 				passed[i] = false;
+
 			} else {
 				printf("  [%s] \t\t\tPASS\n", tests[i].name);
 				fflush(stdout);
 				passed[i] = true;
 			}
+
 			testcount++;
 		}
 	}
@@ -276,13 +287,15 @@ int test_jig(int argc, char *argv[])
 	/* Print summary */
 	printf("\n");
 	int j;
-	for (j = 0; j < 40; j++)
-	{
+
+	for (j = 0; j < 40; j++) {
 		printf("-");
 	}
+
 	printf("\n\n");
 
 	printf("     T E S T    S U M M A R Y\n\n");
+
 	if (failcount == 0) {
 		printf("  ______     __         __            ______     __  __    \n");
 		printf(" /\\  __ \\   /\\ \\       /\\ \\          /\\  __ \\   /\\ \\/ /    \n");
@@ -291,6 +304,7 @@ int test_jig(int argc, char *argv[])
 		printf("   \\/_/\\/_/   \\/_____/   \\/_____/      \\/_____/   \\/_/\\/_/ \n");
 		printf("\n");
 		printf(" All tests passed (%d of %d)\n", testcount, testcount);
+
 	} else {
 		printf("  ______   ______     __     __ \n");
 		printf(" /\\  ___\\ /\\  __ \\   /\\ \\   /\\ \\    \n");
@@ -300,18 +314,20 @@ int test_jig(int argc, char *argv[])
 		printf("\n");
 		printf(" Some tests failed (%d of %d)\n", failcount, testcount);
 	}
+
 	printf("\n");
 
 	/* Print failed tests */
-	if (failcount > 0) printf(" Failed tests:\n\n");
+	if (failcount > 0) { printf(" Failed tests:\n\n"); }
+
 	unsigned int k;
-	for (k = 0; k < i; k++)
-	{
-		if (!passed[i] && !(tests[k].options & OPT_NOJIGTEST))
-		{
+
+	for (k = 0; k < i; k++) {
+		if (!passed[i] && !(tests[k].options & OPT_NOJIGTEST)) {
 			printf(" [%s] to obtain details, please re-run with\n\t nsh> tests %s\n\n", tests[k].name, tests[k].name);
 		}
 	}
+
 	fflush(stdout);
 
 	return 0;
@@ -332,8 +348,9 @@ int tests_main(int argc, char *argv[])
 	}
 
 	for (i = 0; tests[i].name; i++) {
-		if (!strcmp(tests[i].name, argv[1]))
+		if (!strcmp(tests[i].name, argv[1])) {
 			return tests[i].fn(argc - 1, argv + 1);
+		}
 	}
 
 	printf("tests: no test called '%s' - 'tests help' for a list of tests\n", argv[1]);

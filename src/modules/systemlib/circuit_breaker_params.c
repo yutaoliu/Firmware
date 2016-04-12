@@ -42,9 +42,6 @@
  * parameter needs to set to the key (magic).
  */
 
-#include <px4.h>
-#include <systemlib/circuit_breaker_params.h>
-
 /**
  * Circuit breaker for power supply check
  *
@@ -56,7 +53,7 @@
  * @max 894281
  * @group Circuit Breaker
  */
-PX4_PARAM_DEFINE_INT32(CBRK_SUPPLY_CHK);
+PARAM_DEFINE_INT32(CBRK_SUPPLY_CHK, 0);
 
 /**
  * Circuit breaker for rate controller output
@@ -69,19 +66,19 @@ PX4_PARAM_DEFINE_INT32(CBRK_SUPPLY_CHK);
  * @max 140253
  * @group Circuit Breaker
  */
-PX4_PARAM_DEFINE_INT32(CBRK_RATE_CTRL);
+PARAM_DEFINE_INT32(CBRK_RATE_CTRL, 0);
 
 /**
  * Circuit breaker for IO safety
  *
- * Setting this parameter to 894281 will disable IO safety.
+ * Setting this parameter to 22027 will disable IO safety.
  * WARNING: ENABLING THIS CIRCUIT BREAKER IS AT OWN RISK
  *
  * @min 0
  * @max 22027
  * @group Circuit Breaker
  */
-PX4_PARAM_DEFINE_INT32(CBRK_IO_SAFETY);
+PARAM_DEFINE_INT32(CBRK_IO_SAFETY, 0);
 
 /**
  * Circuit breaker for airspeed sensor
@@ -93,7 +90,7 @@ PX4_PARAM_DEFINE_INT32(CBRK_IO_SAFETY);
  * @max 162128
  * @group Circuit Breaker
  */
-PX4_PARAM_DEFINE_INT32(CBRK_AIRSPD_CHK);
+PARAM_DEFINE_INT32(CBRK_AIRSPD_CHK, 0);
 
 /**
  * Circuit breaker for flight termination
@@ -106,7 +103,7 @@ PX4_PARAM_DEFINE_INT32(CBRK_AIRSPD_CHK);
  * @max 121212
  * @group Circuit Breaker
  */
-PX4_PARAM_DEFINE_INT32(CBRK_FLIGHTTERM);
+PARAM_DEFINE_INT32(CBRK_FLIGHTTERM, 121212);
 
 /**
  * Circuit breaker for engine failure detection
@@ -120,4 +117,46 @@ PX4_PARAM_DEFINE_INT32(CBRK_FLIGHTTERM);
  * @max 284953
  * @group Circuit Breaker
  */
-PX4_PARAM_DEFINE_INT32(CBRK_ENGINEFAIL);
+PARAM_DEFINE_INT32(CBRK_ENGINEFAIL, 284953);
+
+/**
+ * Circuit breaker for GPS failure detection
+ *
+ * Setting this parameter to 240024 will disable the GPS failure detection.
+ * If this check is enabled, then the sensor check will fail if the GPS module
+ * is missing. It will also check for excessive signal noise on the GPS receiver
+ * and warn the user if detected.
+ *
+ * WARNING: ENABLING THIS CIRCUIT BREAKER IS AT OWN RISK
+ *
+ * @min 0
+ * @max 240024
+ * @group Circuit Breaker
+ */
+PARAM_DEFINE_INT32(CBRK_GPSFAIL, 240024);
+
+/**
+ * Circuit breaker for disabling buzzer
+ *
+ * Setting this parameter to 782097 will disable the buzzer audio notification.
+ *
+ * WARNING: ENABLING THIS CIRCUIT BREAKER IS AT OWN RISK
+ *
+ * @min 0
+ * @max 782097
+ * @group Circuit Breaker
+ */
+PARAM_DEFINE_INT32(CBRK_BUZZER, 0);
+
+/**
+ * Circuit breaker for USB link check
+ *
+ * Setting this parameter to 197848 will disable the USB connected
+ * checks in the commander.
+ * WARNING: ENABLING THIS CIRCUIT BREAKER IS AT OWN RISK
+ *
+ * @min 0
+ * @max 197848
+ * @group Circuit Breaker
+ */
+PARAM_DEFINE_INT32(CBRK_USB_CHK, 0);

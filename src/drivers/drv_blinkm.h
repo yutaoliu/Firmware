@@ -42,6 +42,7 @@
 
 #pragma once
 
+#include <px4_defines.h>
 #include <stdint.h>
 #include <sys/ioctl.h>
 
@@ -52,7 +53,7 @@
  */
 
 #define _BLINKMIOCBASE		(0x2900)
-#define _BLINKMIOC(_n)		(_IOC(_BLINKMIOCBASE, _n))
+#define _BLINKMIOC(_n)		(_PX4_IOC(_BLINKMIOCBASE, _n))
 
 /** play the named script in *(char *)arg, repeating forever */
 #define BLINKM_PLAY_SCRIPT_NAMED	_BLINKMIOC(1)
@@ -60,7 +61,7 @@
 /** play the numbered script in (arg), repeating forever */
 #define BLINKM_PLAY_SCRIPT		_BLINKMIOC(2)
 
-/** 
+/**
  * Set the user script; (arg) is a pointer to an array of script lines,
  * where each line is an array of four bytes giving <duration>, <command>, arg[0-2]
  *

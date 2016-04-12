@@ -8,15 +8,16 @@
 
 #include "gtest/gtest.h"
 
-TEST(ST24Test, ST24) {
-	const char* filepath = "testdata/st24_data.txt";
+TEST(ST24Test, ST24)
+{
+	const char *filepath = "testdata/st24_data.txt";
 
-	warnx("loading data from: %s", filepath);
+	//warnx("loading data from: %s", filepath);
 
 	FILE *fp;
 
 	fp = fopen(filepath, "rt");
-	//ASSERT_TRUE(fp);
+	ASSERT_TRUE(fp);
 
 	float f;
 	unsigned x;
@@ -40,7 +41,7 @@ TEST(ST24Test, ST24) {
 		last_time = f;
 
 		// Pipe the data into the parser
-		hrt_abstime now = hrt_absolute_time();
+		//hrt_abstime now = hrt_absolute_time();
 
 		uint8_t rssi;
 		uint8_t rx_count;
@@ -52,8 +53,7 @@ TEST(ST24Test, ST24) {
 			//warnx("decoded: %u channels (converted to PPM range)", (unsigned)channel_count);
 
 			for (unsigned i = 0; i < channel_count; i++) {
-
-				int16_t val = channels[i];
+				//int16_t val = channels[i];
 				//warnx("channel %u: %d 0x%03X", i, static_cast<int>(val), static_cast<int>(val));
 			}
 		}

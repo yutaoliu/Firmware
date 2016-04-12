@@ -65,6 +65,17 @@ def main():
                         metavar="FILENAME",
                         help="Create XML file"
                              " (default FILENAME: parameters.xml)")
+    parser.add_argument("-i", "--inject-xml",
+                        nargs='?',
+                        const="../Tools/parameters_injected.xml",
+                        metavar="FILENAME",
+                        help="Inject additional param XML file"
+                             " (default FILENAME: ../Tools/parameters_injected.xml)")
+    parser.add_argument("-b", "--board",
+                         nargs='?',
+                         const="",
+                         metavar="BOARD",
+                         help="Board to create xml parameter xml for")
     parser.add_argument("-w", "--wiki",
                         nargs='?',
                         const="parameters.wiki",
@@ -110,13 +121,16 @@ def main():
 
     # Scan directories, and parse the files
     print("Scanning source path " + args.src_path)
-    scanner.ScanDir(args.src_path, parser)
+    if not scanner.ScanDir(args.src_path, parser):
+        sys.exit(1)
+    if not parser.Validate():
+        sys.exit(1)
     param_groups = parser.GetParamGroups()
 
     # Output to XML file
     if args.xml:
         print("Creating XML file " + args.xml)
-        out = xmlout.XMLOutput(param_groups)
+        out = xmlout.XMLOutput(param_groups, args.board, os.path.join(args.src_path, args.inject_xml))
         out.Save(args.xml)
 
     # Output to DokuWiki tables

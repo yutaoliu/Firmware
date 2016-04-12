@@ -139,6 +139,7 @@ public:
     Vector3f correctedDelVel; // delta velocities along the XYZ body axes corrected for errors (m/s)
     Vector3f summedDelAng; // summed delta angles about the xyz body axes corrected for errors (rad)
     Vector3f summedDelVel; // summed delta velocities along the XYZ body axes corrected for errors (m/s)
+    Vector3f prevDelAng;    ///< previous delta angle, used for coning correction
     float accNavMag; // magnitude of navigation accel (- used to adjust GPS obs variance (m/s^2)
     Vector3f earthRateNED; // earths angular rate vector in NED (rad/s)
     Vector3f angRate; // angular rate vector in XYZ body axes measured by the IMU (rad/s)
@@ -288,7 +289,6 @@ public:
      * Recall the state vector.
      *
      * Recalls the vector stored at closest time to the one specified by msec
-     *FuseOptFlow
      * @return zero on success, integer indicating the number of invalid states on failure.
      *         Does only copy valid states, if the statesForFusion vector was initialized
      *         correctly by the caller, the result can be safely used, but is a mixture
@@ -306,12 +306,6 @@ public:
     static void eul2quat(float (&quat)[4], const float (&eul)[3]);
 
     static void quat2eul(float (&eul)[3], const float (&quat)[4]);
-
-    static void calcvelNED(float (&velNED)[3], float gpsCourse, float gpsGndSpd, float gpsVelD);
-
-    static void calcposNED(float (&posNED)[3], double lat, double lon, float hgt, double latRef, double lonRef, float hgtRef);
-
-    static void calcLLH(float posNED[3], double &lat, double &lon, float &hgt, double latRef, double lonRef, float hgtRef);
 
     //static void quat2Tnb(Mat3f &Tnb, const float (&quat)[4]);
 
@@ -362,8 +356,6 @@ public:
      */
     void ResetVelocity();
 
-    void ZeroVariables();
-
     void GetFilterState(struct ekf_status_report *state);
 
     void GetLastErrorState(struct ekf_status_report *last_error);
@@ -381,6 +373,16 @@ public:
     *   true if the vehicle moves like a Fixed Wing, false otherwise
     **/
     void setIsFixedWing(const bool fixedWing);
+    
+    /**
+     * @brief
+     *   Reset internal filter states and clear all variables to zero value
+     */
+    void ZeroVariables();
+
+    void get_covariance(float c[28]);
+
+    float getAccNavMagHorizontal() { return _accNavMagHorizontal; }
 
 protected:
 
@@ -409,7 +411,7 @@ protected:
     void AttitudeInit(float ax, float ay, float az, float mx, float my, float mz, float declination, float *initQuat);
 
     void ResetStoredStates();
-    
+
 private:
     bool _isFixedWing;               ///< True if the vehicle is a fixed-wing frame type
     bool _onGround;                  ///< boolean true when the flight vehicle is on the ground (not flying)

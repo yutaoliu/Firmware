@@ -39,7 +39,7 @@
  * @author Lorenz Meier <lorenz@px4.io>
  */
 
-#include <nuttx/config.h>
+#include <px4_config.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -155,7 +155,6 @@ int parameters_update(const struct param_handles *h, struct params *p)
 void control_attitude(const struct vehicle_attitude_setpoint_s *att_sp, const struct vehicle_attitude_s *att,
 		      struct actuator_controls_s *actuators)
 {
-
 	/*
 	 * The PX4 architecture provides a mixer outside of the controller.
 	 * The mixer is fed with a default vector of actuator controls, representing
@@ -267,18 +266,27 @@ int rover_steering_control_thread_main(int argc, char *argv[])
 
 	/* subscribe to topics. */
 	int att_sub = orb_subscribe(ORB_ID(vehicle_attitude));
+
 	int global_pos_sub = orb_subscribe(ORB_ID(vehicle_global_position));
+
 	int manual_sp_sub = orb_subscribe(ORB_ID(manual_control_setpoint));
+
 	int vstatus_sub = orb_subscribe(ORB_ID(vehicle_status));
+
 	int att_sp_sub = orb_subscribe(ORB_ID(vehicle_attitude_setpoint));
+
 	int param_sub = orb_subscribe(ORB_ID(parameter_update));
 
 	/* Setup of loop */
 
 	struct pollfd fds[2];
+
 	fds[0].fd = param_sub;
+
 	fds[0].events = POLLIN;
+
 	fds[1].fd = att_sub;
+
 	fds[1].events = POLLIN;
 
 	while (!thread_should_exit) {
@@ -371,6 +379,7 @@ int rover_steering_control_thread_main(int argc, char *argv[])
 	for (unsigned i = 0; i < (sizeof(actuators.control) / sizeof(actuators.control[0])); i++) {
 		actuators.control[i] = 0.0f;
 	}
+
 	actuators.timestamp = hrt_absolute_time();
 
 	orb_publish(ORB_ID_VEHICLE_ATTITUDE_CONTROLS, actuator_pub, &actuators);
@@ -399,11 +408,11 @@ usage(const char *reason)
  * Makefile does only apply to this management task.
  *
  * The actual stack size should be set in the call
- * to task_spawn_cmd().
+ * to px4_task_spawn_cmd().
  */
 int rover_steering_control_main(int argc, char *argv[])
 {
-	if (argc < 1) {
+	if (argc < 2) {
 		usage("missing command");
 	}
 
@@ -416,12 +425,12 @@ int rover_steering_control_main(int argc, char *argv[])
 		}
 
 		thread_should_exit = false;
-		deamon_task = task_spawn_cmd("rover_steering_control",
-					     SCHED_DEFAULT,
-					     SCHED_PRIORITY_MAX - 20,
-					     2048,
-					     rover_steering_control_thread_main,
-					     (argv) ? (char *const *)&argv[2] : (char *const *)NULL);
+		deamon_task = px4_task_spawn_cmd("rover_steering_control",
+						 SCHED_DEFAULT,
+						 SCHED_PRIORITY_MAX - 20,
+						 2048,
+						 rover_steering_control_thread_main,
+						 (argv) ? (char *const *)&argv[2] : (char *const *)NULL);
 		thread_running = true;
 		exit(0);
 	}

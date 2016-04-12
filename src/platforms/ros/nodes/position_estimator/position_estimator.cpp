@@ -54,6 +54,7 @@ PositionEstimator::PositionEstimator() :
 	_vehicle_position_pub(_n.advertise<px4::vehicle_local_position>("vehicle_local_position", 1)),
 	_startup_time(1)
 {
+	_n.getParam("vehicle_model", _model_name);
 }
 
 void PositionEstimator::ModelStatesCallback(const gazebo_msgs::ModelStatesConstPtr &msg)
@@ -64,14 +65,16 @@ void PositionEstimator::ModelStatesCallback(const gazebo_msgs::ModelStatesConstP
 
 	/* Fill px4 position topic with contents from modelstates topic */
 	int index = 0;
+
 	//XXX: maybe a more clever approach would be to do this not on every loop, need to check if and when
 	//gazebo rearranges indexes.
-	for(std::vector<std::string>::const_iterator it = msg->name.begin(); it != msg->name.end(); ++it) {
-		if (*it == "iris" || *it == "ardrone") {
+	for (std::vector<std::string>::const_iterator it = msg->name.begin(); it != msg->name.end(); ++it) {
+		if (*it ==  _model_name) {
 			index = it -  msg->name.begin();
 			break;
 		}
 	}
+
 	msg_v_l_pos.xy_valid = true;
 	msg_v_l_pos.z_valid = true;
 	msg_v_l_pos.v_xy_valid = true;
