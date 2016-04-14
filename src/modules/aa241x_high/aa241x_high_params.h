@@ -61,6 +61,7 @@ extern "C" {
 struct aah_params {
 
 	float example_high_param;
+	float proportional_roll_gain;
 
 	// TODO: add custom parameter variable names here......
 
@@ -79,6 +80,7 @@ struct aah_params {
 struct aah_param_handles {
 
 	param_t example_high_param;
+	param_t proportional_roll_gain;
 
 	// TODO: add custom parameter variable names here.......
 

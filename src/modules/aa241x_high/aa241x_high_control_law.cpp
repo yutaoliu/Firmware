@@ -62,6 +62,14 @@ void flight_control() {
 	float my_float_variable = 0.0f;		/**< example float variable */
 
 
+	// An example of how to run a one time 'setup' for example to lock one's altitude and heading...
+	if (hrt_absolute_time() - previous_loop_timestamp > 500000.0f) { // Run if more than 0.5 seconds have passes since last loop, 
+																	 //	should only occur on first engagement since this is 59Hz loop
+		yaw_desired = heading; 							// yaw_desired already defined in aa241x_high_aux.h
+		float altitude_desired = position_D_baro; 		// altitude_desired needs to be declared
+	}
+
+
 	// TODO: write all of your flight control here...
 
 
@@ -72,10 +80,30 @@ void flight_control() {
 	high_data.variable_name1 = my_float_variable;
 
 
+	// // Make a really simple proportional roll stabilizer // //
+	//
+	
+	roll_desired = 0.0f; // roll_desired already exists in aa241x_high_aux so no need to repeat float declaration
+
+	// Now use your parameter gain and multiply by the error from desired
+	float proportionalRollCorrection = aah_parameters.proportional_roll_gain * (roll - roll_desired);
+
+	// Note the use of x.0f, this is important to specify that these are single and not double float values!
+
+	// Do bounds checking to keep the roll correction within the -1..1 limits of the servo output
+	if (proportionalRollCorrection > 1.0f) {
+		proportionalRollCorrection = 1.0f;
+	} else if (proportionalRollCorrection < -1.0f ) {
+		proportionalRollCorrection = -1.0f;
+	}
+
 	// ENSURE THAT YOU SET THE SERVO OUTPUTS!!!
 	// outputs should be set to values between -1..1 (except throttle is 0..1)
 	// where zero is no actuation, and -1,1 are full throw in either the + or - directions
-	roll_servo_out = man_roll_in;		// as an example, just passing through manual control
+
+	// Set output of roll servo to the control law output calculated above
+	roll_servo_out = proportionalRollCorrection;		
+	// as an example, just passing through manual control to everything but roll
 	pitch_servo_out = -man_pitch_in;
 	yaw_servo_out = man_yaw_in;
 	throttle_servo_out = man_throttle_in;

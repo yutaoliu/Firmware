@@ -61,6 +61,18 @@
  */
 PARAM_DEFINE_FLOAT(AAH_EXAMPLE, 10.0f);
 
+/**
+ * This is an example parameter.  The name of the parameter in QGroundControl
+ * will be AAH_PROPROLLGAIN and will be in the AAH dropdown.  Make sure to always
+ * start your parameters with AAH to have them all in one place.
+ *
+ * The default value of this float parameter will be 1.0.
+ *
+ * @unit none 						(the unit attribute (not required, just helps for sanity))
+ * @group AA241x High Params		(always include this)
+ */
+PARAM_DEFINE_FLOAT(AAH_PROPROLLGAIN, 1.0f);
+
 // TODO: define custom parameters here
 
 
@@ -74,7 +86,8 @@ int aah_parameters_init(struct aah_param_handles *h)
 	 * NOTE: the string passed to param_find is the same as the name provided
 	 * in the above PARAM_DEFINE_FLOAT
 	 */
-	h->example_high_param	=	param_find("AAH_EXAMPLE");
+	h->example_high_param		= param_find("AAH_EXAMPLE");
+	h->proportional_roll_gain 	= param_find("AAH_PROPROLLGAIN");
 
 	// TODO: add the above line for each of your custom parameters........
 
@@ -87,6 +100,7 @@ int aah_parameters_update(const struct aah_param_handles *h, struct aah_params *
 	// for each of your custom parameters, make sure to add this line with
 	// the corresponding variable name
 	param_get(h->example_high_param, &(p->example_high_param));
+	param_get(h->proportional_roll_gain, &(p->proportional_roll_gain));
 
 	// TODO: add the above line for each of your custom parameters.....
 
