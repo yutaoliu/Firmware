@@ -65,8 +65,8 @@ void flight_control() {
 	// An example of how to run a one time 'setup' for example to lock one's altitude and heading...
 	if (hrt_absolute_time() - previous_loop_timestamp > 500000.0f) { // Run if more than 0.5 seconds have passes since last loop, 
 																	 //	should only occur on first engagement since this is 59Hz loop
-		yaw_desired = heading; 							// yaw_desired already defined in aa241x_high_aux.h
-		float altitude_desired = position_D_baro; 		// altitude_desired needs to be declared
+		yaw_desired = yaw; 							// yaw_desired already defined in aa241x_high_aux.h
+		// float altitude_desired = position_D_baro; 		// altitude_desired needs to be declared
 	}
 
 
