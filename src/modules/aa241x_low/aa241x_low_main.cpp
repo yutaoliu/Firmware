@@ -650,7 +650,7 @@ LowPriorityLoop::set_aux_values()
 	ground_course = _global_pos.yaw; 	// this is course over ground (direction of velocity relative to North in [rad])
 
 	// airspeed [m/s]
-	air_speed = _airspeed.true_airspeed_m_s;	// speed relative to air in [m/s] (measured by pitot tube)
+//	air_speed = _airspeed.true_airspeed_m_s;	// speed relative to air in [m/s] (measured by pitot tube)
 
 	// status check
 	gps_ok = _vehicle_status.gps_failure; 		// boolean as to whether or not the gps data coming in is valid
