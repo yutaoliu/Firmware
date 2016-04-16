@@ -31,20 +31,20 @@
 #
 ############################################################################
 if (${OS} STREQUAL "nuttx")
-  list(APPEND MODULE_CFLAGS -Wframe-larger-than=1500)
+	list(APPEND MODULE_CFLAGS -Wframe-larger-than=1500)
 endif()
 px4_add_module(
-  MODULE modules__sdlog2
-  MAIN sdlog2
-  PRIORITY "SCHED_PRIORITY_MAX-30"
-  STACK 1200
-  COMPILE_FLAGS
-    ${MODULE_CFLAGS}
-    -Os
-  SRCS
-    sdlog2.c
-    logbuffer.c
-  DEPENDS
-    platforms__common
-  )
+	MODULE modules__sdlog2
+	MAIN sdlog2
+	PRIORITY "SCHED_PRIORITY_MAX-30"
+	STACK 1200
+	COMPILE_FLAGS
+		${MODULE_CFLAGS}
+		-Os
+	SRCS
+		sdlog2.c
+		logbuffer.c
+	DEPENDS
+		platforms__common
+	)
 # vim: set noet ft=cmake fenc=utf-8 ff=unix : 

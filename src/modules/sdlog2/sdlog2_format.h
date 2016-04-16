@@ -66,8 +66,8 @@ Format characters in the format string for binary log messages
 #ifndef SDLOG2_FORMAT_H_
 #define SDLOG2_FORMAT_H_
 
-#define LOG_PACKET_HEADER_LEN    3
-#define LOG_PACKET_HEADER        uint8_t head1, head2, msg_type;
+#define LOG_PACKET_HEADER_LEN	   3
+#define LOG_PACKET_HEADER	       uint8_t head1, head2, msg_type;
 #define LOG_PACKET_HEADER_INIT(id) .head1 = HEAD_BYTE1, .head2 = HEAD_BYTE2, .msg_type = id
 
 // once the logging code is all converted we will remove these from
@@ -76,31 +76,31 @@ Format characters in the format string for binary log messages
 #define HEAD_BYTE2  0x95    // Decimal 149
 
 struct log_format_s {
-  uint8_t type;
-  uint8_t length;   // full packet length including header
-  char name[4];
-  char format[16];
-  char labels[64];
+	uint8_t type;
+	uint8_t length;		// full packet length including header
+	char name[4];
+	char format[16];
+	char labels[64];
 };
 
 #define LOG_FORMAT(_name, _format, _labels) { \
-    .type = LOG_##_name##_MSG, \
-      .length = sizeof(struct log_##_name##_s) + LOG_PACKET_HEADER_LEN, \
-          .name = #_name, \
-            .format = _format, \
-                .labels = _labels \
-  }
+		.type = LOG_##_name##_MSG, \
+			.length = sizeof(struct log_##_name##_s) + LOG_PACKET_HEADER_LEN, \
+				  .name = #_name, \
+					  .format = _format, \
+						    .labels = _labels \
+	}
 
 #define LOG_FORMAT_S(_name, _struct_name, _format, _labels) { \
-    .type = LOG_##_name##_MSG, \
-      .length = sizeof(struct log_##_struct_name##_s) + LOG_PACKET_HEADER_LEN, \
-          .name = #_name, \
-            .format = _format, \
-                .labels = _labels \
-  }
+		.type = LOG_##_name##_MSG, \
+			.length = sizeof(struct log_##_struct_name##_s) + LOG_PACKET_HEADER_LEN, \
+				  .name = #_name, \
+					  .format = _format, \
+						    .labels = _labels \
+	}
 
-#define LOG_FORMAT_MSG    0x80
+#define LOG_FORMAT_MSG	  0x80
 
-#define LOG_PACKET_SIZE(_name)  LOG_PACKET_HEADER_LEN + sizeof(struct log_##_name##_s)
+#define LOG_PACKET_SIZE(_name)	LOG_PACKET_HEADER_LEN + sizeof(struct log_##_name##_s)
 
 #endif /* SDLOG2_FORMAT_H_ */
