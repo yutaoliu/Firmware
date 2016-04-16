@@ -75,12 +75,12 @@
 #include <uORB/topics/camera_trigger.h>
 #include <uORB/topics/vehicle_land_detected.h>
 #include <uORB/topics/estimator_status.h>
-/*
+
 #include <uORB/topics/aa241x_mission_status.h>
 #include <uORB/topics/aa241x_high_data.h>
 #include <uORB/topics/aa241x_low_data.h>
 #include <uORB/topics/aa241x_local_data.h>
-*/
+
 #include <drivers/drv_rc_input.h>
 #include <drivers/drv_pwm_output.h>
 #include <systemlib/err.h>
@@ -2742,7 +2742,7 @@ protected:
 		}
 	}
 };
-/*
+
 class MavlinkStreamAA241xMissionStatus : public MavlinkStream
 {
 public:
@@ -3013,7 +3013,7 @@ protected:
 		}
 	}
 };
-*/
+
 
 const StreamListItem *streams_list[] = {
 	new StreamListItem(&MavlinkStreamHeartbeat::new_instance, &MavlinkStreamHeartbeat::get_name_static),
@@ -3054,9 +3054,9 @@ const StreamListItem *streams_list[] = {
 	new StreamListItem(&MavlinkStreamDistanceSensor::new_instance, &MavlinkStreamDistanceSensor::get_name_static),
 	new StreamListItem(&MavlinkStreamExtendedSysState::new_instance, &MavlinkStreamExtendedSysState::get_name_static),
 	new StreamListItem(&MavlinkStreamAltitude::new_instance, &MavlinkStreamAltitude::get_name_static),
-/*	new StreamListItem(&MavlinkStreamAA241xMissionStatus::new_instance, &MavlinkStreamAA241xMissionStatus::get_name_static),
+	new StreamListItem(&MavlinkStreamAA241xMissionStatus::new_instance, &MavlinkStreamAA241xMissionStatus::get_name_static),
 	new StreamListItem(&MavlinkStreamAA241xHighData::new_instance, &MavlinkStreamAA241xHighData::get_name_static),
 	new StreamListItem(&MavlinkStreamAA241xLowData::new_instance, &MavlinkStreamAA241xLowData::get_name_static),
-	new StreamListItem(&MavlinkStreamAA241xAuxData::new_instance, &MavlinkStreamAA241xAuxData::get_name_static),*/
+	new StreamListItem(&MavlinkStreamAA241xAuxData::new_instance, &MavlinkStreamAA241xAuxData::get_name_static),
 	nullptr
 };
