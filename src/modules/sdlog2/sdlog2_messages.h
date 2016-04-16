@@ -620,8 +620,8 @@ static const struct log_format_s log_formats[] = {
 	LOG_FORMAT_S(ATTC, ATTC, "ffff",		"Roll,Pitch,Yaw,Thrust"),
 	LOG_FORMAT_S(ATC1, ATTC, "ffff",		"Roll,Pitch,Yaw,Thrust"),
 	LOG_FORMAT(STAT, "BBBfBBf",		"MainState,ArmS,Failsafe,BatRem,BatWarn,Landed,Load"),
-	LOG_FORMAT(VTOL, "f",		"Arsp"),
-	//LOG_FORMAT(CTS, "fffffff", "Vx_b,Vy_b,Vz_b,Vinf,P,Q,R"),
+	//LOG_FORMAT(VTOL, "f",		"Arsp"),
+	LOG_FORMAT(CTS, "fffffff", "Vx_b,Vy_b,Vz_b,Vinf,P,Q,R"),
 	LOG_FORMAT(RC, "ffffffffffffBBBL",		"C0,C1,C2,C3,C4,C5,C6,C7,C8,C9,C10,C11,RSSI,CNT,Lost,Drop"),
 	LOG_FORMAT_S(OUT0, OUT, "ffffffff",		"Out0,Out1,Out2,Out3,Out4,Out5,Out6,Out7"),
 	LOG_FORMAT_S(OUT1, OUT, "ffffffff",		"Out0,Out1,Out2,Out3,Out4,Out5,Out6,Out7"),
@@ -658,7 +658,7 @@ static const struct log_format_s log_formats[] = {
 	LOG_FORMAT(MACS, "fff", "RRint,PRint,YRint"),
 
 	/* AA241x logging */
-	LOG_FORMAT(AMIS, "BBfffbb", "InMission,CanStart,MisTime,BattDis,Score,WindDir,Ind"),
+	LOG_FORMAT(AMIS, "BBfffb", "InMission,CanStart,MisTime,BattDis,Score,Ind"),
 	LOG_FORMAT(HIGH, "ffffffffffffffff", HIGH_DATA_LABELS),
 	LOG_FORMAT(LOW, "ffffffffffffffff", LOW_DATA_LABELS),
 	LOG_FORMAT(ADAT, "ffffffff", "N,E,Dbaro,Dgps,u,v,w,GrndSpd"),
