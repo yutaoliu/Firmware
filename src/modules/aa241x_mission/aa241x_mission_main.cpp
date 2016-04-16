@@ -311,7 +311,6 @@ AA241xMission::initialize_mission()
 	_in_mission = true;
 	_can_start = false;	// don't allow restarting of a mission
 	_mission_start_time = hrt_absolute_time();
-	_last_propagation_time = hrt_absolute_time();
 	_mission_start_battery = _batt_stat.discharged_mah;
 
 	// TODO: ADD ANY ADDITIONAL INITIALIZATION REQUIRED
@@ -441,12 +440,12 @@ AA241xMission::task_main()
 		}
 
 		/* local data updated */
-		if (fds[7].revents & POLLIN) {
+		if (fds[5].revents & POLLIN) {
 			local_data_update();
 		}
 
 		/* battery status updated */
-		if (fds[8].revents & POLLIN) {
+		if (fds[6].revents & POLLIN) {
 			battery_status_update();
 		}
 
