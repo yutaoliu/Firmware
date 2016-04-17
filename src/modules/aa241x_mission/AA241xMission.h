@@ -147,7 +147,6 @@ private:
 	}		_parameter_handles;		/**< handles for interesting parameters */
 
 	hrt_abstime _mission_start_time;	/**< timestamp of when entered mission */
-	hrt_abstime	_last_propagation_time;	/**< timestamp of when the last fire propagation was done */
 	float		_mission_start_battery;	/**< the mAh used when entered the mission */
 	bool 		_in_mission;			/**< if true, currently running a mission (fire is spreading) */
 	bool		_can_start;				/**< if false conditions for starting have been violated */

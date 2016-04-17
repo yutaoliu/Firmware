@@ -13,7 +13,7 @@ ekf_att_pos_estimator start
 #
 aa241x_high start
 aa241x_low start
-#aa241x_mission start
+aa241x_mission start
 
 #
 # Start Land Detector
