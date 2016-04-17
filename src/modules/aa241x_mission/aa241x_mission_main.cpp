@@ -41,7 +41,11 @@
  * @author Adrien Perkins	<adrienp@stanford.edu>
  *
  */
-#include <nuttx/config.h>
+//#include <nuttx/config.h>
+#include <px4_config.h>
+#include <px4_defines.h>
+#include <px4_tasks.h>
+#include <px4_posix.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -56,13 +60,17 @@
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <uORB/uORB.h>
+
 #include <drivers/device/device.h>
 #include <drivers/drv_hrt.h>
+#include <drivers/drv_tone_alarm.h>
 #include <arch/board/board.h>
+
+#include <uORB/uORB.h>
+
 #include <mathlib/mathlib.h>
 #include <mavlink/mavlink_log.h>
-#include <drivers/drv_tone_alarm.h>
+
 
 #include "AA241xMission.h"
 #include "missions.h"
@@ -311,7 +319,6 @@ AA241xMission::initialize_mission()
 	_in_mission = true;
 	_can_start = false;	// don't allow restarting of a mission
 	_mission_start_time = hrt_absolute_time();
-	_last_propagation_time = hrt_absolute_time();
 	_mission_start_battery = _batt_stat.discharged_mah;
 
 	// TODO: ADD ANY ADDITIONAL INITIALIZATION REQUIRED
@@ -374,30 +381,20 @@ AA241xMission::task_main()
 	battery_status_update();
 
 	/* wakeup source(s) */
-	struct pollfd fds[9];
+	px4_pollfd_struct_t fds[2] = {};
 
 	/* Setup of loop */
 	fds[0].fd = _params_sub;
 	fds[0].events = POLLIN;
-	fds[1].fd = _vcontrol_mode_sub;
+	fds[1].fd = _global_pos_sub;
 	fds[1].events = POLLIN;
-	fds[2].fd = _global_pos_sub;
-	fds[2].events = POLLIN;
-	fds[3].fd = _local_pos_sub;
-	fds[3].events = POLLIN;
-	fds[4].fd = _vehicle_status_sub;
-	fds[4].events = POLLIN;
-	fds[5].fd = _local_data_sub;
-	fds[5].events = POLLIN;
-	fds[6].fd = _battery_status_sub;
-	fds[6].events = POLLIN;
 
 	_task_running = true;
 
 	while (!_task_should_exit) {
 
 		/* wait for up to 100ms for data */
-		int pret = poll(&fds[0], (sizeof(fds) / sizeof(fds[0])), 100);
+		int pret = px4_poll(&fds[0], (sizeof(fds) / sizeof(fds[0])), 100);
 
 		/* timed out - periodic check for _task_should_exit, etc. */
 		if (pret == 0) {
@@ -420,35 +417,17 @@ AA241xMission::task_main()
 			parameters_update();
 		}
 
-		/* vehicle control mode updated */
-		if (fds[1].revents & POLLIN) {
-			vehicle_control_mode_update();
-		}
-
 		/* global position updated */
-		if (fds[2].revents & POLLIN) {
+		if (fds[1].revents & POLLIN) {
 			global_pos_update();
 		}
 
-		/* local position updated */
-		if (fds[3].revents & POLLIN) {
-			local_pos_update();
-		}
-
-		/* vehicle status updated */
-		if (fds[4].revents & POLLIN) {
-			vehicle_status_update();
-		}
-
-		/* local data updated */
-		if (fds[7].revents & POLLIN) {
-			local_data_update();
-		}
-
-		/* battery status updated */
-		if (fds[8].revents & POLLIN) {
-			battery_status_update();
-		}
+		/* check all other subscriptions */
+		vehicle_control_mode_update();
+		local_pos_update();
+		vehicle_status_update();
+		local_data_update();
+		battery_status_update();
 
 		/* check auto start requirements */
 		if (_can_start && !_in_mission) {

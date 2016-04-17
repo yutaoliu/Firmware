@@ -40,7 +40,11 @@
  *
  */
 
-#include <nuttx/config.h>
+#include <px4_config.h>
+#include <px4_defines.h>
+#include <px4_tasks.h>
+#include <px4_posix.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -50,9 +54,11 @@
 #include <math.h>
 #include <poll.h>
 #include <time.h>
+
 #include <drivers/drv_hrt.h>
 #include <drivers/drv_accel.h>
 #include <arch/board/board.h>
+
 #include <uORB/uORB.h>
 #include <uORB/topics/aa241x_mission_status.h>
 #include <uORB/topics/aa241x_low_data.h>
@@ -71,16 +77,14 @@
 #include <uORB/topics/vehicle_status.h>
 #include <uORB/topics/sensor_combined.h>
 #include <uORB/topics/battery_status.h>
-#include <systemlib/param/param.h>
+
 #include <systemlib/err.h>
+#include <systemlib/systemlib.h>
+#include <systemlib/perf_counter.h>
+#include <systemlib/param/param.h>
 #include <systemlib/pid/pid.h>
 #include <geo/geo.h>
-#include <systemlib/perf_counter.h>
-#include <systemlib/systemlib.h>
 #include <mathlib/mathlib.h>
-
-#include <platforms/px4_defines.h>
-
 
 #include "aa241x_low_params.h"
 #include "aa241x_low_aux.h"
@@ -743,7 +747,7 @@ LowPriorityLoop::task_main()
 
 
 	/* wakeup source(s) */
-	struct pollfd fds[2];
+	px4_pollfd_struct_t fds[2] = {};
 
 	/* Setup of loop */
 	fds[0].fd = _params_sub;
@@ -758,7 +762,7 @@ LowPriorityLoop::task_main()
 		_loop_counter = 0;
 
 		/* wait for up to 200ms for data */
-		int pret = poll(&fds[0], (sizeof(fds) / sizeof(fds[0])), 200);
+		int pret = px4_poll(&fds[0], (sizeof(fds) / sizeof(fds[0])), 200);
 
 		/* timed out - periodic check for _task_should_exit, etc. */
 		if (pret == 0)
