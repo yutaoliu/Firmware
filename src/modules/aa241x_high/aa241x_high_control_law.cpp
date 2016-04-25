@@ -50,6 +50,9 @@
 // needed for variable names
 using namespace aa241x_high;
 
+// define global variables (can be seen by all files in aa241x_high directory unless static keyword used)
+float altitude_desired = 0.0f;
+
 /**
  * Main function in which your code should be written.
  *
@@ -66,7 +69,7 @@ void flight_control() {
 	if (hrt_absolute_time() - previous_loop_timestamp > 500000.0f) { // Run if more than 0.5 seconds have passes since last loop, 
 																	 //	should only occur on first engagement since this is 59Hz loop
 		yaw_desired = yaw; 							// yaw_desired already defined in aa241x_high_aux.h
-		// float altitude_desired = position_D_baro; 		// altitude_desired needs to be declared
+		altitude_desired = position_D_baro; 		// altitude_desired needs to be declared outside flight_control() function
 	}
 
 
