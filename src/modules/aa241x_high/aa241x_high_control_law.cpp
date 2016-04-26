@@ -111,15 +111,17 @@ void follow_waypoints(float a, float b, const float * xx, const float * yy, int 
 
   // Compare squared distance from point to squared waypoint parameter
   if(sqr(a-xx[waypoint]) + sqr(b-yy[waypoint]) < sqr(aah_parameters.waypoint_radius))
-  {waypoint=waypoint+1;
+  {
+    waypoint=waypoint+1;
     if(waypoint==length){
       waypoint=1;
     }
     ydot = 0.0f;
+
+    x_orig=a;
+    y_orig=b;
   }
 
-  x_orig=xx[waypoint-1];
-  y_orig=yy[waypoint-1];
 
   x_dest=xx[waypoint];
   y_dest=yy[waypoint];
@@ -144,6 +146,10 @@ void redzone(const float &a, const float &b)
 // Main function for flight control
 void flight_control() {
 
+  // Initialize current position along with resetting deviation from line
+  float a=position_E;
+  float b=position_N;
+
   // Check if auto is being enabled:
   // RUNS ONCE!!! AT START OF AUTOPILOT
   if ((timestamp - previous_loop_timestamp) > 1000000.0f) {
@@ -151,6 +157,9 @@ void flight_control() {
     waypoint = 1;
     high_data.wpreached_high = 0.0f;
     high_data.wet = 0.0f;
+    // Set initial origin to autopilot turn on location
+    x_orig = a;
+    y_orig = b;
   }
 
   desired_altitude = aah_parameters.desired_altitude;
@@ -205,9 +214,7 @@ void flight_control() {
   //
   //
 
-  // Initialize current position along with resetting deviation from line
-  float a=position_E;
-  float b=position_N;
+  
   //float yold = y;
   float dist2dest;  // distance to P2 in the x-direction in m
 
@@ -248,7 +255,7 @@ void flight_control() {
   // 
   // 5: Square shape
   // Waypoints for path 5
-  float xsquare[5] = {-100.0f, 0.0f, 0.0f, -100.0f, -100.0f};
+  float xsquare[5] = {0.0f, 100.0f, 100.0f, 0.0f, 0.0f};
   float ysquare[5] = {100.0f, 100.0f, 0.0f, 0.0f, 100.0f};
 
   if((aah_parameters.path_no) == 5){
@@ -257,7 +264,7 @@ void flight_control() {
   //
   // 6: Triangle shape (60deg turn)
   // Waypoints for path 6
-  float xtri[4] = {-100.0f, 0.0f, -50.0f, -100.0f};
+  float xtri[4] = {0.0f, 100.0f, 50.0f, 0.0f};
   float ytri[4] = {86.6f, 86.6f, 0.0f, 86.6f};
 
   if((aah_parameters.path_no) == 6){
@@ -293,7 +300,7 @@ void flight_control() {
   
   // BACKUP RED ZONE, check if in red zone and reset the line to head back
   // to center if so:
-  redzone(a,b);
+  // redzone(a,b);
   
   // compute y and distance to destination
   yaw_desired=atan2(x_dest-x_orig,y_dest-y_orig); // in rad
@@ -346,7 +353,7 @@ void flight_control() {
 
 
   // difference between target and actual heading
-  float ddelta_heading = (yaw_desired + delta_heading - ground_course); // rad
+  float ddelta_heading = (yaw_desired + delta_heading - yaw); // rad
 
   // Worry about the specifics of dealing with the discontinuity later
   if (ddelta_heading > pi ) {
@@ -361,14 +368,14 @@ void flight_control() {
   // Set up condition for having less bank at low altitude:
   float max_bank = aah_parameters.max_bank * deg2rad;
 
-  if ((( -position_D_gps ) < (130.0f*0.3048f)) && (fabsf(high_data.inRedzone) < 0.1f)) {
+/*  if ((( -position_D_gps ) < (130.0f*0.3048f)) && (fabsf(high_data.inRedzone) < 0.1f)) {
     max_bank = max_bank/3.0f;
   }
   // Set up "holy shit" condition in red zone to save our asses
   // but only above 130ft to keep from terminating mission
   if ((fabsf(high_data.inRedzone) > 0.1f ) && (( -position_D_gps ) > ( 130.0f*0.3048f ))){
     max_bank = 3.0f * max_bank;
-  }
+  }*/
 
   // Bounds check for bank to ensure it doesn't try to turn too tight:
   if (delta_bank > max_bank ) { //rad
