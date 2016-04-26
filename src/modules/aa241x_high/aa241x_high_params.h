@@ -61,7 +61,52 @@ extern "C" {
 struct aah_params {
 
 	float example_high_param;
-	float proportional_roll_gain;
+
+        // Trims for maintaining level flight
+        float trim_pitch;
+        float trim_bank;
+        float trim_throttle;
+        float trim_rudder;
+        float trim_elevator;
+        float trim_aileron;
+        int motor_active;
+
+        // Gains for maintaining altitude
+        float alt_gain_pitch;
+        float gain_throttle;
+
+        // Gains for maintaining heading
+        float hdg_gain_rudd;
+        float hdg_gain_bank;
+        float hdg_gain_head;
+        float ydot_gain;
+
+        // Climb 1 Trims
+        float climb1_throttle;
+        float climb1_pitch;
+        float climb2_pitch;
+
+        // Descent 1 trims
+        float descent1_throttle;
+        float descent1_pitch;
+
+        // Desired  velocity, heading and altitude
+        float desired_heading;
+        float desired_altitude;
+        float desired_velocity;
+        int path_no;
+
+        // Control surface gains
+        float gain_aileron;
+        float gain_elevator;
+        float gain_rudder;
+
+        // Limits
+        float max_bank;
+        float redzone;
+
+        // Turn stuff
+        float waypoint_radius;
 
 	// TODO: add custom parameter variable names here......
 
@@ -80,10 +125,54 @@ struct aah_params {
 struct aah_param_handles {
 
 	param_t example_high_param;
-	param_t proportional_roll_gain;
 
 	// TODO: add custom parameter variable names here.......
 
+        // Trims for maintaining level flight
+        param_t trim_pitch;
+        param_t trim_bank;
+        param_t trim_throttle;
+        param_t trim_rudder;
+        param_t trim_elevator;
+        param_t trim_aileron;
+        param_t motor_active;
+
+        // Gains for maintaining altitude
+        param_t alt_gain_pitch;
+        param_t gain_throttle;
+
+        // Gains for maintaining heading
+        param_t hdg_gain_rudd;
+        param_t hdg_gain_bank;
+        param_t hdg_gain_head;
+        param_t ydot_gain;
+        param_t path_no;
+
+        // Climb 1 Trims
+        param_t climb1_throttle;
+        param_t climb1_pitch;
+        param_t climb2_pitch;
+
+        // Descent 1 trims
+        param_t descent1_throttle;
+        param_t descent1_pitch;
+
+        // Desired heading and altitude
+        param_t desired_heading;
+        param_t desired_altitude;
+        param_t desired_velocity;
+
+        // Control surface gains
+        param_t gain_aileron;
+        param_t gain_elevator;
+        param_t gain_rudder;
+
+        // Limits
+        param_t max_bank;
+        param_t redzone;
+
+        // Turn stuff
+        param_t waypoint_radius;
 };
 
 /**

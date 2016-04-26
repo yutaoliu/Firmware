@@ -61,14 +61,14 @@
  */
 
 // list of variable names
-#define HIGH_FIELD1 variable_name1;		/**< change variable_name1 to the desired variable name */
-#define HIGH_FIELD2 variable_name2;
-#define HIGH_FIELD3 variable_name3;
-#define HIGH_FIELD4 variable_name4;
-#define HIGH_FIELD5 variable_name5;
-#define HIGH_FIELD6 variable_name6;
-#define HIGH_FIELD7 variable_name7;
-#define HIGH_FIELD8 variable_name8;
+#define HIGH_FIELD1 xOrigin;		/**< change variable_name1 to the desired variable name */
+#define HIGH_FIELD2 yOrigin;
+#define HIGH_FIELD3 inRedzone;
+#define HIGH_FIELD4 wpreached_high;
+#define HIGH_FIELD5 wet;
+#define HIGH_FIELD6 pic_flag;
+#define HIGH_FIELD7 run_flag;
+#define HIGH_FIELD8 douse_flag;
 #define HIGH_FIELD9 variable_name9;
 #define HIGH_FIELD10 variable_name10;
 #define HIGH_FIELD11 variable_name11;
@@ -77,6 +77,7 @@
 #define HIGH_FIELD14 variable_name14;
 #define HIGH_FIELD15 variable_name15;
 #define HIGH_FIELD16 variable_name16;
+
 
 
 /**
