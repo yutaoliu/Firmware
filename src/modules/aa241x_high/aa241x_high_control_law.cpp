@@ -103,8 +103,13 @@ float y_orig=0.0f;
 float x_dest=0.0f;
 float y_dest=0.0f;
 
+// Distance and rate of change of distance for line following
 float ydot = 0.0f;
 float y = 0.0f;
+
+// Unit normal vectors
+float nyE = 0.0f;
+float nyN = 0.0f;
 
 // Define a function to cycle through waypoints
 void follow_waypoints(float a, float b, const float * xx, const float * yy, int length) {
@@ -255,8 +260,8 @@ void flight_control() {
   // 
   // 5: Square shape
   // Waypoints for path 5
-  float xsquare[5] = {0.0f, 100.0f, 100.0f, 0.0f, 0.0f};
-  float ysquare[5] = {100.0f, 100.0f, 0.0f, 0.0f, 100.0f};
+  float xsquare[5] = {-25.0f, 750.0f, 75.0f, -25.0f, -25.0f};
+  float ysquare[5] = {50.0f, 50.0f, -50.0f, -50.0f, 50.0f};
 
   if((aah_parameters.path_no) == 5){
     follow_waypoints(a, b, xsquare, ysquare, 5);
@@ -270,30 +275,7 @@ void flight_control() {
   if((aah_parameters.path_no) == 6){
     follow_waypoints(a, b, xtri, ytri, 4);
   }
-  //
-  // 7: Follow the mission
-  //
- /* if((aah_parameters.path_no) == 7){
-    // TODO: Use when low is passing code for waypoints
-    // check whether new waypoint is availible
-
-    if (fabsf(low_data.waypoint_x-x_dest) > 0.0001f || fabsf(low_data.waypoint_y-y_dest) > 0.0001f){
-      x_orig=a;
-      y_orig=b;
-      x_dest=low_data.waypoint_x;
-      y_dest=low_data.waypoint_y;
-      ydot = 0.0f;
-      high_data.wpreached_high = 0.0f;
-      high_data.wet=0.0f;
-    }
-
-    if((a-x_dest)*(a-x_dest) + (b-y_dest)*(b-y_dest)
-        < aah_parameters.waypoint_radius*aah_parameters.waypoint_radius)
-    {
-      high_data.wpreached_high = 1.0f;
-    }
-
-  }*/
+  
   
   
   //************************************************************
@@ -308,15 +290,17 @@ void flight_control() {
   y=cosf(yaw_desired)*(a-x_orig) -sinf(yaw_desired)*(b-y_orig);
 
   dist2dest=sinf(yaw_desired)*(x_dest-a) +cosf(yaw_desired)*(y_dest-b);
+
+  // Compute orthogonal unit vectors (positive right) in N and E coords
+  nyE = -(y_dest-y_orig)/sqrtf( sqr(y_dest-y_orig) + sqr(x_dest-x_orig) );
+  nyN =  (x_dest-x_orig)/sqrtf( sqr(y_dest-y_orig) + sqr(x_dest-x_orig) );
+
+  // Compute ydot
+  ydot = vel_E*nyE + vel_N*nyN;
   
   // Save values to the log
   high_data.xOrigin = x_orig;
   high_data.yOrigin = y_orig;
-  // Compute ydot to add derivative controller to help damp oscillations
-  // Uses simple sliding filter to keep noise out
-  // timestamps are in microseconds, so convert to seconds.
-//   ydot = 0.9f * ydot + 
-//     0.1f * (y - yold) * (timestamp - previous_loop_timestamp) / 1000000.0f; //m/s
 
   // check whether the destination was missed (and switch P1 and P2)
   if(dist2dest+20.0f<0.00001f){
@@ -324,7 +308,6 @@ void flight_control() {
     //  y=cosf(yaw_desired)*(a-x_dest) -sinf(yaw_desired)*(b-y_dest);  
     x_orig = a;
     y_orig = b;
-    ydot = 0.0f;
   }
   
   // adjust the lateral gains in order to make the control more agressive 
@@ -367,15 +350,6 @@ void flight_control() {
 
   // Set up condition for having less bank at low altitude:
   float max_bank = aah_parameters.max_bank * deg2rad;
-
-/*  if ((( -position_D_gps ) < (130.0f*0.3048f)) && (fabsf(high_data.inRedzone) < 0.1f)) {
-    max_bank = max_bank/3.0f;
-  }
-  // Set up "holy shit" condition in red zone to save our asses
-  // but only above 130ft to keep from terminating mission
-  if ((fabsf(high_data.inRedzone) > 0.1f ) && (( -position_D_gps ) > ( 130.0f*0.3048f ))){
-    max_bank = 3.0f * max_bank;
-  }*/
 
   // Bounds check for bank to ensure it doesn't try to turn too tight:
   if (delta_bank > max_bank ) { //rad

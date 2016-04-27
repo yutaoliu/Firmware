@@ -80,7 +80,7 @@ PARAM_DEFINE_FLOAT(AAH_EXAMPLE, 10.0f);
  * @max 45
  * @group AA241x High Params		(always include this)
  */
-PARAM_DEFINE_FLOAT(AAH_TRIM_PITC, 8.0f);
+PARAM_DEFINE_FLOAT(AAH_TRIM_PITC, 0.0f);
 
  /* Level Bank Parameter
  *
@@ -206,7 +206,7 @@ PARAM_DEFINE_FLOAT(AAH_HGAIN_RUDD, 0.5f);
  *
  * @group AA241x High Params		(always include this)
  */
-PARAM_DEFINE_FLOAT(AAH_HGAIN_YDOT, 0.0f);
+PARAM_DEFINE_FLOAT(AAH_HGAIN_YDOT, -1.0f);
 
 //
 //
