@@ -365,6 +365,12 @@ void flight_control() {
 
   // Output for rudder is unused...
   yaw_servo_out = yaw_trim;
+
+  // check ch05 and set to manual yaw in
+  ch5_servo_out = man_yaw_in;
+
+  // check ch06 and set to negative of the roll
+  ch6_servo_out = -roll_servo_out;
   
 
 }

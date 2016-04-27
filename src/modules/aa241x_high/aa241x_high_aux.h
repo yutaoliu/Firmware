@@ -116,6 +116,8 @@ extern float roll_servo_out;
 extern float pitch_servo_out;
 extern float yaw_servo_out;
 extern float throttle_servo_out;
+extern float ch5_servo_out;
+extern float ch6_servo_out;
 
 // manual control inputs
 // input for each of the controls from the remote control, ranging from -1..1 except for throttle, which ranges from 0..1
