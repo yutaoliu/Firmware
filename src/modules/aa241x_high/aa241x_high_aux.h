@@ -116,6 +116,8 @@ extern float roll_servo_out;
 extern float pitch_servo_out;
 extern float yaw_servo_out;
 extern float throttle_servo_out;
+extern float flaps_servo_out;
+extern float aux1_servo_out;
 
 // manual control inputs
 // input for each of the controls from the remote control, ranging from -1..1 except for throttle, which ranges from 0..1
@@ -194,6 +196,11 @@ extern struct mis_params mission_parameters;			/**< local copies of mission para
  */
 void flight_control();
 
+/**
+ * Function for defining mixing for manual control
+**/
+
+void manual_mixer();
 
 
 #endif /* AA241X_FW_AUX_H_ */
