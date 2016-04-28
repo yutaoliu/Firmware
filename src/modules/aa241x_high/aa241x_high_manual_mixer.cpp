@@ -64,4 +64,29 @@ void manual_mixer() {
   throttle_servo_out  = man_throttle_in;
   flaps_servo_out     = man_flaps_in; // will only work if flaps calibrated
   aux1_servo_out      = man_aux1_in; // will only work if aux1 calibrated
+
+  /*
+   * Example config for flying wing where one elevon is on ch1 (roll)
+   * and the other elevon is on ch2 (pitch). Remember to comment out above
+   * config if using this one...
+   *
+   * This config assumes mechanically reversed servos (i.e., one servo points
+   * left, the other points right)
+  */
+
+   /*
+
+   pitch_command = 0.6f * man_pitch_in; // if pitch is reversed, put minus sign
+   roll_command  = 0.6f * man_roll_in;  // if roll is reversed, put minus sign
+
+   // if pitch and roll are mixed up, then make both pitch_commands positive
+   // and set one roll_command negative
+   roll_servo_out     = roll_command + pitch_command;
+   pitch_servo_out    = roll_command - pitch_command;
+
+   throttle_servo_out = man_throttle_in;
+
+   */
+
+
 }
