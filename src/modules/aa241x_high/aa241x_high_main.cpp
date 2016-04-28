@@ -805,13 +805,30 @@ FixedwingControl::set_actuators()
 		throttle_servo_out = 0.0f;
 	}
 
+	// check channel 5
+	if (flaps_servo_out > 1) {
+		flaps_servo_out = 1.0f;
+	}
+	if (flaps_servo_out < -1) {
+		flaps_servo_out = -1.0f;
+	}
+
+	// check channel 6
+	if (aux1_servo_out > 1) {
+		aux1_servo_out = 1.0f;
+	}
+	if (aux1_servo_out < -1) {
+		aux1_servo_out = -1.0f;
+	}
+
 
 	// set the actuators
 	_actuators.control[0] = (isfinite(roll_servo_out)) ? roll_servo_out : roll_trim;
-	_actuators.control[1] = (isfinite(roll_servo_out)) ? pitch_servo_out : pitch_trim;
-	_actuators.control[2] = (isfinite(roll_servo_out)) ? yaw_servo_out : yaw_trim;
-	_actuators.control[3] = (isfinite(roll_servo_out)) ? throttle_servo_out : 0.0f;
-	_actuators.control[4] = _manual.flaps;
+	_actuators.control[1] = (isfinite(pitch_servo_out)) ? pitch_servo_out : pitch_trim;
+	_actuators.control[2] = (isfinite(yaw_servo_out)) ? yaw_servo_out : yaw_trim;
+	_actuators.control[3] = (isfinite(throttle_servo_out)) ? throttle_servo_out : 0.0f;
+	_actuators.control[4] = (isfinite(flaps_servo_out)) ? flaps_servo_out : 0.0f;
+	_actuators.control[5] = (isfinite(aux1_servo_out)) ? aux1_servo_out : 0.0f;
 }
 
 
@@ -981,16 +998,20 @@ FixedwingControl::task_main()
 			} else { // have manual control of the plane
 
 				/* manual/direct control */
-				_actuators.control[0] = _manual.y;
-				_actuators.control[1] = -_manual.x;
-				_actuators.control[2] = _manual.r;
-				_actuators.control[3] = _manual.z;
-				_actuators.control[4] = _manual.flaps;
+				
+
+				// set all the variables needed for the control law
+				set_aux_values();
+
+				// set manual mixing
+				manual_mixer();
+
+				// write set values to actuators
+				set_actuators();
 
 			}
 
 			// TODO: maybe remove these?? (they aren't needed)
-			_actuators.control[5] = _manual.aux1;
 			_actuators.control[6] = _manual.aux2;
 			_actuators.control[7] = _manual.aux3;
 
