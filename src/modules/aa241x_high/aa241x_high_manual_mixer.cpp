@@ -53,7 +53,7 @@ using namespace aa241x_high;
 /**
  * Mixer function in which you can define the way in which manual control 
  * inputs will be mapped to the output channels (useful for flying wings,
- * flaperons, etc)
+ * flaperons, etc). This is active when in "Manual" mode, not "Mission"
  */
 
 void manual_mixer() {
@@ -76,8 +76,8 @@ void manual_mixer() {
 
    /*
 
-   pitch_command = 0.6f * man_pitch_in; // if pitch is reversed, put minus sign
-   roll_command  = 0.6f * man_roll_in;  // if roll is reversed, put minus sign
+   float pitch_command = 0.6f * man_pitch_in; // if pitch is reversed, put minus sign
+   float roll_command  = 0.6f * man_roll_in;  // if roll is reversed, put minus sign
 
    // if pitch and roll are mixed up, then make both pitch_commands positive
    // and set one roll_command negative
