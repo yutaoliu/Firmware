@@ -366,9 +366,10 @@ AA241xMission::task_main()
 	_local_data_sub = orb_subscribe(ORB_ID(aa241x_local_data));
 	_battery_status_sub = orb_subscribe(ORB_ID(battery_status));
 
-	/* rate limit vehicle status updates and local data updates to 5Hz */
+	/* rate limit vehicle status updates to 5Hz */
 	orb_set_interval(_vcontrol_mode_sub, 200);
-	orb_set_interval(_local_data_sub, 200);
+	/* rate limit local data (including position) updates to 50Hz */
+	orb_set_interval(_local_data_sub, 20);
 
 	parameters_update();
 
@@ -386,7 +387,7 @@ AA241xMission::task_main()
 	/* Setup of loop */
 	fds[0].fd = _params_sub;
 	fds[0].events = POLLIN;
-	fds[1].fd = _global_pos_sub;
+	fds[1].fd = _local_data_sub;
 	fds[1].events = POLLIN;
 
 	_task_running = true;
@@ -419,17 +420,22 @@ AA241xMission::task_main()
 
 		/* global position updated */
 		if (fds[1].revents & POLLIN) {
-			global_pos_update();
+			local_data_update();
 		}
 
 		/* check all other subscriptions */
+		global_pos_update();
 		vehicle_control_mode_update();
 		local_pos_update();
 		vehicle_status_update();
-		local_data_update();
 		battery_status_update();
 
-		/* check auto start requirements */
+		/* check auto start requirements 
+		 * not being used for this, _can_start will be checked for each
+		 * loop and be invisibile to the user and make sure they cross the start
+		 * gate from the appropriate spot.
+		*/
+		/*
 		if (_can_start && !_in_mission) {
 
 			if (!_vehicle_status.gps_failure && -_local_data.D_gps >= _parameters.auto_alt && !_vcontrol_mode.flag_control_auto_enabled) {
@@ -438,6 +444,8 @@ AA241xMission::task_main()
 				mavlink_log_info(_mavlink_fd, "#audio: AA241x mission start conditions violated");
 			}
 		}
+		*/
+
 
 		/* check mission start requirements */
 		if (_can_start && !_in_mission) {
