@@ -196,11 +196,7 @@ extern struct mis_params mission_parameters;			/**< local copies of mission para
  */
 void flight_control();
 
-/**
- * Function for defining mixing for manual control
-**/
 
-void manual_mixer();
 
 
 #endif /* AA241X_FW_AUX_H_ */
