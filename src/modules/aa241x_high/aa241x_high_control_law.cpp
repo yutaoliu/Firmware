@@ -106,27 +106,27 @@ float y_dest=0.0f;
 // Distance and rate of change of distance for line following
 float ydot = 0.0f;
 float y = 0.0f;
+float dist2dest;
 
 // Unit normal vectors
 float nyE = 0.0f;
 float nyN = 0.0f;
 
 // Define a function to cycle through waypoints
-void follow_waypoints(float a, float b, const float * xx, const float * yy, int length) {
+void follow_waypoints(float dist2dest, const float * xx, const float * yy, int length) {
 
   // Compare squared distance from point to squared waypoint parameter
-  if(sqr(a-xx[waypoint]) + sqr(b-yy[waypoint]) < sqr(aah_parameters.waypoint_radius))
+  if(absf(dist2dest) < aah_parameters.waypoint_radius)
   {
     waypoint=waypoint+1;
     if(waypoint==length){
       waypoint=1;
     }
     ydot = 0.0f;
-
-    x_orig=a;
-    y_orig=b;
   }
 
+  x_orig=xx[waypoint-1];
+  y_orig=yy[waypoint-1];
 
   x_dest=xx[waypoint];
   y_dest=yy[waypoint];
@@ -221,7 +221,14 @@ void flight_control() {
 
   
   //float yold = y;
-  float dist2dest;  // distance to P2 in the x-direction in m
+  //float dist2dest;  // distance to P2 in the x-direction in m
+
+    // compute y and distance to destination
+  yaw_desired=atan2(x_dest-x_orig,y_dest-y_orig); // in rad
+
+  y=cosf(yaw_desired)*(a-x_orig) -sinf(yaw_desired)*(b-y_orig);
+
+  dist2dest=sinf(yaw_desired)*(x_dest-a) +cosf(yaw_desired)*(y_dest-b);
 
   //************************************************************
   // Waypoint paths
@@ -255,7 +262,7 @@ void flight_control() {
   float yy[6]={0.0f,-50.0f,-50.0f,0.0f,9.87f,0.0f};
 
   if((aah_parameters.path_no) == 4){
-    follow_waypoints(a, b, xx, yy, 6);
+    follow_waypoints(dist2dest, xx, yy, 6);
   }
   // 
   // 5: Square shape
@@ -264,7 +271,7 @@ void flight_control() {
   float ysquare[5] = {50.0f, 50.0f, -50.0f, -50.0f, 50.0f};
 
   if((aah_parameters.path_no) == 5){
-    follow_waypoints(a, b, xsquare, ysquare, 5);
+    follow_waypoints(dist2dest, xsquare, ysquare, 5);
   }
   //
   // 6: Triangle shape (60deg turn)
@@ -273,7 +280,7 @@ void flight_control() {
   float ytri[4] = {86.6f, 86.6f, 0.0f, 86.6f};
 
   if((aah_parameters.path_no) == 6){
-    follow_waypoints(a, b, xtri, ytri, 4);
+    follow_waypoints(dist2dest, xtri, ytri, 4);
   }
   
   
@@ -284,12 +291,7 @@ void flight_control() {
   // to center if so:
   // redzone(a,b);
   
-  // compute y and distance to destination
-  yaw_desired=atan2(x_dest-x_orig,y_dest-y_orig); // in rad
 
-  y=cosf(yaw_desired)*(a-x_orig) -sinf(yaw_desired)*(b-y_orig);
-
-  dist2dest=sinf(yaw_desired)*(x_dest-a) +cosf(yaw_desired)*(y_dest-b);
 
   // Compute orthogonal unit vectors (positive right) in N and E coords
   nyE = -(y_dest-y_orig)/sqrtf( sqr(y_dest-y_orig) + sqr(x_dest-x_orig) );

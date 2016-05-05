@@ -62,7 +62,7 @@
 
 // TODO: write your function prototypes here
 
-void follow_waypoints(float a, float b, const float * xx, const float * yy, int length);
+void follow_waypoints(float dist2dest, const float * xx, const float * yy, int length);
 
 // float calc_y(float x_orig, float y_orig, float x_dest, float y_dest, float a, float b);
 
