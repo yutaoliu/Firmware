@@ -116,7 +116,7 @@ float nyN = 0.0f;
 void follow_waypoints(float dist2dest, const float * xx, const float * yy, int length) {
 
   // Compare squared distance from point to squared waypoint parameter
-  if(absf(dist2dest) < aah_parameters.waypoint_radius)
+  if(fabsf(dist2dest) < aah_parameters.waypoint_radius)
   {
     waypoint=waypoint+1;
     if(waypoint==length){
