@@ -969,11 +969,12 @@ FixedwingControl::task_main()
 			/* publish the custom calculated data */
 			publish_local_data();
 
+			// set all the variables needed for the control law
+			set_aux_values();
 
 			if (_vcontrol_mode.flag_control_auto_enabled) {
 
-				// set all the variables needed for the control law
-				set_aux_values();
+				
 
 				// TODO: potentially add stabilize and other modes back in....
 				/* run the custom control law */
@@ -995,21 +996,7 @@ FixedwingControl::task_main()
 				_att_sp.thrust = (isfinite(throttle_desired)) ? throttle_desired : 0.0f;
 
 
-			} else { // have manual control of the plane
-
-				/* manual/direct control */
-				
-
-				// set all the variables needed for the control law
-				set_aux_values();
-
-				// set manual mixing
-				manual_mixer();
-
-				// write set values to actuators
-				set_actuators();
-
-			}
+			} 
 
 			// TODO: maybe remove these?? (they aren't needed)
 			_actuators.control[6] = _manual.aux2;
