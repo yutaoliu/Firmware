@@ -158,6 +158,9 @@ private:
 
 	// TODO: ADD MISSION RELATED VARIABLES NEEDED
 
+	hrt_abstime _timestamp; 				// Current loop timestamp
+	hrt_abstime _previous_loop_timestamp; 	// previous loop timestamp
+
 	/**
 	 * Update our local parameter cache.
 	 */

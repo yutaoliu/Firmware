@@ -111,7 +111,9 @@ AA241xMission::AA241xMission() :
 	_early_termination(false),
 	_mission_failed(false),
 	_score(0.0f),
-	_cross_min(false)
+	_cross_min(false),
+	_timestamp(0.0f),
+	_previous_loop_timestamp(0.0f)
 {
 	_vcontrol_mode = {};
 	_global_pos = {};
@@ -445,6 +447,14 @@ AA241xMission::task_main()
 			}
 		}
 		*/
+		
+		// Check if there is no GPS lock and warn the user upon
+		// starting auto mode if that is the case.
+		if (!_vehicle_status.condition_global_position_valid
+			&& (_timestamp - _previous_loop_timestamp) > 1000000.0f) {
+
+			mavlink_log_critical(_mavlink_fd, "No GPS lock, do not launch airplane");
+		}
 
 
 		/* check mission start requirements */
