@@ -101,7 +101,7 @@ AA241xMission::AA241xMission() :
 	_local_pos_sub(-1),
 	_vehicle_status_sub(-1),
 	_params_sub(-1),
-	_local_data_sub(-1),
+	_aa241x_local_data_sub(-1),
 	_battery_status_sub(-1),
 	_mission_status_pub(nullptr),
 	_mission_start_time(-1),
@@ -229,14 +229,14 @@ AA241xMission::vehicle_status_update()
 }
 
 void
-AA241xMission::local_data_update()
+AA241xMission::aa241x_local_data_update()
 {
 	/* check if there is new status information */
-	bool local_data_updated;
-	orb_check(_local_data_sub, &local_data_updated);
+	bool aa241x_local_data_updated;
+	orb_check(_aa241x_local_data_sub, &aa241x_local_data_updated);
 
-	if (local_data_updated) {
-		orb_copy(ORB_ID(aa241x_local_data), _local_data_sub, &_local_data);
+	if (aa241x_local_data_updated) {
+		orb_copy(ORB_ID(aa241x_local_data), _aa241x_local_data_sub, &_aa241x_local_data);
 	}
 }
 
@@ -363,13 +363,13 @@ AA241xMission::task_main()
 	_local_pos_sub = orb_subscribe(ORB_ID(vehicle_local_position));
 	_vehicle_status_sub = orb_subscribe(ORB_ID(vehicle_status));
 	_params_sub = orb_subscribe(ORB_ID(parameter_update));
-	_local_data_sub = orb_subscribe(ORB_ID(aa241x_local_data));
+	_aa241x_local_data_sub = orb_subscribe(ORB_ID(aa241x_local_data));
 	_battery_status_sub = orb_subscribe(ORB_ID(battery_status));
 
 	/* rate limit vehicle status updates to 5Hz */
 	orb_set_interval(_vcontrol_mode_sub, 200);
 	/* rate limit local data (including position) updates to 50Hz */
-	orb_set_interval(_local_data_sub, 20);
+	orb_set_interval(_aa241x_local_data_sub, 20);
 
 	parameters_update();
 
@@ -378,7 +378,7 @@ AA241xMission::task_main()
 	global_pos_update();
 	local_pos_update();
 	vehicle_status_update();
-	local_data_update();
+	aa241x_local_data_update();
 	battery_status_update();
 
 	/* wakeup source(s) */
@@ -387,7 +387,7 @@ AA241xMission::task_main()
 	/* Setup of loop */
 	fds[0].fd = _params_sub;
 	fds[0].events = POLLIN;
-	fds[1].fd = _local_data_sub;
+	fds[1].fd = _aa241x_local_data_sub;
 	fds[1].events = POLLIN;
 
 	_task_running = true;
@@ -420,7 +420,7 @@ AA241xMission::task_main()
 
 		/* global position updated */
 		if (fds[1].revents & POLLIN) {
-			local_data_update();
+			aa241x_local_data_update();
 		}
 
 		/* check all other subscriptions */
@@ -438,7 +438,7 @@ AA241xMission::task_main()
 		/*
 		if (_can_start && !_in_mission) {
 
-			if (!_vehicle_status.gps_failure && -_local_data.D_gps >= _parameters.auto_alt && !_vcontrol_mode.flag_control_auto_enabled) {
+			if (!_vehicle_status.gps_failure && -_aa241x_local_data.D_gps >= _parameters.auto_alt && !_vcontrol_mode.flag_control_auto_enabled) {
 				// not allowed to start is above auto alt and not in auto mode
 				_can_start = false;
 				mavlink_log_info(_mavlink_fd, "#audio: AA241x mission start conditions violated");
@@ -450,7 +450,7 @@ AA241xMission::task_main()
 		/* check mission start requirements */
 		if (_can_start && !_in_mission) {
 
-			if (-_local_data.D_gps >= _parameters.auto_alt && _vcontrol_mode.flag_control_auto_enabled) {
+			if (-_aa241x_local_data.D_gps >= _parameters.auto_alt && _vcontrol_mode.flag_control_auto_enabled) {
 				/* start the mission once have crossed over the minimum altitude */
 				initialize_mission();
 			}
@@ -460,7 +460,7 @@ AA241xMission::task_main()
 		if (_in_mission) {
 
 			/* check to see if we have crossed min alt for first time */
-			if (!_cross_min && -_local_data.D_gps >= _parameters.min_alt) {
+			if (!_cross_min && -_aa241x_local_data.D_gps >= _parameters.min_alt) {
 				_cross_min = true;
 			}
 
@@ -475,7 +475,7 @@ AA241xMission::task_main()
 			}
 
 			/* check min altitude requirements (with 10m buffer) only if plane has gotten above it already */
-			if (_cross_min && -_local_data.D_gps <= (_parameters.min_alt - 10.0f)) {
+			if (_cross_min && -_aa241x_local_data.D_gps <= (_parameters.min_alt - 10.0f)) {
 				// end mission, but let fire propagate for rest of time
 				_in_mission = false;
 				_early_termination = true;
@@ -500,9 +500,9 @@ AA241xMission::task_main()
 			// ---- Check hard failures ---- //
 
 			/* check strict requirements (max alt and radius) (with 10 and 5 m buffers, respectively) */
-			float r2 = _local_data.N*_local_data.N + _local_data.E*_local_data.E;
+			float r2 = _aa241x_local_data.N*_aa241x_local_data.N + _aa241x_local_data.E*_aa241x_local_data.E;
 			float max_r2 = (_parameters.max_radius + 5.0f)*(_parameters.max_radius + 5.0f); // with additional 5 meter buffer
-			if (-_local_data.D_gps >= (_parameters.max_alt + 10.0f) || r2 > max_r2) {
+			if (-_aa241x_local_data.D_gps >= (_parameters.max_alt + 10.0f) || r2 > max_r2) {
 				// end mission and set score to 0 if violate max altitude
 				_in_mission = false;
 				_mission_failed = true;

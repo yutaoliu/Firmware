@@ -39,6 +39,7 @@
  * @author Adrien Perkins	<adrienp@stanford.edu>
  *
  */
+#pragma once
 
 #ifndef AA241XMISSION_H_
 #define AA241XMISSION_H_
@@ -101,7 +102,7 @@ private:
 	int		_local_pos_sub;			/**< local position subscription */
 	int		_vehicle_status_sub;	/**< vehicle status (navigation mode) subscription */
 	int		_params_sub;			/**< parameters update subscription */
-	int		_local_data_sub;		/**< custom data fields */
+	int		_aa241x_local_data_sub;		/**< custom data fields */
 	int		_battery_status_sub;	/**< battery information */
 
 	// TODO: ADD ADDITIONAL SUBSCRIBERS HERE
@@ -111,7 +112,7 @@ private:
 	struct vehicle_global_position_s	_global_pos;		/**< global position */
 	struct vehicle_local_position_s		_local_pos;			/**< local position */
 	struct vehicle_status_s				_vehicle_status;	/**< vehicle status */
-	struct aa241x_local_data_s			_local_data;		/**< custom calc data */
+	struct aa241x_local_data_s			_aa241x_local_data;		/**< custom calc data */
 	struct battery_status_s				_batt_stat;			/**< battery status */
 
 	orb_advert_t	_mission_status_pub;
@@ -185,7 +186,7 @@ private:
 	/**
 	 * Check for custom calc updates.
 	 */
-	void	local_data_update();
+	void	aa241x_local_data_update();
 
 	/**
 	 * Check for battery status updates.
@@ -210,6 +211,15 @@ private:
 
 	// TODO: ADD ADDITIONAL MISSION SPECIFIC FUNCTIONS NEEDED
 
+
+	// Functions for the racetrack (AA241x 2016)
+	void 	check_field_bounds(); // check for hard field boundary violations
+	void 	check_finished();   // check if you have finished the race
+	void 	check_start();		// check if you have started the race
+	void 	check_turn_start(); // check if a turn has started
+	void 	check_turn_end();   // check if a turn has ended
+	void 	check_violation();  // check whether turn keepout has been violated
+	void 	turn_accumulate();  // accumulate degrees on a turn
 
 
 	/**
