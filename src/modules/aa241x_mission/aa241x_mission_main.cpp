@@ -498,6 +498,44 @@ void AA241xMission::check_start()
 
 }
 
+void AA241xMission::check_finished()
+{
+	//check that previous position was within bounds
+	if (line_side(_start_gate[1],_start_gate[2],_cur_pos) < 0) {
+		if (line_side(_start_gate[0],_start_gate[1],_prev_pos) > 0 
+		    && line_side(_start_gate[1],_start_gate[2],_prev_pos) > 0 
+		    && line_side(_start_gate[2],_start_gate[3],_prev_pos) > 0 
+		    && _cur_pos.D < -_parameters.min_alt && _cur_pos.D > -_parameters.max_alt) {
+		    //check that new position is across start line
+	            _in_mission = false;
+	            _turn_num = 0;
+	        }
+	}
+}
+
+void AA241xMission::check_turn_start()
+{
+	// Calculate airplane current and previous angle relative to current pylon to turn around
+
+	float cur_angle = atan2f(_cur_pos.N - _pylon[_turn_num].N, _cur_pos.E - _pylon[_turn_num].E); // float
+	float prev_angle = atan2f(_prev_pos.N - _pylon[_turn_num].N, _prev_pos.E - _pylon[_turn_num].E); //float
+
+	// Check if the airplane has passed clockwise past the turn (assumes must
+	// have small angle
+
+	float cur_angle_diff = angular_difference(cur_angle,_pylon[_turn_num].angle); //float
+	float prev_angle_diff = angular_difference(prev_angle,_pylon[_turn_num].angle); //float
+
+	// If current angle is clockwise of required angle and previous angle is
+	// counterclockwise, plus the angular differences are less than pi/4 from
+	// the required angle (req'd so that it doesn't trigger when crossing
+	// opposite side) then start the turn
+	if (cur_angle_diff <= 0.0f && prev_angle_diff >= 0.0f && fabsf(cur_angle_diff) < 2.0f*pi/3.0f) {
+	    _in_turn = true;
+	    _just_started_turn = true;
+	}
+}
+
 void
 AA241xMission::calculate_score()
 {
