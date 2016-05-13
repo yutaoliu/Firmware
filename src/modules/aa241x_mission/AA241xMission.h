@@ -154,13 +154,13 @@ private:
 	}		_parameter_handles;		/**< handles for interesting parameters */
 
 	hrt_abstime _mission_start_time;	/**< timestamp of when entered mission */
-	float		_mission_start_battery;	/**< the mAh used when entered the mission */
+	//float		_mission_start_battery;	/**< the mAh used when entered the mission */
 	bool 		_in_mission;			/**< if true, currently running a mission (fire is spreading) */
-	bool		_can_start;				/**< if false conditions for starting have been violated */
+	//bool		_can_start;				/**< if false conditions for starting have been violated */
 	//bool		_early_termination;		/**< if true terminating mission early, but still need to finish running fire */
 	bool		_mission_failed;		/**< if true terminating mission entirely with a score of 0 */
 	//float		_score;					/**< the current mission score */
-	bool		_cross_min;				/**< if plane has crossed the minimum altitude (to delay checks between takeoff and first cross) */
+	//bool		_cross_min;				/**< if plane has crossed the minimum altitude (to delay checks between takeoff and first cross) */
 
 	// 
 
@@ -183,6 +183,8 @@ private:
 
 	_land_pos _start_gate[4];
 	_land_pos _lake_boundaries[9];
+
+	_land_pos  _start_pylon;
 	
 	_pylon_pos _pylon[2];
 
@@ -190,7 +192,7 @@ private:
 	_airplane_pos _prev_pos;
 
 
-	float _start_time;
+	hrt_abstime _start_time;
 	float _current_time;
 	float _final_time;
 
@@ -204,11 +206,7 @@ private:
 	bool 	_in_violation;
 	bool	_out_of_bounds;
 
-	// Make params?
-	float 	_keepout; 
-	float	_max_alt;
-	float	_min_alt;
-	//
+	
 
 	hrt_abstime _timestamp; 				// Current loop timestamp
 	hrt_abstime _previous_loop_timestamp; 	// previous loop timestamp
@@ -276,6 +274,8 @@ private:
 	int8_t  line_side(const _land_pos &a, 
 					  const _land_pos &b, 
 					  const _airplane_pos &c); 
+	// build the racecourse from the parameters
+	void 	build_racecourse();
 	// check for hard field boundary violations
 	void 	check_field_bounds(); 
 	// check if you have finished the race

@@ -104,13 +104,23 @@ AA241xMission::AA241xMission() :
 	_battery_status_sub(-1),
 	_mission_status_pub(nullptr),
 	_mission_start_time(-1),
-	_mission_start_battery(0),
+
 	_in_mission(false),
-	_can_start(true),
-	//_early_termination(false),
 	_mission_failed(false),
-	//_score(0.0f),
-	_cross_min(false),
+	_start_time(-1),
+	_current_time(0.0f),
+	_final_time(0.0f),
+
+	_in_turn(false),
+	_just_started_turn(false),
+	_turn_num(0),
+	_turn_radians(0.0f),
+	_turn_degrees(0.0f),
+	_num_of_turns(2),
+	_num_violations(0),
+	_in_violation(false),
+	_out_of_bounds(false),
+
 	_timestamp(0.0f),
 	_previous_loop_timestamp(0.0f)
 {
@@ -322,9 +332,9 @@ AA241xMission::initialize_mission()
 	} */
 
 	_in_mission = true;
-	_can_start = false;	// don't allow restarting of a mission
-	_mission_start_time = hrt_absolute_time();
-	_mission_start_battery = _batt_stat.discharged_mah;
+	//_can_start = false;	// don't allow restarting of a mission
+	_start_time = hrt_absolute_time();
+	//_mission_start_battery = _batt_stat.discharged_mah;
 
 	// TODO: ADD ANY ADDITIONAL INITIALIZATION REQUIRED
 }
@@ -367,6 +377,37 @@ int8_t AA241xMission::line_side(const _land_pos &a,
 
 	return sgnf((b.E - a.E)*(c.N - a.N) - (b.N - a.N)*(c.E - a.E));
 }
+
+
+// build the racecourse from parameters
+void AA241xMission::build_racecourse()
+{
+	// populate the start pylon with the appropriate values
+	_start_pylon.N 	= _parameters.start_pos_N;
+	_start_pylon.E 	= _parameters.start_pos_E;
+	float tiltrad 	= _parameters.tilt * deg2rad;
+	float leg 		= _parameters.leg_length;
+	float gate_width = _parameters.gate_width;
+
+	// set up pylons
+	_pylon[0].E  = roundf(_start_pylon.E  + leg*cosf(tiltrad));
+	_pylon[0].N  = roundf(_start_pylon.N  + leg*sinf(tiltrad));
+	_pylon[0].angle = atan2f(_pylon[0].N - _start_pylon.N, _pylon[0].E - _start_pylon.E) + pi/2.0f;
+	_pylon[1].E  = roundf(_pylon[0].E + leg*cosf(tiltrad-2.0f*pi/3.0f));
+	_pylon[1].N  = roundf(_pylon[0].N + leg*sinf(tiltrad-2.0f*pi/3.0f));
+	_pylon[1].angle = atan2f(_pylon[1].N - _pylon[0].N, _pylon[1].E - _pylon[0].E) + pi/2.0f;
+
+	// set up start gate
+	_start_gate[0].E = _start_pylon.E + gate_width/2.0f * cosf(tiltrad - 2.0f*pi/3.0f) - 10.0f*cosf(tiltrad - pi/6.0f); // 10 insignificant, just for visibility
+	_start_gate[0].N = _start_pylon.N + gate_width/2.0f * sinf(tiltrad - 2.0f*pi/3.0f) - 10.0f*sinf(tiltrad - pi/6.0f);
+	_start_gate[1].E = _start_pylon.E + gate_width/2.0f * cosf(tiltrad - 2.0f*pi/3.0f);
+	_start_gate[1].N = _start_pylon.N + gate_width/2.0f * sinf(tiltrad - 2.0f*pi/3.0f);
+	_start_gate[2].E = _start_pylon.E + gate_width/2.0f * cosf(tiltrad + pi/3.0f);
+	_start_gate[2].N = _start_pylon.N + gate_width/2.0f * sinf(tiltrad + pi/3.0f);
+	_start_gate[3].E = _start_pylon.E + gate_width/2.0f * cosf(tiltrad + pi/3.0f) - 10.0f*cosf(tiltrad - pi/6.0f);
+	_start_gate[3].N = _start_pylon.N + gate_width/2.0f * sinf(tiltrad + pi/3.0f) - 10.0f*sinf(tiltrad - pi/6.0f);
+}
+
 
 //CHECK_FIELD_BOUNDS check if airplane has left boundaries of Lake Lag
 void AA241xMission::check_field_bounds()
@@ -428,6 +469,9 @@ AA241xMission::task_main()
 	vehicle_status_update();
 	aa241x_local_data_update();
 	battery_status_update();
+
+	/* build the racecourse */
+	build_racecourse();
 
 	/* wakeup source(s) */
 	px4_pollfd_struct_t fds[2] = {};
