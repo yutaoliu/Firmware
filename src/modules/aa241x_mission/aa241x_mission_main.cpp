@@ -121,14 +121,16 @@ AA241xMission::AA241xMission() :
 	_in_violation(false),
 	_out_of_bounds(false),
 
-	_timestamp(0.0f),
-	_previous_loop_timestamp(0.0f)
+	_timestamp(0),
+	_previous_loop_timestamp(0)
 {
 	_vcontrol_mode = {};
 	_global_pos = {};
 	_local_pos = {};
 	_vehicle_status = {};
 	_batt_stat = {};
+	_cur_pos.N = 0.0f; _cur_pos.E = 0.0f; _cur_pos.D = 0.0f;
+	_prev_pos = _cur_pos;
 
 	_parameter_handles.min_alt = param_find("AAMIS_ALT_MIN");
 	_parameter_handles.max_alt = param_find("AAMIS_ALT_MAX");
@@ -250,6 +252,10 @@ AA241xMission::aa241x_local_data_update()
 	if (aa241x_local_data_updated) {
 		orb_copy(ORB_ID(aa241x_local_data), _aa241x_local_data_sub, &_aa241x_local_data);
 	}
+	// Set current position
+	_cur_pos.N = _aa241x_local_data.N;
+	_cur_pos.E = _aa241x_local_data.E;
+	_cur_pos.D = _aa241x_local_data.D_baro;
 }
 
 void
@@ -444,6 +450,7 @@ void AA241xMission::check_field_bounds()
 	        _out_of_bounds = true;
 	        // TONE
 	        // send msg: aa241x mission failed, boundary violation
+	        mavlink_log_critical(_mavlink_fd, "#audio: AA241x mission failed, lake boundary violation");
 	    }
 	}
 
@@ -460,6 +467,7 @@ void AA241xMission::check_field_bounds()
 	        _out_of_bounds = true;
 	        // TONE
 	        // send msg: aa241x mission failed, boundary violation
+	        mavlink_log_critical(_mavlink_fd, "#audio: AA241x mission failed, lake boundary violation");
 	    }
 	}
 
@@ -470,7 +478,24 @@ void AA241xMission::check_field_bounds()
 	    _out_of_bounds = true;
 	    // TONE
 	    // send msg: aa241x mission failed, boundary violation
+	        mavlink_log_critical(_mavlink_fd, "#audio: AA241x mission failed, altitude violation");
 	}
+}
+
+void AA241xMission::check_start()
+{
+	//check that previous position was within bounds
+	if (line_side(_start_gate[0],_start_gate[1],_prev_pos) > 0 
+	    && line_side(_start_gate[1],_start_gate[2],_prev_pos) > 0 
+	    && line_side(_start_gate[2],_start_gate[3],_prev_pos) > 0 
+	    && _cur_pos.D < -_parameters.min_alt && _cur_pos.D > -_parameters.max_alt) {
+	    //check that new position is across start line
+	        if (line_side(_start_gate[1],_start_gate[2],_cur_pos) < 0) {
+	            _in_mission = true;
+	            _turn_num = 1;
+	        }
+	}
+
 }
 
 void
@@ -579,7 +604,24 @@ AA241xMission::task_main()
 		local_pos_update();
 		vehicle_status_update();
 		battery_status_update();
+
+		// Update timestamp
+		_timestamp = hrt_absolute_time();
+
+		// Check if there is no GPS lock and warn the user upon
+		// starting auto mode if that is the case.
+		if (!_vehicle_status.condition_global_position_valid
+			&& (_timestamp - _previous_loop_timestamp) > 1000000) {
+
+			mavlink_log_critical(_mavlink_fd, "#audio: AA241x. No GPS lock, do not launch airplane");
+		}
 		
+
+
+
+		_previous_loop_timestamp = _timestamp;
+		_prev_pos = _cur_pos;
+
 		#if 0
 		/* check auto start requirements 
 		 * not being used for this, _can_start will be checked for each
@@ -597,13 +639,7 @@ AA241xMission::task_main()
 		}
 		*/
 		
-		// Check if there is no GPS lock and warn the user upon
-		// starting auto mode if that is the case.
-		if (!_vehicle_status.condition_global_position_valid
-			&& (_timestamp - _previous_loop_timestamp) > 1000000.0f) {
-
-			mavlink_log_critical(_mavlink_fd, "No GPS lock, do not launch airplane");
-		}
+		
 
 
 		/* check mission start requirements */
