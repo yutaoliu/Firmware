@@ -777,7 +777,7 @@ AA241xMission::task_main()
 	    // CHECK IF HARD VIOLATIONS
 	    // if yea, mission_failed = true, final_time = 0
 	    //
-		check_field_bounds();
+		//check_field_bounds();
 		_previous_loop_timestamp = _timestamp;
 		_prev_pos = _cur_pos;
 		
