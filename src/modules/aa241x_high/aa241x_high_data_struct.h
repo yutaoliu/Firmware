@@ -69,9 +69,9 @@
 #define HIGH_FIELD6 pic_flag;
 #define HIGH_FIELD7 run_flag;
 #define HIGH_FIELD8 douse_flag;
-#define HIGH_FIELD9 variable_name9;
-#define HIGH_FIELD10 variable_name10;
-#define HIGH_FIELD11 variable_name11;
+#define HIGH_FIELD9 dist2dest;
+#define HIGH_FIELD10 y;
+#define HIGH_FIELD11 ydot;
 #define HIGH_FIELD12 variable_name12;
 #define HIGH_FIELD13 variable_name13;
 #define HIGH_FIELD14 variable_name14;
@@ -90,7 +90,7 @@
  * MEET THESE REQUIREMENTS, LOGGING WILL FAIL!!!!!!
  *
  */
-#define HIGH_DATA_LABELS "f01,f02,f03,f04,f05,f06,f07,f08,f09,f10,f11,f12,f13,f14,f15,f16"
+#define HIGH_DATA_LABELS "xO,yO,f03,f04,f05,f06,f07,f08,d2d,y,yd,f12,f13,f14,f15,f16"
 
 struct aa241x_high_data_s {
 	float HIGH_FIELD1;
