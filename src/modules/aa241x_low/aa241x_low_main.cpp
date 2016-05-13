@@ -684,7 +684,7 @@ LowPriorityLoop::set_aux_values()
 	utc_timestamp = _global_pos.time_utc_usec;
 
 	// mission time
-	mission_time = _mis_status.mission_time;
+	// mission_time = _mis_status.mission_time;
 
 }
 

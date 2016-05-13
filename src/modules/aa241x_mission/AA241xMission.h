@@ -58,6 +58,10 @@
 #include <uORB/topics/aa241x_mission_status.h>
 #include <uORB/topics/aa241x_local_data.h>
 
+// Important math defines
+#define pi 3.141592653589793f
+#define deg2rad (pi/180.0f)
+#define rad2deg (1.0f / deg2rad)
 
 class AA241xMission
 {
@@ -122,28 +126,30 @@ private:
 	struct {
 		float min_alt;
 		float max_alt;
-		float auto_alt;
-		float duration;
-		float max_radius;
-		int index;
+		float start_pos_N;
+		float start_pos_E;
+		float keepout_radius;
+		float tilt;
 		float ctr_lat;
 		float ctr_lon;
 		float ctr_alt;
-		float max_discharge;
+		float leg_length;
+		float gate_width;
 		int team_num;
 	}		_parameters;			/**< local copies of interesting parameters */
 
 	struct {
 		param_t min_alt;
 		param_t max_alt;
-		param_t auto_alt;
-		param_t duration;
-		param_t max_radius;
-		param_t index;
+		param_t start_pos_N;
+		param_t start_pos_E;
+		param_t keepout_radius;
+		param_t tilt;
 		param_t ctr_lat;
 		param_t ctr_lon;
 		param_t ctr_alt;
-		param_t max_discharge;
+		param_t leg_length;
+		param_t gate_width;
 		param_t team_num;
 	}		_parameter_handles;		/**< handles for interesting parameters */
 
@@ -151,12 +157,58 @@ private:
 	float		_mission_start_battery;	/**< the mAh used when entered the mission */
 	bool 		_in_mission;			/**< if true, currently running a mission (fire is spreading) */
 	bool		_can_start;				/**< if false conditions for starting have been violated */
-	bool		_early_termination;		/**< if true terminating mission early, but still need to finish running fire */
+	//bool		_early_termination;		/**< if true terminating mission early, but still need to finish running fire */
 	bool		_mission_failed;		/**< if true terminating mission entirely with a score of 0 */
-	float		_score;					/**< the current mission score */
+	//float		_score;					/**< the current mission score */
 	bool		_cross_min;				/**< if plane has crossed the minimum altitude (to delay checks between takeoff and first cross) */
 
-	// TODO: ADD MISSION RELATED VARIABLES NEEDED
+	// 
+
+	struct _land_pos {
+		float N;
+		float E;
+	}	;
+
+	struct _airplane_pos {
+		float N;
+		float E;
+		float D;
+	} 	;
+
+	struct _pylon_pos {
+		float N;
+		float E;
+		float angle;
+	}	;
+
+	_land_pos _start_gate[4];
+	_land_pos _lake_boundaries[9];
+	
+	_pylon_pos _pylon[2];
+
+	_airplane_pos _cur_pos;
+	_airplane_pos _prev_pos;
+
+
+	float _start_time;
+	float _current_time;
+	float _final_time;
+
+	bool 	_in_turn;
+	bool 	_just_started_turn;
+	uint8_t _turn_num;
+	float 	_turn_radians;
+	float 	_turn_degrees;
+	uint8_t _num_of_turns;
+	uint8_t _num_violations;
+	bool 	_in_violation;
+	bool	_out_of_bounds;
+
+	// Make params?
+	float 	_keepout; 
+	float	_max_alt;
+	float	_min_alt;
+	//
 
 	hrt_abstime _timestamp; 				// Current loop timestamp
 	hrt_abstime _previous_loop_timestamp; 	// previous loop timestamp
@@ -216,13 +268,29 @@ private:
 
 
 	// Functions for the racetrack (AA241x 2016)
-	void 	check_field_bounds(); // check for hard field boundary violations
-	void 	check_finished();   // check if you have finished the race
-	void 	check_start();		// check if you have started the race
-	void 	check_turn_start(); // check if a turn has started
-	void 	check_turn_end();   // check if a turn has ended
-	void 	check_violation();  // check whether turn keepout has been violated
-	void 	turn_accumulate();  // accumulate degrees on a turn
+	// implement a quick signum function
+	int8_t 	sgnf(const float &val);
+	// find angular difference
+	float 	angular_difference(const float &theta1, const float &theta0);
+	// check which side of line you are on ( left = +1, right = -1 )
+	int8_t  line_side(const _land_pos &a, 
+					  const _land_pos &b, 
+					  const _airplane_pos &c); 
+	// check for hard field boundary violations
+	void 	check_field_bounds(); 
+	// check if you have finished the race
+	void 	check_finished();  
+	// check if you have started the race
+	void 	check_start();		
+	// check if a turn has started
+	void 	check_turn_start(); 
+	// check if a turn has ended
+	void 	check_turn_end();  
+	// check whether turn keepout has been violated
+	void 	check_violation(); 
+	// accumulate degrees on a turn
+	void 	turn_accumulate();
+
 
 
 	/**

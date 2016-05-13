@@ -73,7 +73,6 @@
 
 
 #include "AA241xMission.h"
-#include "missions.h"
 
 
 /**
@@ -108,9 +107,9 @@ AA241xMission::AA241xMission() :
 	_mission_start_battery(0),
 	_in_mission(false),
 	_can_start(true),
-	_early_termination(false),
+	//_early_termination(false),
 	_mission_failed(false),
-	_score(0.0f),
+	//_score(0.0f),
 	_cross_min(false),
 	_timestamp(0.0f),
 	_previous_loop_timestamp(0.0f)
@@ -123,14 +122,15 @@ AA241xMission::AA241xMission() :
 
 	_parameter_handles.min_alt = param_find("AAMIS_ALT_MIN");
 	_parameter_handles.max_alt = param_find("AAMIS_ALT_MAX");
-	_parameter_handles.auto_alt = param_find("AAMIS_ALT_AUTO");
-	_parameter_handles.duration = param_find("AAMIS_DURATION");
-	_parameter_handles.max_radius = param_find("AAMIS_RAD_MAX");
-	_parameter_handles.index = param_find("AA_MIS_INDEX");
+	_parameter_handles.start_pos_N = param_find("AAMIS_SPOS_N");
+	_parameter_handles.start_pos_E = param_find("AAMIS_SPOS_E");
+	_parameter_handles.keepout_radius = param_find("AAMIS_RAD_KPT");
+	_parameter_handles.tilt = param_find("AAMIS_TILT");
+	_parameter_handles.leg_length = param_find("AAMIS_LEG_LEN");
+	_parameter_handles.gate_width = param_find("AAMIS_GTE_WID");
 	_parameter_handles.ctr_lat = param_find("AAMIS_CTR_LAT");
 	_parameter_handles.ctr_lon = param_find("AAMIS_CTR_LON");
 	_parameter_handles.ctr_alt = param_find("AAMIS_CTR_ALT");
-	_parameter_handles.max_discharge = param_find("AAMIS_BATT_MAX");
 	_parameter_handles.team_num = param_find("AA_TEAM");
 
 	parameters_update();
@@ -166,14 +166,14 @@ AA241xMission::parameters_update()
 {
 	param_get(_parameter_handles.min_alt, &(_parameters.min_alt));
 	param_get(_parameter_handles.max_alt, &(_parameters.max_alt));
-	param_get(_parameter_handles.auto_alt, &(_parameters.auto_alt));
-	param_get(_parameter_handles.duration, &(_parameters.duration));
-	param_get(_parameter_handles.max_radius, &(_parameters.max_radius));
-	param_get(_parameter_handles.index, &(_parameters.index));
+	param_get(_parameter_handles.start_pos_N, &(_parameters.start_pos_N));
+	param_get(_parameter_handles.start_pos_E, &(_parameters.start_pos_E));
+	param_get(_parameter_handles.keepout_radius, &(_parameters.keepout_radius));
+	param_get(_parameter_handles.tilt, &(_parameters.tilt));
+	param_get(_parameter_handles.leg_length, &(_parameters.leg_length));
 	param_get(_parameter_handles.ctr_lat, &(_parameters.ctr_lat));
 	param_get(_parameter_handles.ctr_lon, &(_parameters.ctr_lon));
 	param_get(_parameter_handles.ctr_alt, &(_parameters.ctr_alt));
-	param_get(_parameter_handles.max_discharge, &(_parameters.max_discharge));
 	param_get(_parameter_handles.team_num, &(_parameters.team_num));
 
 	// TODO: HANDLE ADDITIONAL PARAMETERS HERE
@@ -259,14 +259,22 @@ void
 AA241xMission::publish_mission_status()
 {
 	aa241x_mission_status_s mis_stat;
-	mis_stat.can_start = _can_start;
-	mis_stat.in_mission = _in_mission;
-	mis_stat.score = _score;
-	mis_stat.mission_index = _parameters.index;
+	
+	mis_stat.in_mission 	= _in_mission;
+	mis_stat.start_time 	= _start_time;
+	mis_stat.current_time 	= _current_time;
+	mis_stat.final_time 	= _final_time;
+	mis_stat.mission_failed = _mission_failed;
+	mis_stat.in_turn		= _in_turn;
+	mis_stat.turn_num		= _turn_num;
+	mis_stat.turn_degrees	= _turn_degrees;
+	mis_stat.num_violations = _num_violations;
+	mis_stat.in_violation	= _in_violation;
+	mis_stat.out_of_bounds	= _out_of_bounds;
 
 	if (_in_mission) {
-		mis_stat.mission_time = (hrt_absolute_time() - _mission_start_time)/(1000000.0f*60.0f);
-		mis_stat.battery_used = _batt_stat.discharged_mah - _mission_start_battery;
+		//mis_stat.mission_time = (hrt_absolute_time() - _mission_start_time)/(1000000.0f*60.0f);
+		//mis_stat.battery_used = _batt_stat.discharged_mah - _mission_start_battery;
 	} else {
 		/*
 		// don't necessarily need to set to 0?
@@ -288,12 +296,7 @@ void
 AA241xMission::initialize_mission()
 {
 
-	if (_parameters.index >= NUM_MISSIONS) {
-		// TODO: throw a system warning
-		_can_start = false;
-		mavlink_log_info(_mavlink_fd, "#audio: AA241x invalid mission index");
-		return;
-	}
+
 
 	// send message that mission has started
 	mavlink_log_info(_mavlink_fd, "#audio: AA241x mission started");
@@ -326,7 +329,50 @@ AA241xMission::initialize_mission()
 	// TODO: ADD ANY ADDITIONAL INITIALIZATION REQUIRED
 }
 
+//
+/* ALL OF THE AA241x FUNCTIONS LIVE HERE!! */
+//
+//
 
+// SGNF quick signum function
+int8_t AA241xMission::sgnf(const float &val)
+{
+	return   (0.0f < val) - (0.0f > val) ;
+}
+
+//ANGDIFF find the difference in two angles, accounting for a discontinuity
+	// at +/- pi
+float AA241xMission::angular_difference(const float &theta1, const float &theta0)
+{
+	
+
+	float deltaTheta = theta1 - theta0;
+
+	// Check bounds
+	if (deltaTheta > pi) {deltaTheta = deltaTheta - 2*pi;}
+	else if (deltaTheta < -pi) {deltaTheta = deltaTheta + 2*pi;}
+	
+	return deltaTheta;
+}
+
+//// LINESIDE, check if left (+1) or right (-1) of line
+	// a, start of line
+	// b, end of line
+	// c, query point
+int8_t AA241xMission::line_side(const _land_pos &a, 
+								const _land_pos &b, 
+								const _airplane_pos &c)
+{
+	
+
+	return sgnf((b.E - a.E)*(c.N - a.N) - (b.N - a.N)*(c.E - a.E));
+}
+
+//CHECK_FIELD_BOUNDS check if airplane has left boundaries of Lake Lag
+void AA241xMission::check_field_bounds()
+{
+	
+}
 
 void
 AA241xMission::calculate_score()
@@ -334,7 +380,7 @@ AA241xMission::calculate_score()
 	
 	// TODO: WRITE YOUR SCORE FUNCTION HERE
 
-	_score = 0.0f;
+	//_score = 0.0f;
 }
 
 void
@@ -431,7 +477,8 @@ AA241xMission::task_main()
 		local_pos_update();
 		vehicle_status_update();
 		battery_status_update();
-
+		
+		#if 0
 		/* check auto start requirements 
 		 * not being used for this, _can_start will be checked for each
 		 * loop and be invisibile to the user and make sure they cross the start
@@ -460,7 +507,7 @@ AA241xMission::task_main()
 		/* check mission start requirements */
 		if (_can_start && !_in_mission) {
 
-			if (-_aa241x_local_data.D_gps >= _parameters.auto_alt && _vcontrol_mode.flag_control_auto_enabled) {
+			if (_vcontrol_mode.flag_control_auto_enabled) {
 				/* start the mission once have crossed over the minimum altitude */
 				initialize_mission();
 			}
@@ -480,7 +527,7 @@ AA241xMission::task_main()
 			if (!_vcontrol_mode.flag_control_auto_enabled) {
 				// end mission and set score to 0 if switch to manual mode
 				_in_mission = false;
-				_early_termination = true;
+				//_early_termination = true;
 				mavlink_log_info(_mavlink_fd, "#audio: AA241x mission termination: control mode violation");
 			}
 
@@ -488,24 +535,24 @@ AA241xMission::task_main()
 			if (_cross_min && -_aa241x_local_data.D_gps <= (_parameters.min_alt - 10.0f)) {
 				// end mission, but let fire propagate for rest of time
 				_in_mission = false;
-				_early_termination = true;
+				//_early_termination = true;
 				mavlink_log_info(_mavlink_fd, "#audio: AA241x mission termination: below min alt");
 			}
 
 			/* check battery requirements */
 			if ((_batt_stat.discharged_mah - _mission_start_battery) > _parameters.max_discharge) {
 				_in_mission = false;
-				_early_termination = true;
+				//_early_termination = true;
 				mavlink_log_info(_mavlink_fd, "#audio: AA241x mission termination: max battery discharge reached");
 			}
 
 			// propagate through the rest of the fire as needed
-			if (_early_termination) {
+			/*if (_early_termination) {
 
 				// TODO: DO ANYTHING YOU WANT FOR A VIOLATION
 
 				calculate_score();
-			}
+			}*/
 
 			// ---- Check hard failures ---- //
 
@@ -516,7 +563,7 @@ AA241xMission::task_main()
 				// end mission and set score to 0 if violate max altitude
 				_in_mission = false;
 				_mission_failed = true;
-				_score = 0.0f;
+				//_score = 0.0f;
 				mavlink_log_info(_mavlink_fd, "#audio: AA241x mission failed: boundary violation");
 			}
 
@@ -541,6 +588,7 @@ AA241xMission::task_main()
 
 
 		}
+		#endif
 
 		/* publish the mission status as the last thing to do each loop */
 		publish_mission_status();
