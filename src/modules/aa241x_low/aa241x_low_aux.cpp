@@ -131,6 +131,19 @@ uint64_t timestamp = 0; 				// timestamp of microseconds since boot (set at the 
 uint64_t utc_timestamp = 0; 			// GPS UTC timestamp in microseconds
 uint64_t previous_loop_timestamp = 0;	// timestamp of start of previous loop
 // float mission_time;						// the mission time in minutes
+// mission stuff
+
+bool in_mission;
+hrt_abstime start_time;
+float current_time;
+float final_time;
+bool mission_failed;
+bool in_turn;
+int32_t turn_num;
+float turn_degrees;
+int32_t num_violations;
+bool in_violation;
+bool out_of_bounds;
 
 // data from threads
 struct aa241x_low_data_s low_data = {};
