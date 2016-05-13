@@ -386,33 +386,91 @@ void AA241xMission::build_racecourse()
 	_start_pylon.N 	= _parameters.start_pos_N;
 	_start_pylon.E 	= _parameters.start_pos_E;
 	float tiltrad 	= _parameters.tilt * deg2rad;
-	float leg 		= _parameters.leg_length;
-	float gate_width = _parameters.gate_width;
 
 	// set up pylons
-	_pylon[0].E  = roundf(_start_pylon.E  + leg*cosf(tiltrad));
-	_pylon[0].N  = roundf(_start_pylon.N  + leg*sinf(tiltrad));
+	_pylon[0].E  = roundf(_start_pylon.E  + _parameters.leg_length*cosf(tiltrad));
+	_pylon[0].N  = roundf(_start_pylon.N  + _parameters.leg_length*sinf(tiltrad));
 	_pylon[0].angle = atan2f(_pylon[0].N - _start_pylon.N, _pylon[0].E - _start_pylon.E) + pi/2.0f;
-	_pylon[1].E  = roundf(_pylon[0].E + leg*cosf(tiltrad-2.0f*pi/3.0f));
-	_pylon[1].N  = roundf(_pylon[0].N + leg*sinf(tiltrad-2.0f*pi/3.0f));
+	_pylon[1].E  = roundf(_pylon[0].E + _parameters.leg_length*cosf(tiltrad-2.0f*pi/3.0f));
+	_pylon[1].N  = roundf(_pylon[0].N + _parameters.leg_length*sinf(tiltrad-2.0f*pi/3.0f));
 	_pylon[1].angle = atan2f(_pylon[1].N - _pylon[0].N, _pylon[1].E - _pylon[0].E) + pi/2.0f;
 
 	// set up start gate
-	_start_gate[0].E = _start_pylon.E + gate_width/2.0f * cosf(tiltrad - 2.0f*pi/3.0f) - 10.0f*cosf(tiltrad - pi/6.0f); // 10 insignificant, just for visibility
-	_start_gate[0].N = _start_pylon.N + gate_width/2.0f * sinf(tiltrad - 2.0f*pi/3.0f) - 10.0f*sinf(tiltrad - pi/6.0f);
-	_start_gate[1].E = _start_pylon.E + gate_width/2.0f * cosf(tiltrad - 2.0f*pi/3.0f);
-	_start_gate[1].N = _start_pylon.N + gate_width/2.0f * sinf(tiltrad - 2.0f*pi/3.0f);
-	_start_gate[2].E = _start_pylon.E + gate_width/2.0f * cosf(tiltrad + pi/3.0f);
-	_start_gate[2].N = _start_pylon.N + gate_width/2.0f * sinf(tiltrad + pi/3.0f);
-	_start_gate[3].E = _start_pylon.E + gate_width/2.0f * cosf(tiltrad + pi/3.0f) - 10.0f*cosf(tiltrad - pi/6.0f);
-	_start_gate[3].N = _start_pylon.N + gate_width/2.0f * sinf(tiltrad + pi/3.0f) - 10.0f*sinf(tiltrad - pi/6.0f);
+	_start_gate[0].E = _start_pylon.E + _parameters.gate_width/2.0f * cosf(tiltrad - 2.0f*pi/3.0f) - 10.0f*cosf(tiltrad - pi/6.0f); // 10 insignificant, just for visibility
+	_start_gate[0].N = _start_pylon.N + _parameters.gate_width/2.0f * sinf(tiltrad - 2.0f*pi/3.0f) - 10.0f*sinf(tiltrad - pi/6.0f);
+	_start_gate[1].E = _start_pylon.E + _parameters.gate_width/2.0f * cosf(tiltrad - 2.0f*pi/3.0f);
+	_start_gate[1].N = _start_pylon.N + _parameters.gate_width/2.0f * sinf(tiltrad - 2.0f*pi/3.0f);
+	_start_gate[2].E = _start_pylon.E + _parameters.gate_width/2.0f * cosf(tiltrad + pi/3.0f);
+	_start_gate[2].N = _start_pylon.N + _parameters.gate_width/2.0f * sinf(tiltrad + pi/3.0f);
+	_start_gate[3].E = _start_pylon.E + _parameters.gate_width/2.0f * cosf(tiltrad + pi/3.0f) - 10.0f*cosf(tiltrad - pi/6.0f);
+	_start_gate[3].N = _start_pylon.N + _parameters.gate_width/2.0f * sinf(tiltrad + pi/3.0f) - 10.0f*sinf(tiltrad - pi/6.0f);
 }
 
 
 //CHECK_FIELD_BOUNDS check if airplane has left boundaries of Lake Lag
 void AA241xMission::check_field_bounds()
 {
-	
+	// Assign struct boundaries
+
+	_land_pos lake_boundaries[9];
+
+	lake_boundaries[0].E = -173.0f; lake_boundaries[0].N =  143.0f;
+	lake_boundaries[1].E = -82.0f;  lake_boundaries[1].N =  228.0f;
+	lake_boundaries[2].E = 176.0f;  lake_boundaries[2].N =   81.0f;
+	lake_boundaries[3].E = 181.0f;  lake_boundaries[3].N = -138.0f;
+	lake_boundaries[4].E =  54.0f;  lake_boundaries[4].N = -148.0f;
+	lake_boundaries[5].E =  62.0f;  lake_boundaries[5].N = -219.0f;
+	lake_boundaries[6].E = -36.0f;  lake_boundaries[6].N = -216.0f;
+	lake_boundaries[7].E = -101.0f; lake_boundaries[7].N = -142.0f;
+	lake_boundaries[8].E = -181.0f; lake_boundaries[8].N = -112.0f;
+
+	//% Set inbounds to start
+	_out_of_bounds = false;
+
+	//% Check if outside convex portions
+	uint8_t convex[5] = {1, 2, 3, 6, 9};
+
+	for (int i = 0; i < 5; i++) {
+	    // If at the last boundary (wrapping)
+		uint8_t nextpt = i+1;
+	    if (i == 4) {
+	        nextpt = 0;
+	    }
+	    
+	    if (line_side(lake_boundaries[convex[i]], lake_boundaries[convex[nextpt]], _cur_pos) > 0 
+	            && (_in_mission == true || _cur_pos.D < -40)) {
+	        _mission_failed = true;
+	        _in_mission = false;
+	        _out_of_bounds = true;
+	        // TONE
+	        // send msg: aa241x mission failed, boundary violation
+	    }
+	}
+
+	// Check if outside concave portions
+
+	uint8_t concave[2] = {4, 7};
+
+	for (int i = 0; i < 2; i++) {
+	    if (line_side(lake_boundaries[concave[i]], lake_boundaries[concave[i]+1], _cur_pos) > 0 
+	    && line_side(lake_boundaries[concave[i]+1],lake_boundaries[concave[i]+2], _cur_pos) > 0 
+	    && (_in_mission == true || _cur_pos.D < -40) ) {
+	        _mission_failed = true;
+	        _in_mission = false;
+	        _out_of_bounds = true;
+	        // TONE
+	        // send msg: aa241x mission failed, boundary violation
+	    }
+	}
+
+	// Check if violating the flight window
+	if (_in_mission == true && (_cur_pos.D < -_parameters.max_alt || _cur_pos.D > -_parameters.min_alt)) {
+	    _mission_failed = true;
+	    _in_mission = false;
+	    _out_of_bounds = true;
+	    // TONE
+	    // send msg: aa241x mission failed, boundary violation
+	}
 }
 
 void
