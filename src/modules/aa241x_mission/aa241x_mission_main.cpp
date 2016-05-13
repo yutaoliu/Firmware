@@ -608,7 +608,7 @@ void AA241xMission::check_violation()
 	    _in_violation = false;
 	    _num_violations = _num_violations + 1;
 		// MESSAGE, violation occured
-		mavlink_log_critical(_mavlink_fd, "#audio: AA241x turn keep out violation occured");
+		mavlink_log_critical(_mavlink_fd, "#audio: AA241x turn keep out violation");
 	}
 
 }
@@ -710,7 +710,7 @@ AA241xMission::task_main()
 
 		/* global position updated */
 		if (fds[1].revents & POLLIN) {
-			aa241x_local_data_update();
+			aa241x_local_data_update(); // _cur_pos gets updated in here
 		}
 
 		/* check all other subscriptions */
@@ -720,22 +720,67 @@ AA241xMission::task_main()
 		vehicle_status_update();
 		battery_status_update();
 
-		// Update timestamp
-		_timestamp = hrt_absolute_time();
+		//  run required auto mission code
+		if (_vcontrol_mode.flag_control_auto_enabled) {
+			_timestamp = hrt_absolute_time();
+			
 
-		// Check if there is no GPS lock and warn the user upon
-		// starting auto mode if that is the case.
-		if (!_vehicle_status.condition_global_position_valid
-			&& (_timestamp - _previous_loop_timestamp) > 1000000) {
+			// Check if there is no GPS lock and warn the user upon
+			// starting auto mode if that is the case.
+			if (!_vehicle_status.condition_global_position_valid
+				&& (_timestamp - _previous_loop_timestamp) > 1000000) {
 
-			mavlink_log_critical(_mavlink_fd, "#audio: AA241x. No GPS lock, do not launch airplane");
-		}
-		
+				mavlink_log_critical(_mavlink_fd, "#audio: AA241x. No GPS lock, do not launch airplane");
+			}
+			
+			// If not yet in mission check if mission has started
+			if (!_in_mission) {
+				check_start();
+				// If check start sets mission to true set the start time
+	            if (_in_mission) {
+	                _start_time = hrt_absolute_time(); // make hrt_absolute_time
+	            }
+	        }
 
+			if (_in_mission) {
+			            
+	            // Report current time
+	            _current_time = (float)(hrt_absolute_time() - _start_time)/1000000.0f;
+	            
+	            if (_turn_num < _num_of_turns) {
+	                if (!_in_turn) {
+	                    check_start();
+	                }
+	                // Not an elseif so that turn accumulate on first run
+	                if (_in_turn) {
+	                    turn_accumulate();
+	                    check_violation();
+	                    check_turn_end();
+	                }
+	            } else {// turns completed; check for finishing conditions
+	                check_finished();
+	                if (!_in_mission) {
+	                    _final_time = _current_time;
+	                }
+	            }
+	        }
 
-
+        } else {// in manual mode
+	        // if still in mission when activating manual, fail the mission
+	        if (_in_mission) {
+	            _mission_failed = true;
+	            // tone, msg output
+	            mavlink_log_critical(_mavlink_fd, "#audio: AA241x. Mission failed, manual mode activated");
+	        }
+	    }
+		    
+	    // CHECK IF HARD VIOLATIONS
+	    // if yea, mission_failed = true, final_time = 0
+	    //
+		check_field_bounds();
 		_previous_loop_timestamp = _timestamp;
 		_prev_pos = _cur_pos;
+		
 
 		#if 0
 		/* check auto start requirements 
