@@ -514,7 +514,7 @@ struct log_CTS_s {
 #define LOG_AMIS_MSG 64
 struct log_AMIS_s {
 	bool in_mission;
-	float start_time;
+	hrt_abstime start_time;
 	float current_time;
 	float final_time;
 	bool mission_failed;
@@ -663,7 +663,7 @@ static const struct log_format_s log_formats[] = {
 	LOG_FORMAT(MACS, "fff", "RRint,PRint,YRint"),
 
 	/* AA241x logging */
-	LOG_FORMAT(AMIS, "BfffBBifiBB", "InM,STim,CTim,FTim,MFail,InTrn,TrnNum,TurnDeg,NumV,InV,OoB"),
+	LOG_FORMAT(AMIS, "BQffBBifiBB", "InM,STim,CTim,FTim,MFail,InTrn,TrnNum,TurnDeg,NumV,InV,OoB"),
 	LOG_FORMAT(HIGH, "ffffffffffffffff", HIGH_DATA_LABELS),
 	LOG_FORMAT(LOW, "ffffffffffffffff", LOW_DATA_LABELS),
 	LOG_FORMAT(ADAT, "ffffffff", "N,E,Dbaro,Dgps,u,v,w,GrndSpd"),

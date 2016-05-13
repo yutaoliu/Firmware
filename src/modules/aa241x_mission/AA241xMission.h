@@ -260,7 +260,7 @@ private:
 	/**
 	 * Calculate the current score.
 	 */
-	void 	calculate_score();
+	//void 	calculate_score();
 
 
 	// TODO: ADD ADDITIONAL MISSION SPECIFIC FUNCTIONS NEEDED

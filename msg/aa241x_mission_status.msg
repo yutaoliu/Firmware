@@ -1,7 +1,7 @@
 # AA241x mission status
 
 bool in_mission				# if true, currently running a mission
-float32 start_time  		# time since mission start (in minutes)
+uint64 start_time  		    # time since mission start (in minutes)
 float32 current_time		# battery capacity used since mission start (in mAh)
 float32 final_time			# current mission score
 bool mission_failed         # if you have failed the mission

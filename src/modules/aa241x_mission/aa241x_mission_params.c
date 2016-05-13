@@ -47,17 +47,17 @@
  * Also acts at the mission start threshold altitude.
  *
  * @unit meters
- * @group AA241x Mission
+ * @group AA241x Student Params
  */
-PARAM_DEFINE_FLOAT(AAMIS_ALT_MIN, 40.0f);
+PARAM_DEFINE_FLOAT(AA_ALT_MIN, 40.0f);
 
 /**
  * Maximum allowed altitude during mission  in [m] above Lake Lag.
  *
  * @unit meters
- * @group AA241x Mission
+ * @group AA241x Student Params
  */
-PARAM_DEFINE_FLOAT(AAMIS_ALT_MAX, 60.0f);
+PARAM_DEFINE_FLOAT(AA_ALT_MAX, 60.0f);
 
 /**
  * North location of starting gate pylon
