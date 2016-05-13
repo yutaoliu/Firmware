@@ -113,9 +113,10 @@ AA241xMission::AA241xMission() :
 
 	_in_turn(false),
 	_just_started_turn(false),
-	_turn_num(0),
+	_turn_num(-1),
 	_turn_radians(0.0f),
 	_turn_degrees(0.0f),
+	_req_turn_degrees(-840.0f),
 	_num_of_turns(2),
 	_num_violations(0),
 	_in_violation(false),
@@ -471,8 +472,8 @@ void AA241xMission::check_field_bounds()
 	    }
 	}
 
-	// Check if violating the flight window
-	if (_in_mission == true && (_cur_pos.D < -_parameters.max_alt || _cur_pos.D > -_parameters.min_alt)) {
+	// Check if violating the flight window (5m safety buffer for errors)
+	if (_in_mission == true && (_cur_pos.D < -(_parameters.max_alt + 5.0f) || _cur_pos.D > -(_parameters.min_alt - 5.0f))) {
 	    _mission_failed = true;
 	    _in_mission = false;
 	    _out_of_bounds = true;
@@ -492,7 +493,9 @@ void AA241xMission::check_start()
 	    //check that new position is across start line
 	        if (line_side(_start_gate[1],_start_gate[2],_cur_pos) < 0) {
 	            _in_mission = true;
-	            _turn_num = 1;
+	            _turn_num = 0;
+		    // MESSAGE, race started
+		    mavlink_log_info(_mavlink_fd, "#audio: AA241x race started");
 	        }
 	}
 
@@ -508,7 +511,9 @@ void AA241xMission::check_finished()
 		    && _cur_pos.D < -_parameters.min_alt && _cur_pos.D > -_parameters.max_alt) {
 		    //check that new position is across start line
 	            _in_mission = false;
-	            _turn_num = 0;
+	            _turn_num = -1;
+		    // MESSAGE, race completed
+		    mavlink_log_info(_mavlink_fd, "#audio: AA241x race completed");
 	        }
 	}
 }
@@ -533,17 +538,89 @@ void AA241xMission::check_turn_start()
 	if (cur_angle_diff <= 0.0f && prev_angle_diff >= 0.0f && fabsf(cur_angle_diff) < 2.0f*pi/3.0f) {
 	    _in_turn = true;
 	    _just_started_turn = true;
+	    // MESSAGE, turn started
+	    mavlink_log_info(_mavlink_fd, "#audio: AA241x turn started");
 	}
 }
 
-void
+void AA241xMission::check_turn_end() 
+{
+	// Less than negative because clockwise rotation
+	if (_turn_radians < _req_turn_degrees * deg2rad) {
+	    // end turn
+	    _in_turn = false;
+	    // reset accumulator
+	    _turn_radians = 0.0f;
+	    // step to next turn
+	    _turn_num = _turn_num + 1;
+	    // MESSAGE, turn completed
+	    mavlink_log_info(_mavlink_fd, "#audio: AA241x turn completed");
+	}
+}
+
+void AA241xMission::turn_accumulate()
+{
+
+	// initialize vars
+	float prev_angle;
+
+	// if just entered turn then accumulate from start line
+	if (_just_started_turn) {
+	    _just_started_turn = false;
+	    prev_angle        = _pylon[_turn_num].angle;
+	} else { // else just use the previous position's angle relative to the pylon
+	    prev_angle        = atan2f(_prev_pos.N - _pylon[_turn_num].N, _prev_pos.E - _pylon[_turn_num].E);
+	}
+
+	// Calc current angle relative to pylon
+	float cur_angle       = atan2f(_cur_pos.N - _pylon[_turn_num].N, _cur_pos.E - _pylon[_turn_num].E);
+
+	// Calc angle traversed (assumes < 180 deg)
+	float accumAngle = angular_difference(cur_angle,prev_angle);
+
+
+
+	// Accumulate in the turn angle counter
+	_turn_radians = _turn_radians + accumAngle;
+
+	// Make sure you can't go positive (CCW accumulation) in accumulated angle
+	if (_turn_radians > 0.0f) {
+	    _turn_radians = 0.0f;
+	}
+}
+
+void AA241xMission::check_violation()
+{
+	// Calculate r^2 distance from pylon
+	float r2 =   (_cur_pos.E - _pylon[_turn_num].E)*(_cur_pos.E - _pylon[_turn_num].E)
+	     + (_cur_pos.N - _pylon[_turn_num].N)*(_cur_pos.N - _pylon[_turn_num].N);
+	 
+	// calculate minimum radius^2 (with 2.5 meter safety buffer)
+	float min_r2 = (_parameters.keepout_radius-2.5f)*(_parameters.keepout_radius-2.5f);
+
+	// Check if distance is smaller than min distance and reset accumulator if
+	// so
+
+	if (r2 < min_r2) {
+	    _turn_radians = 0;
+	    _in_violation = true;
+	} else if (_in_violation) {
+	    _in_violation = false;
+	    _num_violations = _num_violations + 1;
+		// MESSAGE, violation occured
+		mavlink_log_critical(_mavlink_fd, "#audio: AA241x turn keep out violation occured");
+	}
+
+}
+
+/*void
 AA241xMission::calculate_score()
 {
 	
 	// TODO: WRITE YOUR SCORE FUNCTION HERE
 
 	//_score = 0.0f;
-}
+}*/
 
 void
 AA241xMission::task_main_trampoline(int argc, char **argv)

@@ -198,9 +198,10 @@ private:
 
 	bool 	_in_turn;
 	bool 	_just_started_turn;
-	uint8_t _turn_num;
+	int8_t _turn_num;
 	float 	_turn_radians;
 	float 	_turn_degrees;
+	float 	_req_turn_degrees;
 	uint8_t _num_of_turns;
 	uint8_t _num_violations;
 	bool 	_in_violation;
