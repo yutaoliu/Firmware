@@ -384,7 +384,6 @@ LowPriorityLoop::LowPriorityLoop() :
 	_parameter_handles.ctr_lon = param_find("AAMIS_CTR_LON");
 	_parameter_handles.ctr_alt = param_find("AAMIS_CTR_ALT");
 	_parameter_handles.team_num = param_find("AA_TEAM");
-	_parameter_handles.ctr_alt = param_find("AAMIS_CTR_ALT");
 
 	// initialize the aa241x control parameters
 	aal_parameters_init(&_aal_parameter_handles);
