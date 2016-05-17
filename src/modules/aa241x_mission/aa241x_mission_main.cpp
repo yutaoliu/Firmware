@@ -107,7 +107,7 @@ AA241xMission::AA241xMission() :
 
 	_in_mission(false),
 	_mission_failed(false),
-	_start_time(-1),
+	_start_time(0),
 	_current_time(0.0f),
 	_final_time(0.0f),
 
@@ -145,6 +145,7 @@ AA241xMission::AA241xMission() :
 	_parameter_handles.ctr_lon = param_find("AAMIS_CTR_LON");
 	_parameter_handles.ctr_alt = param_find("AAMIS_CTR_ALT");
 	_parameter_handles.team_num = param_find("AA_TEAM");
+	_parameter_handles.mis_fail = param_find("AAMIS_MIS_FAIL");
 
 	parameters_update();
 
@@ -188,6 +189,7 @@ AA241xMission::parameters_update()
 	param_get(_parameter_handles.ctr_lon, &(_parameters.ctr_lon));
 	param_get(_parameter_handles.ctr_alt, &(_parameters.ctr_alt));
 	param_get(_parameter_handles.team_num, &(_parameters.team_num));
+	param_get(_parameter_handles.mis_fail, &(_parameters.mis_fail));
 
 	// TODO: HANDLE ADDITIONAL PARAMETERS HERE
 
@@ -253,10 +255,7 @@ AA241xMission::aa241x_local_data_update()
 	if (aa241x_local_data_updated) {
 		orb_copy(ORB_ID(aa241x_local_data), _aa241x_local_data_sub, &_aa241x_local_data);
 	}
-	// Set current position
-	_cur_pos.N = _aa241x_local_data.N;
-	_cur_pos.E = _aa241x_local_data.E;
-	_cur_pos.D = _aa241x_local_data.D_baro;
+	
 }
 
 void
@@ -435,7 +434,7 @@ void AA241xMission::check_field_bounds()
 	_out_of_bounds = false;
 
 	//% Check if outside convex portions
-	uint8_t convex[5] = {1, 2, 3, 6, 9};
+	uint8_t convex[5] = {0, 1, 2, 5, 8};
 
 	for (int i = 0; i < 5; i++) {
 	    // If at the last boundary (wrapping)
@@ -447,7 +446,11 @@ void AA241xMission::check_field_bounds()
 	    if (line_side(lake_boundaries[convex[i]], lake_boundaries[convex[nextpt]], _cur_pos) > 0 
 	            && (_in_mission == true || _cur_pos.D < -40)) {
 	        _mission_failed = true;
-	        _in_mission = false;
+	        
+	        if (_parameters.mis_fail == 1){
+			    _in_mission = false;
+			}
+
 	        _out_of_bounds = true;
 	        // TONE
 	        // send msg: aa241x mission failed, boundary violation
@@ -457,14 +460,17 @@ void AA241xMission::check_field_bounds()
 
 	// Check if outside concave portions
 
-	uint8_t concave[2] = {4, 7};
+	uint8_t concave[2] = {3, 6};
 
 	for (int i = 0; i < 2; i++) {
 	    if (line_side(lake_boundaries[concave[i]], lake_boundaries[concave[i]+1], _cur_pos) > 0 
 	    && line_side(lake_boundaries[concave[i]+1],lake_boundaries[concave[i]+2], _cur_pos) > 0 
 	    && (_in_mission == true || _cur_pos.D < -40) ) {
 	        _mission_failed = true;
-	        _in_mission = false;
+	        
+	        if (_parameters.mis_fail == 1){
+			    _in_mission = false;
+			}
 	        _out_of_bounds = true;
 	        // TONE
 	        // send msg: aa241x mission failed, boundary violation
@@ -475,7 +481,11 @@ void AA241xMission::check_field_bounds()
 	// Check if violating the flight window (5m safety buffer for errors)
 	if (_in_mission == true && (_cur_pos.D < -(_parameters.max_alt + 5.0f) || _cur_pos.D > -(_parameters.min_alt - 5.0f))) {
 	    _mission_failed = true;
+
+	    if (_parameters.mis_fail == 1){
 	    _in_mission = false;
+		}
+
 	    _out_of_bounds = true;
 	    // TONE
 	    // send msg: aa241x mission failed, boundary violation
@@ -668,6 +678,11 @@ AA241xMission::task_main()
 	aa241x_local_data_update();
 	battery_status_update();
 
+	// Set current position at start
+	_cur_pos.N = _aa241x_local_data.N;
+	_cur_pos.E = _aa241x_local_data.E;
+	_cur_pos.D = _aa241x_local_data.D_baro;
+
 	/* build the racecourse */
 	build_racecourse();
 
@@ -719,6 +734,11 @@ AA241xMission::task_main()
 		local_pos_update();
 		vehicle_status_update();
 		battery_status_update();
+
+		// Set current position
+		_cur_pos.N = _aa241x_local_data.N;
+		_cur_pos.E = _aa241x_local_data.E;
+		_cur_pos.D = _aa241x_local_data.D_baro;
 
 		//  run required auto mission code
 		if (_vcontrol_mode.flag_control_auto_enabled) {
@@ -777,7 +797,7 @@ AA241xMission::task_main()
 	    // CHECK IF HARD VIOLATIONS
 	    // if yea, mission_failed = true, final_time = 0
 	    //
-		//check_field_bounds();
+		check_field_bounds();
 		_previous_loop_timestamp = _timestamp;
 		_prev_pos = _cur_pos;
 		

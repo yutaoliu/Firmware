@@ -691,8 +691,11 @@ FixedwingControl::set_local_data()
 	position_N = 0.0f;
 	position_E = 0.0f;
 	position_D_baro = 0.0f;
-	position_D_gps = -_global_pos.alt + mission_parameters.ctr_alt;
-	map_projection_project(&_lake_lag_proj_ref, _global_pos.lat, _global_pos.lon, &position_N, &position_E);
+	position_D_gps = 0.0f;
+	if (_vehicle_status.condition_global_position_valid) {
+		position_D_gps = -_global_pos.alt + mission_parameters.ctr_alt;
+		map_projection_project(&_lake_lag_proj_ref, _global_pos.lat, _global_pos.lon, &position_N, &position_E);
+	}
 	if (_local_pos.z_valid) {
 		position_D_baro = _local_pos.z;
 
@@ -703,7 +706,7 @@ FixedwingControl::set_local_data()
 	local_pos_ne_valid = _local_pos.xy_valid;
 	local_pos_d_valid = _local_pos.z_valid;
 
-	if (gps_ok && !_initial_offset_valid && local_pos_d_valid) {
+	if (_vehicle_status.condition_global_position_valid && !_initial_offset_valid && local_pos_d_valid) {
 		_initial_baro_offset = position_D_baro - position_D_gps;
 		_initial_offset_valid = true;
 	}

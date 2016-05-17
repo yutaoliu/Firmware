@@ -105,7 +105,18 @@ PARAM_DEFINE_FLOAT(AAMIS_LEG_LEN, 243.84f);
  * @unit meters
  * @group AA241x Mission
  */
-PARAM_DEFINE_FLOAT(AAMIS_GTE_WID, 50.0f);
+PARAM_DEFINE_FLOAT(AAMIS_GTE_WID, 100.0f);
+
+/**
+ * Activate/deactivate mission failure. 1 means mission failure kills the current mission,
+ * 0 means it allows the mission to continue
+ *
+ * @unit none
+ * @min 0
+ * @max 1
+ * @group AA241x Mission
+ */
+PARAM_DEFINE_INT32(AAMIS_MIS_FAIL, 1);
 
 /**
  * Origin latitude for local position.
@@ -146,7 +157,7 @@ PARAM_DEFINE_FLOAT(AAMIS_CTR_ALT, 40.0f);
 
 
 /**
- * Team number (1-4).
+ * Team number (1-5).
  *
  * @group AA241x Student Params
  */

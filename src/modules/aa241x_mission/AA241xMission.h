@@ -135,6 +135,7 @@ private:
 		float ctr_alt;
 		float leg_length;
 		float gate_width;
+		int mis_fail;
 		int team_num;
 	}		_parameters;			/**< local copies of interesting parameters */
 
@@ -150,6 +151,7 @@ private:
 		param_t ctr_alt;
 		param_t leg_length;
 		param_t gate_width;
+		param_t mis_fail;
 		param_t team_num;
 	}		_parameter_handles;		/**< handles for interesting parameters */
 
