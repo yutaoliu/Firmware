@@ -184,7 +184,7 @@ PARAM_DEFINE_FLOAT(AAH_GAIN_THRO, 0.2f);
  */
 
 
-PARAM_DEFINE_FLOAT(AAH_HGAIN_HEAD, -0.1f);
+PARAM_DEFINE_FLOAT(AAH_HGAIN_HEAD, -0.2f);
 
  /* Heading gain, output is in !rad!
  *
@@ -206,7 +206,7 @@ PARAM_DEFINE_FLOAT(AAH_HGAIN_RUDD, 0.5f);
  *
  * @group AA241x High Params		(always include this)
  */
-PARAM_DEFINE_FLOAT(AAH_HGAIN_YDOT, -3.0f);
+PARAM_DEFINE_FLOAT(AAH_HGAIN_YDOT, 5.0f);
 
 //
 //
