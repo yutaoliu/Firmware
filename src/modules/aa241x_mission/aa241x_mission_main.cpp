@@ -749,10 +749,20 @@ AA241xMission::task_main()
 		vehicle_status_update();
 		battery_status_update();
 
-		// Set current position
-		_cur_pos.N = _aa241x_local_data.N;
-		_cur_pos.E = _aa241x_local_data.E;
-		_cur_pos.D = _aa241x_local_data.D_baro;
+		// Set current position and previous position if the local data is updated
+		if (fabsf(_cur_pos.N - _aa241x_local_data.N) > 0.001f) {
+			_prev_pos.N = _cur_pos.N;
+			_cur_pos.N = _aa241x_local_data.N;
+		}
+		if (fabsf(_cur_pos.E - _aa241x_local_data.E) > 0.0001f) {
+			_prev_pos.E = _cur_pos.E;
+			_cur_pos.E = _aa241x_local_data.E;
+		}
+		if (fabsf(_cur_pos.D - _aa241x_local_data.D_baro) > 0.001f) {
+			_prev_pos.D = _cur_pos.D;
+			_cur_pos.D = _aa241x_local_data.D_baro;
+		}
+		
 
 		//  run required auto mission code
 		if (_vcontrol_mode.flag_control_auto_enabled) {
@@ -813,7 +823,6 @@ AA241xMission::task_main()
 	    //
 		check_field_bounds();
 		_previous_loop_timestamp = _timestamp;
-		_prev_pos = _cur_pos;
 		
 
 		#if 0
