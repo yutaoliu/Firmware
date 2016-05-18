@@ -775,6 +775,8 @@ AA241xMission::task_main()
 				&& (_timestamp - _previous_loop_timestamp) > 1000000) {
 
 				mavlink_log_critical(_mavlink_fd, "AA241x. No GPS lock, do not launch airplane");
+				mavlink_log_info(_mavlink_fd, "AA241x info. No GPS lock, do not launch airplane");
+				mavlink_log_info(_mavlink_fd, "#audio: A241x info. No GPS lock, info");
 			}
 			
 			// If not yet in mission check if mission has started
