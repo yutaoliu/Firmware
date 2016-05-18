@@ -707,7 +707,7 @@ FixedwingControl::set_local_data()
 	local_pos_d_valid = _local_pos.z_valid;
 
 	if (_vehicle_status.condition_global_position_valid && !_initial_offset_valid && local_pos_d_valid) {
-		_initial_baro_offset = position_D_baro - position_D_gps;
+		_initial_baro_offset = position_D_gps - position_D_baro;
 		_initial_offset_valid = true;
 	}
 

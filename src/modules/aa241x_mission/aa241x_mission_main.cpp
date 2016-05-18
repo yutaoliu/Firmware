@@ -429,6 +429,14 @@ void AA241xMission::check_field_bounds()
 	lake_boundaries[6].E = -36.0f;  lake_boundaries[6].N = -216.0f;
 	lake_boundaries[7].E = -101.0f; lake_boundaries[7].N = -142.0f;
 	lake_boundaries[8].E = -181.0f; lake_boundaries[8].N = -112.0f;
+	
+	// check if already out of bounds so that it doesn't yell at you 1000 times
+	bool already_out = false;
+	
+	if (_out_of_bounds) {
+		already_out = true;
+	}
+
 
 	//% Set inbounds to start
 	_out_of_bounds = false;
@@ -438,12 +446,12 @@ void AA241xMission::check_field_bounds()
 
 	for (int i = 0; i < 5; i++) {
 	    // If at the last boundary (wrapping)
-		uint8_t nextpt = i+1;
+		uint8_t nextpt = convex[i]+1;
 	    if (i == 4) {
-	        nextpt = 0;
+	        nextpt = convex[0];
 	    }
 	    
-	    if (line_side(lake_boundaries[convex[i]], lake_boundaries[convex[nextpt]], _cur_pos) > 0 
+	    if (line_side(lake_boundaries[convex[i]], lake_boundaries[nextpt], _cur_pos) > 0 
 	            && (_in_mission == true || _cur_pos.D < -40)) {
 	        _mission_failed = true;
 	        
@@ -454,7 +462,9 @@ void AA241xMission::check_field_bounds()
 	        _out_of_bounds = true;
 	        // TONE
 	        // send msg: aa241x mission failed, boundary violation
-	        mavlink_log_critical(_mavlink_fd, "AA241x mission failed, lake boundary violation");
+	        if (!already_out) {
+		        mavlink_log_critical(_mavlink_fd, "AA241x mission failed, lake boundary violation");
+		    }
 	    }
 	}
 
@@ -474,7 +484,9 @@ void AA241xMission::check_field_bounds()
 	        _out_of_bounds = true;
 	        // TONE
 	        // send msg: aa241x mission failed, boundary violation
-	        mavlink_log_critical(_mavlink_fd, "AA241x mission failed, lake boundary violation");
+	        if (!already_out) {
+		        mavlink_log_critical(_mavlink_fd, "AA241x mission failed, lake boundary violation");
+		    }
 	    }
 	}
 
@@ -489,7 +501,9 @@ void AA241xMission::check_field_bounds()
 	    _out_of_bounds = true;
 	    // TONE
 	    // send msg: aa241x mission failed, boundary violation
+	    if (!already_out) {
 	        mavlink_log_critical(_mavlink_fd, "AA241x mission failed, altitude violation");
+	    }
 	}
 }
 
