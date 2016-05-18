@@ -392,6 +392,8 @@ void flight_control() {
   high_data.dist2dest = dist2dest;
   high_data.y = y;
   high_data.ydot = ydot;
+  high_data.turn_degrees = turn_degrees;
+  high_data.turn_num = turn_num;
 
 
 }

@@ -72,8 +72,8 @@
 #define HIGH_FIELD9 dist2dest;
 #define HIGH_FIELD10 y;
 #define HIGH_FIELD11 ydot;
-#define HIGH_FIELD12 variable_name12;
-#define HIGH_FIELD13 variable_name13;
+#define HIGH_FIELD12 turn_degrees;
+#define HIGH_FIELD13 turn_num;
 #define HIGH_FIELD14 variable_name14;
 #define HIGH_FIELD15 variable_name15;
 #define HIGH_FIELD16 variable_name16;
@@ -90,7 +90,7 @@
  * MEET THESE REQUIREMENTS, LOGGING WILL FAIL!!!!!!
  *
  */
-#define HIGH_DATA_LABELS "xO,yO,f03,f04,f05,f06,f07,f08,d2d,y,yd,f12,f13,f14,f15,f16"
+#define HIGH_DATA_LABELS "xO,yO,f03,f04,f05,f06,f07,f08,d2d,y,yd,td,tn,f14,f15,f16"
 
 struct aa241x_high_data_s {
 	float HIGH_FIELD1;
