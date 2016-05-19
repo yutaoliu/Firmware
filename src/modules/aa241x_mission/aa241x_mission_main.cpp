@@ -872,7 +872,7 @@ AA241xMission::task_main()
 	            
 	            if (_turn_num < _num_of_turns) {
 	                if (!_in_turn) {
-	                    check_start();
+	                    check_turn_start();
 	                }
 	                // Not an elseif so that turn accumulate on first run
 	                if (_in_turn) {
@@ -890,7 +890,7 @@ AA241xMission::task_main()
 
         } else {// in manual mode
 	        // if still in mission when activating manual, fail the mission
-	        if (_in_mission == true) {
+	        if (_in_mission == true && !_mission_failed) {
 	            _mission_failed = true;
 	            // tone, msg output
 	            mavlink_log_critical(_mavlink_fd, "AA241x. Mission failed, manual mode activated");
