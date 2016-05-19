@@ -826,10 +826,7 @@ AA241xMission::task_main()
 		vehicle_status_update();
 		battery_status_update();
 
-		// Force mission if so desired
-		if (_parameters.force_start == 1) {
-			_in_mission = true;
-		}
+		
 
 		// Yell position every second if debugging
 		_debug_yell = false;
@@ -846,6 +843,14 @@ AA241xMission::task_main()
 		//  run required auto mission code
 		if (_vcontrol_mode.flag_control_auto_enabled) {
 			_timestamp = hrt_absolute_time();
+
+			// Force mission if so desired
+			if (_parameters.force_start == 1) {
+				_in_mission = true;
+				if (_start_time == 0) {
+					_start_time = hrt_absolute_time();
+				}
+			}
 			
 
 			// Check if there is no GPS lock and warn the user upon
