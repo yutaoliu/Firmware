@@ -315,7 +315,7 @@ AA241xMission::initialize_mission()
 
 
 	// send message that mission has started
-	mavlink_log_info(_mavlink_fd, "#audio: AA241x mission started");
+	mavlink_log_info(_mavlink_fd, "#AA241x mission started");
 
 	// trigger the buzzer audio for mission start
 	/*
@@ -519,7 +519,7 @@ void AA241xMission::check_start()
 	            _in_mission = true;
 	            _turn_num = 0;
 		    // MESSAGE, race started
-		    mavlink_log_info(_mavlink_fd, "#audio: AA241x race started");
+		    mavlink_log_info(_mavlink_fd, "#AA241x race started");
 	        }
 	}
 
@@ -537,7 +537,7 @@ void AA241xMission::check_finished()
 	            _in_mission = false;
 	            _turn_num = -1;
 		    // MESSAGE, race completed
-		    mavlink_log_info(_mavlink_fd, "#audio: AA241x race completed");
+		    mavlink_log_info(_mavlink_fd, "#AA241x race completed");
 	        }
 	}
 }
@@ -563,7 +563,7 @@ void AA241xMission::check_turn_start()
 	    _in_turn = true;
 	    _just_started_turn = true;
 	    // MESSAGE, turn started
-	    mavlink_log_info(_mavlink_fd, "#audio: AA241x turn started");
+	    mavlink_log_info(_mavlink_fd, "#AA241x turn started");
 	}
 }
 
@@ -578,7 +578,7 @@ void AA241xMission::check_turn_end()
 	    // step to next turn
 	    _turn_num = _turn_num + 1;
 	    // MESSAGE, turn completed
-	    mavlink_log_info(_mavlink_fd, "#audio: AA241x turn completed");
+	    mavlink_log_info(_mavlink_fd, "#AA241x turn completed");
 	}
 }
 
@@ -775,8 +775,6 @@ AA241xMission::task_main()
 				&& (_timestamp - _previous_loop_timestamp) > 1000000) {
 
 				mavlink_log_critical(_mavlink_fd, "AA241x. No GPS lock, do not launch airplane");
-				mavlink_log_info(_mavlink_fd, "AA241x info. No GPS lock, do not launch airplane");
-				mavlink_log_info(_mavlink_fd, "#audio: A241x info. No GPS lock, info");
 			}
 			
 			// If not yet in mission check if mission has started
@@ -839,7 +837,7 @@ AA241xMission::task_main()
 			if (!_vehicle_status.gps_failure && -_aa241x_local_data.D_gps >= _parameters.auto_alt && !_vcontrol_mode.flag_control_auto_enabled) {
 				// not allowed to start is above auto alt and not in auto mode
 				_can_start = false;
-				mavlink_log_info(_mavlink_fd, "#audio: AA241x mission start conditions violated");
+				mavlink_log_info(_mavlink_fd, "#AA241x mission start conditions violated");
 			}
 		}
 		*/
@@ -871,7 +869,7 @@ AA241xMission::task_main()
 				// end mission and set score to 0 if switch to manual mode
 				_in_mission = false;
 				//_early_termination = true;
-				mavlink_log_info(_mavlink_fd, "#audio: AA241x mission termination: control mode violation");
+				mavlink_log_info(_mavlink_fd, "#AA241x mission termination: control mode violation");
 			}
 
 			/* check min altitude requirements (with 10m buffer) only if plane has gotten above it already */
@@ -879,14 +877,14 @@ AA241xMission::task_main()
 				// end mission, but let fire propagate for rest of time
 				_in_mission = false;
 				//_early_termination = true;
-				mavlink_log_info(_mavlink_fd, "#audio: AA241x mission termination: below min alt");
+				mavlink_log_info(_mavlink_fd, "#AA241x mission termination: below min alt");
 			}
 
 			/* check battery requirements */
 			if ((_batt_stat.discharged_mah - _mission_start_battery) > _parameters.max_discharge) {
 				_in_mission = false;
 				//_early_termination = true;
-				mavlink_log_info(_mavlink_fd, "#audio: AA241x mission termination: max battery discharge reached");
+				mavlink_log_info(_mavlink_fd, "#AA241x mission termination: max battery discharge reached");
 			}
 
 			// propagate through the rest of the fire as needed
@@ -907,7 +905,7 @@ AA241xMission::task_main()
 				_in_mission = false;
 				_mission_failed = true;
 				//_score = 0.0f;
-				mavlink_log_info(_mavlink_fd, "#audio: AA241x mission failed: boundary violation");
+				mavlink_log_info(_mavlink_fd, "#AA241x mission failed: boundary violation");
 			}
 
 
@@ -921,7 +919,7 @@ AA241xMission::task_main()
 			if (_in_mission && (current_time - _mission_start_time)/1000000.0f >= _parameters.duration*60.0f) {
 				_in_mission = false;
 				_can_start = false;
-				mavlink_log_info(_mavlink_fd, "#audio: AA241x mission completed");
+				mavlink_log_info(_mavlink_fd, "#AA241x mission completed");
 
 				// TODO: ADD ANY END OF TIME CODE
 
