@@ -159,6 +159,7 @@ AA241xMission::AA241xMission() :
 	_parameter_handles.team_num = param_find("AA_TEAM");
 	_parameter_handles.mis_fail = param_find("AAMIS_MIS_FAIL");
 	_parameter_handles.debug_mode = param_find("AAMIS_DEBUG");
+	_parameter_handles.force_start = param_find("AAMIS_FSTART");
 
 	parameters_update();
 
@@ -204,6 +205,7 @@ AA241xMission::parameters_update()
 	param_get(_parameter_handles.team_num, &(_parameters.team_num));
 	param_get(_parameter_handles.mis_fail, &(_parameters.mis_fail));
 	param_get(_parameter_handles.debug_mode, &(_parameters.debug_mode));
+	param_get(_parameter_handles.force_start, &(_parameters.force_start));
 
 	// TODO: HANDLE ADDITIONAL PARAMETERS HERE
 
@@ -513,7 +515,7 @@ void AA241xMission::check_field_bounds()
 	}
 
 	// Check if violating the flight window (5m safety buffer for errors)
-	if (_in_mission == true && (_cur_pos.D < -(_parameters.max_alt + 5.0f) || _cur_pos.D > -(_parameters.min_alt - 5.0f))) {
+	if (_in_mission == true && (-_cur_pos.D > (_parameters.max_alt + 5.0f) || -_cur_pos.D < (_parameters.min_alt - 5.0f))) {
 	    _mission_failed = true;
 
 	    if (_parameters.mis_fail == 1){
@@ -541,14 +543,19 @@ void AA241xMission::check_start()
 	if (line_side(_start_gate[0],_start_gate[1],_prev_pos) > 0 
 	    && line_side(_start_gate[1],_start_gate[2],_prev_pos) > 0 
 	    && line_side(_start_gate[2],_start_gate[3],_prev_pos) > 0 
-	    && _cur_pos.D < -_parameters.min_alt && _cur_pos.D > -_parameters.max_alt) {
+	    && -_prev_pos.D > _parameters.min_alt && -_prev_pos.D < _parameters.max_alt) {
+
+		if (_parameters.debug_mode == 1 && (_check_start_run == false || _debug_yell == true)) {
+			mavlink_log_info(_mavlink_fd, "#In valid starting position")
+		}
+
 	    //check that new position is across start line
-	        if (line_side(_start_gate[1],_start_gate[2],_cur_pos) < 0) {
-	            _in_mission = true;
-	            _turn_num = 0;
+        if (line_side(_start_gate[1],_start_gate[2],_cur_pos) < 0) {
+            _in_mission = true;
+            _turn_num = 0;
 		    // MESSAGE, race started
 		    mavlink_log_info(_mavlink_fd, "#AA241x race started");
-	        }
+        }
 	}
 
 }
@@ -566,7 +573,7 @@ void AA241xMission::check_finished()
 		if (line_side(_start_gate[0],_start_gate[1],_prev_pos) > 0 
 		    && line_side(_start_gate[1],_start_gate[2],_prev_pos) > 0 
 		    && line_side(_start_gate[2],_start_gate[3],_prev_pos) > 0 
-		    && _cur_pos.D < -_parameters.min_alt && _cur_pos.D > -_parameters.max_alt) {
+		    && -_cur_pos.D > _parameters.min_alt && -_cur_pos.D < _parameters.max_alt) {
 		    //check that new position is across start line
 	            _in_mission = false;
 	            _turn_num = -1;
@@ -819,7 +826,10 @@ AA241xMission::task_main()
 		vehicle_status_update();
 		battery_status_update();
 
-		
+		// Force mission if so desired
+		if (_parameters.force_start == 1) {
+			_in_mission = true;
+		}
 
 		// Yell position every second if debugging
 		_debug_yell = false;

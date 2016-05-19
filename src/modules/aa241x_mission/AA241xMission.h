@@ -138,6 +138,7 @@ private:
 		int mis_fail;
 		int team_num;
 		int debug_mode;
+		int force_start;
 	}		_parameters;			/**< local copies of interesting parameters */
 
 	struct {
@@ -155,6 +156,7 @@ private:
 		param_t mis_fail;
 		param_t team_num;
 		param_t debug_mode;
+		param_t force_start;
 	}		_parameter_handles;		/**< handles for interesting parameters */
 
 	hrt_abstime _mission_start_time;	/**< timestamp of when entered mission */

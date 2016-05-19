@@ -163,6 +163,13 @@ PARAM_DEFINE_FLOAT(AAMIS_CTR_ALT, 40.0f);
  */
 PARAM_DEFINE_INT32(AAMIS_DEBUG, 0);
 
+/**
+ * Force mission to run (regardless of whether you cross the start line)
+ *
+ *
+ * @group AA241x Mission
+ */
+PARAM_DEFINE_INT32(AAMIS_FSTART, 0);
 
 /**
  * Team number (1-5).
