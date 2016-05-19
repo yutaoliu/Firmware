@@ -738,8 +738,8 @@ AA241xMission::task_main()
 
 	/* rate limit vehicle status updates to 5Hz */
 	orb_set_interval(_vcontrol_mode_sub, 200);
-	/* rate limit local data (including position) updates to 50Hz */
-	orb_set_interval(_aa241x_local_data_sub, 20);
+	/* rate limit local data (including position) updates to 20Hz */
+	orb_set_interval(_aa241x_local_data_sub, 50);
 
 	parameters_update();
 
@@ -805,18 +805,18 @@ AA241xMission::task_main()
 			aa241x_local_data_update(); // _cur_pos gets updated in here
 
 			// Set current position and previous position if the local data is updated
-			if (fabsf(_cur_pos.N - _aa241x_local_data.N) > 0.001f) {
+			// if (fabsf(_cur_pos.N - _aa241x_local_data.N) > 0.001f) {
 				_prev_pos.N = _cur_pos.N;
 				_cur_pos.N = _aa241x_local_data.N;
-			}
-			if (fabsf(_cur_pos.E - _aa241x_local_data.E) > 0.0001f) {
+			// }
+			// if (fabsf(_cur_pos.E - _aa241x_local_data.E) > 0.0001f) {
 				_prev_pos.E = _cur_pos.E;
 				_cur_pos.E = _aa241x_local_data.E;
-			}
-			if (fabsf(_cur_pos.D - _aa241x_local_data.D_baro) > 0.001f) {
+			// }
+			// if (fabsf(_cur_pos.D - _aa241x_local_data.D_baro) > 0.001f) {
 				_prev_pos.D = _cur_pos.D;
 				_cur_pos.D = _aa241x_local_data.D_baro;
-			}
+			// }
 		}
 
 		/* check all other subscriptions */
