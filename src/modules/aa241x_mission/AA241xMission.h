@@ -137,6 +137,7 @@ private:
 		float gate_width;
 		int mis_fail;
 		int team_num;
+		int debug_mode;
 	}		_parameters;			/**< local copies of interesting parameters */
 
 	struct {
@@ -153,6 +154,7 @@ private:
 		param_t gate_width;
 		param_t mis_fail;
 		param_t team_num;
+		param_t debug_mode;
 	}		_parameter_handles;		/**< handles for interesting parameters */
 
 	hrt_abstime _mission_start_time;	/**< timestamp of when entered mission */
@@ -279,20 +281,28 @@ private:
 					  const _airplane_pos &c); 
 	// build the racecourse from the parameters
 	void 	build_racecourse();
+	bool	_build_racecourse_run;
 	// check for hard field boundary violations
-	void 	check_field_bounds(); 
+	void 	check_field_bounds();
+	bool	_check_field_bounds_run; 
 	// check if you have finished the race
 	void 	check_finished();  
+	bool	_check_finished_run;
 	// check if you have started the race
 	void 	check_start();		
+	bool	_check_start_run;
 	// check if a turn has started
 	void 	check_turn_start(); 
+	bool	_check_turn_start_run;
 	// check if a turn has ended
 	void 	check_turn_end();  
+	bool	_check_turn_end_run;
 	// check whether turn keepout has been violated
 	void 	check_violation(); 
+	bool	_check_violation_run;
 	// accumulate degrees on a turn
 	void 	turn_accumulate();
+	bool	_turn_accumulate_run;
 
 
 

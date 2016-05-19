@@ -155,6 +155,14 @@ PARAM_DEFINE_FLOAT(AAMIS_CTR_LON, -122.1760917f);
  */
 PARAM_DEFINE_FLOAT(AAMIS_CTR_ALT, 40.0f);
 
+/**
+ * Turn debug mode on and off
+ *
+ *
+ * @group AA241x Mission
+ */
+PARAM_DEFINE_INT32(AAMIS_DEBUG, 0);
+
 
 /**
  * Team number (1-5).

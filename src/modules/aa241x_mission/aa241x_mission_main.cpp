@@ -123,7 +123,16 @@ AA241xMission::AA241xMission() :
 	_out_of_bounds(false),
 
 	_timestamp(0),
-	_previous_loop_timestamp(0)
+	_previous_loop_timestamp(0),
+
+	_build_racecourse_run(false),
+	_check_field_bounds_run(false),
+	_check_finished_run(false),
+	_check_start_run(false),
+	_check_turn_start_run(false),
+	_check_turn_end_run(false),
+	_check_violation_run(false),
+	_turn_accumulate_run(false)
 {
 	_vcontrol_mode = {};
 	_global_pos = {};
@@ -146,6 +155,7 @@ AA241xMission::AA241xMission() :
 	_parameter_handles.ctr_alt = param_find("AAMIS_CTR_ALT");
 	_parameter_handles.team_num = param_find("AA_TEAM");
 	_parameter_handles.mis_fail = param_find("AAMIS_MIS_FAIL");
+	_parameter_handles.debug_mode = param_find("AAMIS_DEBUG");
 
 	parameters_update();
 
@@ -190,6 +200,7 @@ AA241xMission::parameters_update()
 	param_get(_parameter_handles.ctr_alt, &(_parameters.ctr_alt));
 	param_get(_parameter_handles.team_num, &(_parameters.team_num));
 	param_get(_parameter_handles.mis_fail, &(_parameters.mis_fail));
+	param_get(_parameter_handles.debug_mode, &(_parameters.debug_mode));
 
 	// TODO: HANDLE ADDITIONAL PARAMETERS HERE
 
@@ -388,6 +399,10 @@ int8_t AA241xMission::line_side(const _land_pos &a,
 // build the racecourse from parameters
 void AA241xMission::build_racecourse()
 {
+	if (_build_racecourse_run == false && _parameters.debug_mode == 1) {
+		_build_racecourse_run = true;
+		mavlink_log_info(_mavlink_fd, "#Build racecourse ran")
+	}
 	// populate the start pylon with the appropriate values
 	_start_pylon.N 	= _parameters.start_pos_N;
 	_start_pylon.E 	= _parameters.start_pos_E;
@@ -416,6 +431,10 @@ void AA241xMission::build_racecourse()
 //CHECK_FIELD_BOUNDS check if airplane has left boundaries of Lake Lag
 void AA241xMission::check_field_bounds()
 {
+	if (_check_field_bounds_run == false && _parameters.debug_mode == 1) {
+		_check_field_bounds_run = true;
+		mavlink_log_info(_mavlink_fd, "#Check field bounds ran")
+	}
 	// Assign struct boundaries
 
 	_land_pos lake_boundaries[9];
@@ -509,6 +528,12 @@ void AA241xMission::check_field_bounds()
 
 void AA241xMission::check_start()
 {
+
+	if (_check_start_run == false && _parameters.debug_mode == 1) {
+		_check_start_run = true;
+		mavlink_log_info(_mavlink_fd, "#Check start ran")
+	}
+
 	//check that previous position was within bounds
 	if (line_side(_start_gate[0],_start_gate[1],_prev_pos) > 0 
 	    && line_side(_start_gate[1],_start_gate[2],_prev_pos) > 0 
@@ -527,6 +552,12 @@ void AA241xMission::check_start()
 
 void AA241xMission::check_finished()
 {
+
+	if (_check_finished_run == false && _parameters.debug_mode == 1) {
+		_check_finished_run = true;
+		mavlink_log_info(_mavlink_fd, "#Check finish ran")
+	}
+
 	//check that previous position was within bounds
 	if (line_side(_start_gate[1],_start_gate[2],_cur_pos) < 0) {
 		if (line_side(_start_gate[0],_start_gate[1],_prev_pos) > 0 
@@ -544,6 +575,10 @@ void AA241xMission::check_finished()
 
 void AA241xMission::check_turn_start()
 {
+	if (_check_turn_start_run == false && _parameters.debug_mode == 1) {
+		_check_turn_start_run = true;
+		mavlink_log_info(_mavlink_fd, "#Check turn start ran")
+	}
 	// Calculate airplane current and previous angle relative to current pylon to turn around
 
 	float cur_angle = atan2f(_cur_pos.N - _pylon[_turn_num].N, _cur_pos.E - _pylon[_turn_num].E); // float
@@ -569,6 +604,11 @@ void AA241xMission::check_turn_start()
 
 void AA241xMission::check_turn_end() 
 {
+	if (_check_turn_end_run == false && _parameters.debug_mode == 1) {
+		_check_turn_end_run = true;
+		mavlink_log_info(_mavlink_fd, "#Check turn finish ran")
+	}
+
 	// Less than negative because clockwise rotation
 	if (_turn_radians < _req_turn_degrees * deg2rad) {
 	    // end turn
@@ -584,6 +624,10 @@ void AA241xMission::check_turn_end()
 
 void AA241xMission::turn_accumulate()
 {
+	if (_turn_accumulate_run == false && _parameters.debug_mode == 1) {
+		_turn_accumulate_run = true;
+		mavlink_log_info(_mavlink_fd, "#Turn accumulator ran")
+	}
 
 	// initialize vars
 	float prev_angle;
@@ -614,7 +658,12 @@ void AA241xMission::turn_accumulate()
 }
 
 void AA241xMission::check_violation()
-{
+{	
+	if (_check_violation_run == false && _parameters.debug_mode == 1) {
+		_check_violation_run = true;
+		mavlink_log_info(_mavlink_fd, "#Check violation ran")
+	}
+
 	// Calculate r^2 distance from pylon
 	float r2 =   (_cur_pos.E - _pylon[_turn_num].E)*(_cur_pos.E - _pylon[_turn_num].E)
 	     + (_cur_pos.N - _pylon[_turn_num].N)*(_cur_pos.N - _pylon[_turn_num].N);
@@ -778,7 +827,7 @@ AA241xMission::task_main()
 			}
 			
 			// If not yet in mission check if mission has started
-			if (!_in_mission) {
+			if (_in_mission == false) {
 				check_start();
 				// If check start sets mission to true set the start time
 	            if (_in_mission) {
@@ -786,7 +835,7 @@ AA241xMission::task_main()
 	            }
 	        }
 
-			if (_in_mission) {
+			if (_in_mission == true) {
 			            
 	            // Report current time
 	            _current_time = (float)(hrt_absolute_time() - _start_time)/1000000.0f;
@@ -811,7 +860,7 @@ AA241xMission::task_main()
 
         } else {// in manual mode
 	        // if still in mission when activating manual, fail the mission
-	        if (_in_mission) {
+	        if (_in_mission == true) {
 	            _mission_failed = true;
 	            // tone, msg output
 	            mavlink_log_critical(_mavlink_fd, "AA241x. Mission failed, manual mode activated");
