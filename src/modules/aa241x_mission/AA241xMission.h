@@ -304,6 +304,8 @@ private:
 	void 	turn_accumulate();
 	bool	_turn_accumulate_run;
 
+	hrt_abstime _debug_timestamp;
+	bool	_debug_yell;
 
 
 	/**

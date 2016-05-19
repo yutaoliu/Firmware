@@ -132,7 +132,10 @@ AA241xMission::AA241xMission() :
 	_check_turn_start_run(false),
 	_check_turn_end_run(false),
 	_check_violation_run(false),
-	_turn_accumulate_run(false)
+	_turn_accumulate_run(false),
+
+	_debug_timestamp(0),
+	_debug_yell(false)
 {
 	_vcontrol_mode = {};
 	_global_pos = {};
@@ -399,9 +402,9 @@ int8_t AA241xMission::line_side(const _land_pos &a,
 // build the racecourse from parameters
 void AA241xMission::build_racecourse()
 {
-	if (_build_racecourse_run == false && _parameters.debug_mode == 1) {
+	if (_parameters.debug_mode == 1 && (_build_racecourse_run == false || _debug_yell == true)) {
 		_build_racecourse_run = true;
-		mavlink_log_info(_mavlink_fd, "#Build racecourse ran")
+		mavlink_log_info(_mavlink_fd, "Build racecourse ran")
 	}
 	// populate the start pylon with the appropriate values
 	_start_pylon.N 	= _parameters.start_pos_N;
@@ -431,9 +434,9 @@ void AA241xMission::build_racecourse()
 //CHECK_FIELD_BOUNDS check if airplane has left boundaries of Lake Lag
 void AA241xMission::check_field_bounds()
 {
-	if (_check_field_bounds_run == false && _parameters.debug_mode == 1) {
+	if (_parameters.debug_mode == 1 && (_check_field_bounds_run == false || _debug_yell == true)) {
 		_check_field_bounds_run = true;
-		mavlink_log_info(_mavlink_fd, "#Check field bounds ran")
+		mavlink_log_info(_mavlink_fd, "Check field bounds ran")
 	}
 	// Assign struct boundaries
 
@@ -529,9 +532,9 @@ void AA241xMission::check_field_bounds()
 void AA241xMission::check_start()
 {
 
-	if (_check_start_run == false && _parameters.debug_mode == 1) {
+	if (_parameters.debug_mode == 1 && (_check_start_run == false || _debug_yell == true)) {
 		_check_start_run = true;
-		mavlink_log_info(_mavlink_fd, "#Check start ran")
+		mavlink_log_info(_mavlink_fd, "Check start ran")
 	}
 
 	//check that previous position was within bounds
@@ -553,9 +556,9 @@ void AA241xMission::check_start()
 void AA241xMission::check_finished()
 {
 
-	if (_check_finished_run == false && _parameters.debug_mode == 1) {
+	if (_parameters.debug_mode == 1 && (_check_finished_run == false || _debug_yell == true)) {
 		_check_finished_run = true;
-		mavlink_log_info(_mavlink_fd, "#Check finish ran")
+		mavlink_log_info(_mavlink_fd, "Check finish ran")
 	}
 
 	//check that previous position was within bounds
@@ -575,9 +578,9 @@ void AA241xMission::check_finished()
 
 void AA241xMission::check_turn_start()
 {
-	if (_check_turn_start_run == false && _parameters.debug_mode == 1) {
+	if (_parameters.debug_mode == 1 && (_check_turn_start_run == false || _debug_yell == true)) {
 		_check_turn_start_run = true;
-		mavlink_log_info(_mavlink_fd, "#Check turn start ran")
+		mavlink_log_info(_mavlink_fd, "Check turn start ran")
 	}
 	// Calculate airplane current and previous angle relative to current pylon to turn around
 
@@ -604,9 +607,9 @@ void AA241xMission::check_turn_start()
 
 void AA241xMission::check_turn_end() 
 {
-	if (_check_turn_end_run == false && _parameters.debug_mode == 1) {
+	if (_parameters.debug_mode == 1 && (_check_turn_end_run == false || _debug_yell == true)) {
 		_check_turn_end_run = true;
-		mavlink_log_info(_mavlink_fd, "#Check turn finish ran")
+		mavlink_log_info(_mavlink_fd, "Check turn finish ran")
 	}
 
 	// Less than negative because clockwise rotation
@@ -624,9 +627,9 @@ void AA241xMission::check_turn_end()
 
 void AA241xMission::turn_accumulate()
 {
-	if (_turn_accumulate_run == false && _parameters.debug_mode == 1) {
+	if (_parameters.debug_mode == 1 && (_turn_accumulate_run == false || _debug_yell == true)) {
 		_turn_accumulate_run = true;
-		mavlink_log_info(_mavlink_fd, "#Turn accumulator ran")
+		mavlink_log_info(_mavlink_fd, "Turn accumulator ran")
 	}
 
 	// initialize vars
@@ -659,9 +662,9 @@ void AA241xMission::turn_accumulate()
 
 void AA241xMission::check_violation()
 {	
-	if (_check_violation_run == false && _parameters.debug_mode == 1) {
+	if (_parameters.debug_mode == 1 && (_check_violation_run == false || _debug_yell == true)) {
 		_check_violation_run = true;
-		mavlink_log_info(_mavlink_fd, "#Check violation ran")
+		mavlink_log_info(_mavlink_fd, "Check violation ran")
 	}
 
 	// Calculate r^2 distance from pylon
@@ -746,6 +749,10 @@ AA241xMission::task_main()
 	_cur_pos.E = _aa241x_local_data.E;
 	_cur_pos.D = _aa241x_local_data.D_baro;
 
+	_prev_pos.N = 0.0f;
+	_prev_pos.E = 0.0f;
+	_prev_pos.D = 0.0f;
+
 	/* build the racecourse */
 	build_racecourse();
 
@@ -789,6 +796,20 @@ AA241xMission::task_main()
 		/* global position updated */
 		if (fds[1].revents & POLLIN) {
 			aa241x_local_data_update(); // _cur_pos gets updated in here
+
+			// Set current position and previous position if the local data is updated
+			if (fabsf(_cur_pos.N - _aa241x_local_data.N) > 0.001f) {
+				_prev_pos.N = _cur_pos.N;
+				_cur_pos.N = _aa241x_local_data.N;
+			}
+			if (fabsf(_cur_pos.E - _aa241x_local_data.E) > 0.0001f) {
+				_prev_pos.E = _cur_pos.E;
+				_cur_pos.E = _aa241x_local_data.E;
+			}
+			if (fabsf(_cur_pos.D - _aa241x_local_data.D_baro) > 0.001f) {
+				_prev_pos.D = _cur_pos.D;
+				_cur_pos.D = _aa241x_local_data.D_baro;
+			}
 		}
 
 		/* check all other subscriptions */
@@ -798,18 +819,17 @@ AA241xMission::task_main()
 		vehicle_status_update();
 		battery_status_update();
 
-		// Set current position and previous position if the local data is updated
-		if (fabsf(_cur_pos.N - _aa241x_local_data.N) > 0.001f) {
-			_prev_pos.N = _cur_pos.N;
-			_cur_pos.N = _aa241x_local_data.N;
-		}
-		if (fabsf(_cur_pos.E - _aa241x_local_data.E) > 0.0001f) {
-			_prev_pos.E = _cur_pos.E;
-			_cur_pos.E = _aa241x_local_data.E;
-		}
-		if (fabsf(_cur_pos.D - _aa241x_local_data.D_baro) > 0.001f) {
-			_prev_pos.D = _cur_pos.D;
-			_cur_pos.D = _aa241x_local_data.D_baro;
+		
+
+		// Yell position every second if debugging
+		_debug_yell = false;
+		if (_parameters.debug_mode == 1 && (hrt_absolute_time() - _debug_timestamp > 5000000)) {
+			_debug_timestamp = hrt_absolute_time();
+			_debug_yell = true;
+
+			mavlink_log_info(_mavlink_fd, "Current: N %.3f, E %.3f, D %.3f", (double)_cur_pos.N, (double)_cur_pos.E, (double)_cur_pos.D);
+			mavlink_log_info(_mavlink_fd, "Previous: N %.3f, E %.3f D %.3f", (double)_prev_pos.N, (double)_prev_pos.E, (double)_prev_pos.D);
+
 		}
 		
 
