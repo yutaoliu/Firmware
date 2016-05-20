@@ -199,6 +199,7 @@ AA241xMission::parameters_update()
 	param_get(_parameter_handles.keepout_radius, &(_parameters.keepout_radius));
 	param_get(_parameter_handles.tilt, &(_parameters.tilt));
 	param_get(_parameter_handles.leg_length, &(_parameters.leg_length));
+	param_get(_parameter_handles.gate_width, &(_parameters.gate_width));
 	param_get(_parameter_handles.ctr_lat, &(_parameters.ctr_lat));
 	param_get(_parameter_handles.ctr_lon, &(_parameters.ctr_lon));
 	param_get(_parameter_handles.ctr_alt, &(_parameters.ctr_alt));
