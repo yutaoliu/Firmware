@@ -39,6 +39,7 @@
  * @author Adrien Perkins	<adrienp@stanford.edu>
  *
  */
+#pragma once
 
 #ifndef AA241XMISSION_H_
 #define AA241XMISSION_H_
@@ -57,6 +58,10 @@
 #include <uORB/topics/aa241x_mission_status.h>
 #include <uORB/topics/aa241x_local_data.h>
 
+// Important math defines
+#define pi 3.141592653589793f
+#define deg2rad (pi/180.0f)
+#define rad2deg (1.0f / deg2rad)
 
 class AA241xMission
 {
@@ -101,7 +106,7 @@ private:
 	int		_local_pos_sub;			/**< local position subscription */
 	int		_vehicle_status_sub;	/**< vehicle status (navigation mode) subscription */
 	int		_params_sub;			/**< parameters update subscription */
-	int		_local_data_sub;		/**< custom data fields */
+	int		_aa241x_local_data_sub;		/**< custom data fields */
 	int		_battery_status_sub;	/**< battery information */
 
 	// TODO: ADD ADDITIONAL SUBSCRIBERS HERE
@@ -111,7 +116,7 @@ private:
 	struct vehicle_global_position_s	_global_pos;		/**< global position */
 	struct vehicle_local_position_s		_local_pos;			/**< local position */
 	struct vehicle_status_s				_vehicle_status;	/**< vehicle status */
-	struct aa241x_local_data_s			_local_data;		/**< custom calc data */
+	struct aa241x_local_data_s			_aa241x_local_data;		/**< custom calc data */
 	struct battery_status_s				_batt_stat;			/**< battery status */
 
 	orb_advert_t	_mission_status_pub;
@@ -121,41 +126,97 @@ private:
 	struct {
 		float min_alt;
 		float max_alt;
-		float auto_alt;
-		float duration;
-		float max_radius;
-		int index;
+		float start_pos_N;
+		float start_pos_E;
+		float keepout_radius;
+		float tilt;
 		float ctr_lat;
 		float ctr_lon;
 		float ctr_alt;
-		float max_discharge;
+		float leg_length;
+		float gate_width;
+		int mis_fail;
 		int team_num;
+		int debug_mode;
+		int force_start;
 	}		_parameters;			/**< local copies of interesting parameters */
 
 	struct {
 		param_t min_alt;
 		param_t max_alt;
-		param_t auto_alt;
-		param_t duration;
-		param_t max_radius;
-		param_t index;
+		param_t start_pos_N;
+		param_t start_pos_E;
+		param_t keepout_radius;
+		param_t tilt;
 		param_t ctr_lat;
 		param_t ctr_lon;
 		param_t ctr_alt;
-		param_t max_discharge;
+		param_t leg_length;
+		param_t gate_width;
+		param_t mis_fail;
 		param_t team_num;
+		param_t debug_mode;
+		param_t force_start;
 	}		_parameter_handles;		/**< handles for interesting parameters */
 
 	hrt_abstime _mission_start_time;	/**< timestamp of when entered mission */
-	float		_mission_start_battery;	/**< the mAh used when entered the mission */
+	//float		_mission_start_battery;	/**< the mAh used when entered the mission */
 	bool 		_in_mission;			/**< if true, currently running a mission (fire is spreading) */
-	bool		_can_start;				/**< if false conditions for starting have been violated */
-	bool		_early_termination;		/**< if true terminating mission early, but still need to finish running fire */
+	//bool		_can_start;				/**< if false conditions for starting have been violated */
+	//bool		_early_termination;		/**< if true terminating mission early, but still need to finish running fire */
 	bool		_mission_failed;		/**< if true terminating mission entirely with a score of 0 */
-	float		_score;					/**< the current mission score */
-	bool		_cross_min;				/**< if plane has crossed the minimum altitude (to delay checks between takeoff and first cross) */
+	//float		_score;					/**< the current mission score */
+	//bool		_cross_min;				/**< if plane has crossed the minimum altitude (to delay checks between takeoff and first cross) */
 
-	// TODO: ADD MISSION RELATED VARIABLES NEEDED
+	// 
+
+	struct _land_pos {
+		float N;
+		float E;
+	}	;
+
+	struct _airplane_pos {
+		float N;
+		float E;
+		float D;
+	} 	;
+
+	struct _pylon_pos {
+		float N;
+		float E;
+		float angle;
+	}	;
+
+	_land_pos _start_gate[4];
+	_land_pos _lake_boundaries[9];
+
+	_land_pos  _start_pylon;
+	
+	_pylon_pos _pylon[2];
+
+	_airplane_pos _cur_pos;
+	_airplane_pos _prev_pos;
+
+
+	hrt_abstime _start_time;
+	float _current_time;
+	float _final_time;
+
+	bool 	_in_turn;
+	bool 	_just_started_turn;
+	int8_t _turn_num;
+	float 	_turn_radians;
+	float 	_turn_degrees;
+	float 	_req_turn_degrees;
+	uint8_t _num_of_turns;
+	uint8_t _num_violations;
+	bool 	_in_violation;
+	bool	_out_of_bounds;
+
+	
+
+	hrt_abstime _timestamp; 				// Current loop timestamp
+	hrt_abstime _previous_loop_timestamp; 	// previous loop timestamp
 
 	/**
 	 * Update our local parameter cache.
@@ -185,7 +246,7 @@ private:
 	/**
 	 * Check for custom calc updates.
 	 */
-	void	local_data_update();
+	void	aa241x_local_data_update();
 
 	/**
 	 * Check for battery status updates.
@@ -205,11 +266,48 @@ private:
 	/**
 	 * Calculate the current score.
 	 */
-	void 	calculate_score();
+	//void 	calculate_score();
 
 
 	// TODO: ADD ADDITIONAL MISSION SPECIFIC FUNCTIONS NEEDED
 
+
+	// Functions for the racetrack (AA241x 2016)
+	// implement a quick signum function
+	int8_t 	sgnf(const float &val);
+	// find angular difference
+	float 	angular_difference(const float &theta1, const float &theta0);
+	// check which side of line you are on ( left = +1, right = -1 )
+	int8_t  line_side(const _land_pos &a, 
+					  const _land_pos &b, 
+					  const _airplane_pos &c); 
+	// build the racecourse from the parameters
+	void 	build_racecourse();
+	bool	_build_racecourse_run;
+	// check for hard field boundary violations
+	void 	check_field_bounds();
+	bool	_check_field_bounds_run; 
+	// check if you have finished the race
+	void 	check_finished();  
+	bool	_check_finished_run;
+	// check if you have started the race
+	void 	check_start();		
+	bool	_check_start_run;
+	// check if a turn has started
+	void 	check_turn_start(); 
+	bool	_check_turn_start_run;
+	// check if a turn has ended
+	void 	check_turn_end();  
+	bool	_check_turn_end_run;
+	// check whether turn keepout has been violated
+	void 	check_violation(); 
+	bool	_check_violation_run;
+	// accumulate degrees on a turn
+	void 	turn_accumulate();
+	bool	_turn_accumulate_run;
+
+	hrt_abstime _debug_timestamp;
+	bool	_debug_yell;
 
 
 	/**

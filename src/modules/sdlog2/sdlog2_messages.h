@@ -513,12 +513,17 @@ struct log_CTS_s {
 /* --- AA241x MISSION STATUS --- */
 #define LOG_AMIS_MSG 64
 struct log_AMIS_s {
-	uint8_t in_mission;
-	uint8_t can_start;
-	float mission_time;
-	float battery_discharge;
-	float score;
-	int8_t index;
+	bool in_mission;
+	hrt_abstime start_time;
+	float current_time;
+	float final_time;
+	bool mission_failed;
+	bool in_turn;
+	int32_t turn_num;
+	float turn_degrees;
+	int32_t num_violations;
+	bool in_violation;
+	bool out_of_bounds;
 };
 
 
@@ -658,7 +663,7 @@ static const struct log_format_s log_formats[] = {
 	LOG_FORMAT(MACS, "fff", "RRint,PRint,YRint"),
 
 	/* AA241x logging */
-	LOG_FORMAT(AMIS, "BBfffb", "InMission,CanStart,MisTime,BattDis,Score,Ind"),
+	LOG_FORMAT(AMIS, "BQffBBifiBB", "InM,STim,CTim,FTim,MFail,InTrn,TrnNum,TurnDeg,NumV,InV,OoB"),
 	LOG_FORMAT(HIGH, "ffffffffffffffff", HIGH_DATA_LABELS),
 	LOG_FORMAT(LOW, "ffffffffffffffff", LOW_DATA_LABELS),
 	LOG_FORMAT(ADAT, "ffffffff", "N,E,Dbaro,Dgps,u,v,w,GrndSpd"),

@@ -212,21 +212,19 @@ private:
 		/* mission parameters */
 		param_t min_alt;
 		param_t max_alt;
-		param_t auto_alt;
-		param_t cell_width;
-		param_t duration;
-		param_t max_radius;
-		param_t timestep;
-		param_t std;
-		param_t t_pic;
-		param_t min_fov;
-		param_t max_fov;
-		param_t index;
+		param_t start_pos_N;
+		param_t start_pos_E;
+		param_t keepout_radius;
+		param_t tilt;
 		param_t water_weight;
 		param_t weight_per_drop;
 		param_t ctr_lat;
 		param_t ctr_lon;
 		param_t ctr_alt;
+		param_t leg_length;
+		param_t gate_width;
+		param_t team_num;
+
 	}		_parameter_handles;		/**< handles for interesting parameters */
 
 
@@ -416,15 +414,21 @@ FixedwingControl::FixedwingControl() :
 	_parameter_handles.trim_pitch = param_find("TRIM_PITCH");
 	_parameter_handles.trim_yaw = param_find("TRIM_YAW");
 
-	_parameter_handles.min_alt = param_find("AAMIS_ALT_MIN");
-	_parameter_handles.max_alt = param_find("AAMIS_ALT_MAX");
-	_parameter_handles.auto_alt = param_find("AAMIS_ALT_AUTO");
-	_parameter_handles.duration = param_find("AAMIS_DURATION");
-	_parameter_handles.max_radius = param_find("AAMIS_RAD_MAX");
-	_parameter_handles.index = param_find("AA_MIS_INDEX");
+	_parameter_handles.min_alt = param_find("AA_ALT_MIN");
+	_parameter_handles.max_alt = param_find("AA_ALT_MAX");
+	_parameter_handles.start_pos_N = param_find("AAMIS_SPOS_N");
+	_parameter_handles.start_pos_E = param_find("AAMIS_SPOS_E");
+	_parameter_handles.keepout_radius = param_find("AAMIS_RAD_KPT");
+	_parameter_handles.tilt = param_find("AAMIS_TILT");
+	_parameter_handles.leg_length = param_find("AAMIS_LEG_LEN");
+	_parameter_handles.gate_width = param_find("AAMIS_GTE_WID");
+
 	_parameter_handles.ctr_lat = param_find("AAMIS_CTR_LAT");
 	_parameter_handles.ctr_lon = param_find("AAMIS_CTR_LON");
 	_parameter_handles.ctr_alt = param_find("AAMIS_CTR_ALT");
+
+	_parameter_handles.team_num = param_find("AA_TEAM");
+
 
 	// TODO: ADD ADDITIONAL MISSION SPECIFIC PARAMETERS HERE (THOSE DECLARED IN aa241x_mission/aa241x_mission_params.c)
 
@@ -476,13 +480,15 @@ FixedwingControl::parameters_update()
 	// update the mission parameters
 	param_get(_parameter_handles.min_alt, &(mission_parameters.min_alt));
 	param_get(_parameter_handles.max_alt, &(mission_parameters.max_alt));
-	param_get(_parameter_handles.auto_alt, &(mission_parameters.auto_alt));
-	param_get(_parameter_handles.duration, &(mission_parameters.duration));
-	param_get(_parameter_handles.max_radius, &(mission_parameters.max_radius));
-	param_get(_parameter_handles.index, &(mission_parameters.index));
+	param_get(_parameter_handles.start_pos_N, &(mission_parameters.start_pos_N));
+	param_get(_parameter_handles.start_pos_E, &(mission_parameters.start_pos_E));
+	param_get(_parameter_handles.keepout_radius, &(mission_parameters.keepout_radius));
+	param_get(_parameter_handles.tilt, &(mission_parameters.tilt));
+	param_get(_parameter_handles.leg_length, &(mission_parameters.leg_length));
 	param_get(_parameter_handles.ctr_lat, &(mission_parameters.ctr_lat));
 	param_get(_parameter_handles.ctr_lon, &(mission_parameters.ctr_lon));
 	param_get(_parameter_handles.ctr_alt, &(mission_parameters.ctr_alt));
+	param_get(_parameter_handles.team_num, &(mission_parameters.team_num));
 
 	// TODO: UPDATE ADDITIONAL PARAMS HERE, FOLLOW EXISITING EXAMPLES
 
@@ -685,8 +691,11 @@ FixedwingControl::set_local_data()
 	position_N = 0.0f;
 	position_E = 0.0f;
 	position_D_baro = 0.0f;
-	position_D_gps = -_global_pos.alt + mission_parameters.ctr_alt;
-	map_projection_project(&_lake_lag_proj_ref, _global_pos.lat, _global_pos.lon, &position_N, &position_E);
+	position_D_gps = 0.0f;
+	if (_vehicle_status.condition_global_position_valid) {
+		position_D_gps = -_global_pos.alt + mission_parameters.ctr_alt;
+		map_projection_project(&_lake_lag_proj_ref, _global_pos.lat, _global_pos.lon, &position_N, &position_E);
+	}
 	if (_local_pos.z_valid) {
 		position_D_baro = _local_pos.z;
 
@@ -697,8 +706,8 @@ FixedwingControl::set_local_data()
 	local_pos_ne_valid = _local_pos.xy_valid;
 	local_pos_d_valid = _local_pos.z_valid;
 
-	if (gps_ok && !_initial_offset_valid && local_pos_d_valid) {
-		_initial_baro_offset = position_D_baro - position_D_gps;
+	if (_vehicle_status.condition_global_position_valid && !_initial_offset_valid && local_pos_d_valid) {
+		_initial_baro_offset = position_D_gps - position_D_baro;
 		_initial_offset_valid = true;
 	}
 
@@ -765,7 +774,21 @@ FixedwingControl::set_aux_values()
 	utc_timestamp = _global_pos.time_utc_usec;
 
 	// mission time
-	mission_time = _mis_status.mission_time;
+	// mission_time = _mis_status.mission_time;
+
+	// mission stuff
+
+	in_mission = _mis_status.in_mission;
+	start_time = _mis_status.start_time;
+	current_time = _mis_status.current_time;
+	final_time = _mis_status.final_time;
+	mission_failed = _mis_status.mission_failed;
+	in_turn = _mis_status.in_turn;
+	turn_num = _mis_status.turn_num;
+	turn_degrees = _mis_status.turn_degrees;
+	num_violations = _mis_status.num_violations;
+	in_violation = _mis_status.in_violation;
+	out_of_bounds = _mis_status.out_of_bounds;
 
 }
 

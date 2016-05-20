@@ -1986,11 +1986,16 @@ int sdlog2_thread_main(int argc, char *argv[])
 		if (copy_if_updated(ORB_ID(aa241x_mission_status), &subs.mis_sub, &buf.mis_status)) {
 			log_msg.msg_type = LOG_AMIS_MSG;
 			log_msg.body.log_AMIS.in_mission = buf.mis_status.in_mission;
-			log_msg.body.log_AMIS.can_start = buf.mis_status.can_start;
-			log_msg.body.log_AMIS.mission_time = buf.mis_status.mission_time;
-			log_msg.body.log_AMIS.battery_discharge = buf.mis_status.battery_used;
-			log_msg.body.log_AMIS.score = buf.mis_status.score;
-			log_msg.body.log_AMIS.index = buf.mis_status.mission_index;
+			log_msg.body.log_AMIS.start_time = buf.mis_status.start_time;
+			log_msg.body.log_AMIS.current_time = buf.mis_status.current_time;
+			log_msg.body.log_AMIS.final_time = buf.mis_status.final_time;
+			log_msg.body.log_AMIS.mission_failed = buf.mis_status.mission_failed;
+			log_msg.body.log_AMIS.in_turn = buf.mis_status.in_turn;
+			log_msg.body.log_AMIS.turn_num = buf.mis_status.turn_num;
+			log_msg.body.log_AMIS.turn_degrees = buf.mis_status.turn_degrees;
+			log_msg.body.log_AMIS.num_violations = buf.mis_status.num_violations;
+			log_msg.body.log_AMIS.in_violation = buf.mis_status.in_violation;
+			log_msg.body.log_AMIS.out_of_bounds = buf.mis_status.out_of_bounds;
 			LOGBUFFER_WRITE_AND_COUNT(AMIS);
 		}
 

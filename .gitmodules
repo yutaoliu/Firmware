@@ -37,6 +37,3 @@
 [submodule "cmake/cmake_hexagon"]
 	path = cmake/cmake_hexagon
 	url = https://github.com/ATLFlight/cmake_hexagon
-[submodule "mavlink/include/mavlink/v1.0_aa241x"]
-	path = mavlink/include/mavlink/v1.0_aa241x
-	url = https://github.com/adrnp/aa241x_c_mavlink_library.git

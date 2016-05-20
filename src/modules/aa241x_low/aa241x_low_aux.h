@@ -135,7 +135,20 @@ extern float yaw_trim;
 extern uint64_t timestamp; 					// unix timestamp in microseconds of the beginning of the current loop
 extern uint64_t utc_timestamp; 				// GPS UTC timestamp in microseconds
 extern uint64_t previous_loop_timestamp; 	// timestamp of start of previous loop
-extern float mission_time;					// the mission time in minutes
+// extern float mission_time;					// the mission time in minutes
+
+// mission stuff
+extern bool in_mission;
+extern hrt_abstime start_time;
+extern float current_time;
+extern float final_time;
+extern bool mission_failed;
+extern bool in_turn;
+extern int32_t turn_num;
+extern float turn_degrees;
+extern int32_t num_violations;
+extern bool in_violation;
+extern bool out_of_bounds;
 
 // communication data
 extern aa241x_low_data_s low_data;
@@ -147,14 +160,17 @@ extern struct aal_params aal_parameters;		// struct containing all of the user e
 // mission definition parameters
 struct mis_params {
 	float min_alt;
-	float max_alt;
-	float auto_alt;
-	float duration;
-	float max_radius;
-	int index;
-	float ctr_lat;
-	float ctr_lon;
-	float ctr_alt;
+    float max_alt;
+    float start_pos_N;
+    float start_pos_E;
+    float keepout_radius;
+    float tilt;
+    float ctr_lat;
+    float ctr_lon;
+    float ctr_alt;
+    float leg_length;
+    float gate_width;
+    int team_num;
 };
 extern struct mis_params mission_parameters;			/**< local copies of mission parameters */
 
