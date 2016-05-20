@@ -105,7 +105,7 @@ PARAM_DEFINE_FLOAT(AAMIS_LEG_LEN, 243.84f);
  * @unit meters
  * @group AA241x Mission
  */
-PARAM_DEFINE_FLOAT(AAMIS_GTE_WID, 100.0f);
+PARAM_DEFINE_FLOAT(AAMIS_GTE_WID, 50.0f);
 
 /**
  * Activate/deactivate mission failure. 1 means mission failure kills the current mission,
