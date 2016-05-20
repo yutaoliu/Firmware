@@ -47,44 +47,76 @@
  * Also acts at the mission start threshold altitude.
  *
  * @unit meters
- * @group AA241x Mission
+ * @group AA241x Student Params
  */
-PARAM_DEFINE_FLOAT(AAMIS_ALT_MIN, 30.48f);
+PARAM_DEFINE_FLOAT(AA_ALT_MIN, 40.0f);
 
 /**
  * Maximum allowed altitude during mission  in [m] above Lake Lag.
  *
  * @unit meters
- * @group AA241x Mission
+ * @group AA241x Student Params
  */
-PARAM_DEFINE_FLOAT(AAMIS_ALT_MAX, 121.92f);
+PARAM_DEFINE_FLOAT(AA_ALT_MAX, 60.0f);
 
 /**
- * Maximum allowed radial distance in [m] from the center of the lake.
+ * North location of starting gate pylon
  *
  * @unit meters
  * @group AA241x Mission
  */
-PARAM_DEFINE_FLOAT(AAMIS_RAD_MAX, 170.0f);
+PARAM_DEFINE_FLOAT(AAMIS_SPOS_N, 150.0f);
 
 /**
- * Altitude in [m] by which autopilot needs to be engaged in order
- * to be eligible for a mission start.
- *
- * @unit meters
- * @group AA241x Mission
- */
-PARAM_DEFINE_FLOAT(AAMIS_ALT_AUTO, 15.24f);
-
-/**
- * Total duration before mission termination, once
- * mission clock starts.
+ * East location of starting gate pylon
  *
  * @unit minutes
  * @group AA241x Mission
  */
-PARAM_DEFINE_FLOAT(AAMIS_DURATION, 10.0f);
+PARAM_DEFINE_FLOAT(AAMIS_SPOS_E, -96.0f);
 
+/**
+ * Minimum allowed radius from pylon
+ *
+ * @unit meters
+ * @group AA241x Mission
+ */
+PARAM_DEFINE_FLOAT(AAMIS_RAD_KPT, 5.0f);
+
+/**
+ * Tilt angle of first leg of course relative to East, positive CCW
+ *
+ * @unit degrees
+ * @group AA241x Mission
+ */
+PARAM_DEFINE_FLOAT(AAMIS_TILT, -25.0f);
+
+/**
+ * Length of straight legs
+ *
+ * @unit meters
+ * @group AA241x Mission
+ */
+PARAM_DEFINE_FLOAT(AAMIS_LEG_LEN, 243.84f);
+
+/**
+ * Width of start/finish gate
+ *
+ * @unit meters
+ * @group AA241x Mission
+ */
+PARAM_DEFINE_FLOAT(AAMIS_GTE_WID, 100.0f);
+
+/**
+ * Activate/deactivate mission failure. 1 means mission failure kills the current mission,
+ * 0 means it allows the mission to continue
+ *
+ * @unit none
+ * @min 0
+ * @max 1
+ * @group AA241x Mission
+ */
+PARAM_DEFINE_INT32(AAMIS_MIS_FAIL, 1);
 
 /**
  * Origin latitude for local position.
@@ -124,25 +156,23 @@ PARAM_DEFINE_FLOAT(AAMIS_CTR_LON, -122.1760917f);
 PARAM_DEFINE_FLOAT(AAMIS_CTR_ALT, 40.0f);
 
 /**
- * Maximum battery capacity allowed.
+ * Turn debug mode on and off
  *
- * Maximum battery discharge allowed during the mission.
  *
- * @unit mAh
  * @group AA241x Mission
  */
-PARAM_DEFINE_FLOAT(AAMIS_BATT_MAX, 650.0f);
+PARAM_DEFINE_INT32(AAMIS_DEBUG, 0);
 
 /**
- * Index (0 based) of the mission to be executed.
+ * Force mission to run (regardless of whether you cross the start line)
  *
- * @min 0.
- * @group AA241x Student Params
+ *
+ * @group AA241x Mission
  */
-PARAM_DEFINE_INT32(AA_MIS_INDEX, 0);
+PARAM_DEFINE_INT32(AAMIS_FSTART, 0);
 
 /**
- * Team number (1-4).
+ * Team number (1-5).
  *
  * @group AA241x Student Params
  */

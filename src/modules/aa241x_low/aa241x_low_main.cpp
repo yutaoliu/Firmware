@@ -199,13 +199,16 @@ private:
 		/* mission parameters */
 		param_t min_alt;
 		param_t max_alt;
-		param_t auto_alt;
-		param_t duration;
-		param_t max_radius;
-		param_t index;
+		param_t start_pos_N;
+		param_t start_pos_E;
+		param_t keepout_radius;
+		param_t tilt;
 		param_t ctr_lat;
 		param_t ctr_lon;
 		param_t ctr_alt;
+		param_t leg_length;
+		param_t gate_width;
+		param_t team_num;
 	}		_parameter_handles;		/**< handles for interesting parameters */
 
 
@@ -369,15 +372,18 @@ LowPriorityLoop::LowPriorityLoop() :
 	_parameter_handles.trim_roll = param_find("TRIM_ROLL");
 	_parameter_handles.trim_pitch = param_find("TRIM_PITCH");
 	_parameter_handles.trim_yaw = param_find("TRIM_YAW");
-	_parameter_handles.min_alt = param_find("AAMIS_ALT_MIN");
-	_parameter_handles.max_alt = param_find("AAMIS_ALT_MAX");
-	_parameter_handles.auto_alt = param_find("AAMIS_ALT_AUTO");
-	_parameter_handles.duration = param_find("AAMIS_DURATION");
-	_parameter_handles.max_radius = param_find("AAMIS_RAD_MAX");
-	_parameter_handles.index = param_find("AA_MIS_INDEX");
+	_parameter_handles.min_alt = param_find("AA_ALT_MIN");
+	_parameter_handles.max_alt = param_find("AA_ALT_MAX");
+	_parameter_handles.start_pos_N = param_find("AAMIS_SPOS_N");
+	_parameter_handles.start_pos_E = param_find("AAMIS_SPOS_E");
+	_parameter_handles.keepout_radius = param_find("AAMIS_RAD_KPT");
+	_parameter_handles.tilt = param_find("AAMIS_TILT");
+	_parameter_handles.leg_length = param_find("AAMIS_LEG_LEN");
+	_parameter_handles.gate_width = param_find("AAMIS_GTE_WID");
 	_parameter_handles.ctr_lat = param_find("AAMIS_CTR_LAT");
 	_parameter_handles.ctr_lon = param_find("AAMIS_CTR_LON");
 	_parameter_handles.ctr_alt = param_find("AAMIS_CTR_ALT");
+	_parameter_handles.team_num = param_find("AA_TEAM");
 
 	// initialize the aa241x control parameters
 	aal_parameters_init(&_aal_parameter_handles);
@@ -425,13 +431,15 @@ LowPriorityLoop::parameters_update()
 	// update the mission parameters
 	param_get(_parameter_handles.min_alt, &(mission_parameters.min_alt));
 	param_get(_parameter_handles.max_alt, &(mission_parameters.max_alt));
-	param_get(_parameter_handles.auto_alt, &(mission_parameters.auto_alt));
-	param_get(_parameter_handles.duration, &(mission_parameters.duration));
-	param_get(_parameter_handles.max_radius, &(mission_parameters.max_radius));
-	param_get(_parameter_handles.index, &(mission_parameters.index));
+	param_get(_parameter_handles.start_pos_N, &(mission_parameters.start_pos_N));
+	param_get(_parameter_handles.start_pos_E, &(mission_parameters.start_pos_E));
+	param_get(_parameter_handles.keepout_radius, &(mission_parameters.keepout_radius));
+	param_get(_parameter_handles.tilt, &(mission_parameters.tilt));
+	param_get(_parameter_handles.leg_length, &(mission_parameters.leg_length));
 	param_get(_parameter_handles.ctr_lat, &(mission_parameters.ctr_lat));
 	param_get(_parameter_handles.ctr_lon, &(mission_parameters.ctr_lon));
 	param_get(_parameter_handles.ctr_alt, &(mission_parameters.ctr_alt));
+	param_get(_parameter_handles.team_num, &(mission_parameters.team_num));
 
 	// update the aa241x control parameters
 	aal_parameters_update(&_aal_parameter_handles, &aal_parameters);
@@ -684,7 +692,21 @@ LowPriorityLoop::set_aux_values()
 	utc_timestamp = _global_pos.time_utc_usec;
 
 	// mission time
-	mission_time = _mis_status.mission_time;
+	// mission_time = _mis_status.mission_time;
+
+	// mission stuff
+
+	in_mission = _mis_status.in_mission;
+	start_time = _mis_status.start_time;
+	current_time = _mis_status.current_time;
+	final_time = _mis_status.final_time;
+	mission_failed = _mis_status.mission_failed;
+	in_turn = _mis_status.in_turn;
+	turn_num = _mis_status.turn_num;
+	turn_degrees = _mis_status.turn_degrees;
+	num_violations = _mis_status.num_violations;
+	in_violation = _mis_status.in_violation;
+	out_of_bounds = _mis_status.out_of_bounds;
 
 }
 

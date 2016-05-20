@@ -45,7 +45,6 @@ px4_add_module(
 		aa241x_high_control_law.cpp
 		aa241x_high_main.cpp
 		aa241x_high_params.c
-		aa241x_high_manual_mixer.cpp
 	DEPENDS
 		platforms__common
 	)
