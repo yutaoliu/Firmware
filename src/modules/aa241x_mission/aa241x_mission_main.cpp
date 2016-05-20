@@ -305,16 +305,6 @@ AA241xMission::publish_mission_status()
 	mis_stat.in_violation	= _in_violation;
 	mis_stat.out_of_bounds	= _out_of_bounds;
 
-	if (_in_mission) {
-		//mis_stat.mission_time = (hrt_absolute_time() - _mission_start_time)/(1000000.0f*60.0f);
-		//mis_stat.battery_used = _batt_stat.discharged_mah - _mission_start_battery;
-	} else {
-		/*
-		// don't necessarily need to set to 0?
-		mis_stat.mission_time = 0.0f;
-		mis_stat.battery_used = 0.0f;
-		*/
-	}
 
 	/* publish the mission status */
 	if (_mission_status_pub != nullptr) {
@@ -698,15 +688,6 @@ void AA241xMission::check_violation()
 
 }
 
-/*void
-AA241xMission::calculate_score()
-{
-	
-	// TODO: WRITE YOUR SCORE FUNCTION HERE
-
-	//_score = 0.0f;
-}*/
-
 void
 AA241xMission::task_main_trampoline(int argc, char **argv)
 {
@@ -806,19 +787,12 @@ AA241xMission::task_main()
 		if (fds[1].revents & POLLIN) {
 			aa241x_local_data_update(); // _cur_pos gets updated in here
 
-			// Set current position and previous position if the local data is updated
-			// if (fabsf(_cur_pos.N - _aa241x_local_data.N) > 0.001f) {
-				_prev_pos.N = _cur_pos.N;
-				_cur_pos.N = _aa241x_local_data.N;
-			// }
-			// if (fabsf(_cur_pos.E - _aa241x_local_data.E) > 0.0001f) {
-				_prev_pos.E = _cur_pos.E;
-				_cur_pos.E = _aa241x_local_data.E;
-			// }
-			// if (fabsf(_cur_pos.D - _aa241x_local_data.D_baro) > 0.001f) {
-				_prev_pos.D = _cur_pos.D;
-				_cur_pos.D = _aa241x_local_data.D_baro;
-			// }
+			_prev_pos.N = _cur_pos.N;
+			_cur_pos.N = _aa241x_local_data.N;
+			_prev_pos.E = _cur_pos.E;
+			_cur_pos.E = _aa241x_local_data.E;
+			_prev_pos.D = _cur_pos.D;
+			_cur_pos.D = _aa241x_local_data.D_baro;
 		}
 
 		/* check all other subscriptions */
