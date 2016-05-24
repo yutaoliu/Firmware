@@ -805,7 +805,8 @@ AA241xMission::task_main()
 		vehicle_status_update();
 		battery_status_update();
 
-		
+		// Reset turn if dropped out of mission
+		if (_in_mission == false) { _turn_num = -1; }
 
 		// Yell position every 5 seconds if debugging
 		_debug_yell = false;
