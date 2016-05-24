@@ -400,9 +400,9 @@ Mission::set_mission_items()
 			if (_navigator->get_vstatus()->condition_landed) {
 				/* landed, refusing to take off without a mission */
 
-				mavlink_log_critical(_navigator->get_mavlink_fd(), "no valid mission available, refusing takeoff");
+				// mavlink_log_critical(_navigator->get_mavlink_fd(), "no valid mission available, refusing takeoff");
 			} else {
-				mavlink_log_critical(_navigator->get_mavlink_fd(), "no valid mission available, loitering");
+				// mavlink_log_critical(_navigator->get_mavlink_fd(), "no valid mission available, loitering");
 			}
 
 			user_feedback_done = true;

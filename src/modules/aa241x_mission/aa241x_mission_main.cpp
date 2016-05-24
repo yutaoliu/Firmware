@@ -472,6 +472,7 @@ void AA241xMission::check_field_bounds()
 	        
 	        if (_parameters.mis_fail == 1){
 			    _in_mission = false;
+			    mavlink_log_critical(_mavlink_fd, "AA241x. Mission ended");
 			}
 
 	        _out_of_bounds = true;
@@ -495,6 +496,7 @@ void AA241xMission::check_field_bounds()
 	        
 	        if (_parameters.mis_fail == 1){
 			    _in_mission = false;
+			    mavlink_log_critical(_mavlink_fd, "AA241x. Mission ended");
 			}
 	        _out_of_bounds = true;
 	        // TONE
@@ -510,7 +512,8 @@ void AA241xMission::check_field_bounds()
 	    _mission_failed = true;
 
 	    if (_parameters.mis_fail == 1){
-	    _in_mission = false;
+		    _in_mission = false;
+		    mavlink_log_critical(_mavlink_fd, "AA241x. Mission ended");
 		}
 
 	    _out_of_bounds = true;
@@ -873,6 +876,10 @@ AA241xMission::task_main()
 	        // if still in mission when activating manual, fail the mission
 	        if (_in_mission == true && !_mission_failed) {
 	            _mission_failed = true;
+	            if (_parameters.mis_fail == 1){
+				    _in_mission = false;
+				    mavlink_log_critical(_mavlink_fd, "AA241x. Mission ended");
+				}
 	            // tone, msg output
 	            mavlink_log_critical(_mavlink_fd, "AA241x. Mission failed, manual mode activated during race");
 	        }
