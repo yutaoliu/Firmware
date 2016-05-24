@@ -1019,7 +1019,16 @@ FixedwingControl::task_main()
 				_att_sp.thrust = (isfinite(throttle_desired)) ? throttle_desired : 0.0f;
 
 
-			} 
+			} else { 
+				// forward through manual values
+			  	roll_servo_out      = man_roll_in;
+			  	pitch_servo_out     = man_pitch_in;
+			  	yaw_servo_out       = man_yaw_in;
+			  	throttle_servo_out  = man_throttle_in;
+
+			  	set_actuators();
+			}
+
 
 			// TODO: maybe remove these?? (they aren't needed)
 			_actuators.control[6] = _manual.aux2;

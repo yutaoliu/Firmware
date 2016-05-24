@@ -2804,7 +2804,7 @@ protected:
 		}
 	}
 };
-*/
+
 
 class MavlinkStreamAA241xHighData : public MavlinkStream
 {
@@ -2838,7 +2838,7 @@ private:
 	MavlinkOrbSubscription *_high_data_sub;
 	uint64_t _high_time;
 
-	/* do not allow top copying this class */
+	// do not allow top copying this class 
 	MavlinkStreamAA241xHighData(MavlinkStreamAA241xHighData &);
 	MavlinkStreamAA241xHighData& operator = (const MavlinkStreamAA241xHighData &);
 
@@ -2910,7 +2910,7 @@ private:
 	MavlinkOrbSubscription *_low_data_sub;
 	uint64_t _low_time;
 
-	/* do not allow top copying this class */
+	 // do not allow top copying this class 
 	MavlinkStreamAA241xLowData(MavlinkStreamAA241xLowData &);
 	MavlinkStreamAA241xLowData& operator = (const MavlinkStreamAA241xLowData &);
 
@@ -2983,7 +2983,7 @@ private:
 	MavlinkOrbSubscription *_local_data_sub;
 	uint64_t _local_time;
 
-	/* do not allow top copying this class */
+	// do not allow top copying this class 
 	MavlinkStreamAA241xAuxData(MavlinkStreamAA241xAuxData &);
 	MavlinkStreamAA241xAuxData& operator = (const MavlinkStreamAA241xAuxData &);
 
@@ -3014,7 +3014,7 @@ protected:
 		}
 	}
 };
-
+*/
 
 const StreamListItem *streams_list[] = {
 	new StreamListItem(&MavlinkStreamHeartbeat::new_instance, &MavlinkStreamHeartbeat::get_name_static),
@@ -3056,8 +3056,8 @@ const StreamListItem *streams_list[] = {
 	new StreamListItem(&MavlinkStreamExtendedSysState::new_instance, &MavlinkStreamExtendedSysState::get_name_static),
 	new StreamListItem(&MavlinkStreamAltitude::new_instance, &MavlinkStreamAltitude::get_name_static),
 	// new StreamListItem(&MavlinkStreamAA241xMissionStatus::new_instance, &MavlinkStreamAA241xMissionStatus::get_name_static),
-	new StreamListItem(&MavlinkStreamAA241xHighData::new_instance, &MavlinkStreamAA241xHighData::get_name_static),
-	new StreamListItem(&MavlinkStreamAA241xLowData::new_instance, &MavlinkStreamAA241xLowData::get_name_static),
-	new StreamListItem(&MavlinkStreamAA241xAuxData::new_instance, &MavlinkStreamAA241xAuxData::get_name_static),
+	// new StreamListItem(&MavlinkStreamAA241xHighData::new_instance, &MavlinkStreamAA241xHighData::get_name_static),
+	// new StreamListItem(&MavlinkStreamAA241xLowData::new_instance, &MavlinkStreamAA241xLowData::get_name_static),
+	// new StreamListItem(&MavlinkStreamAA241xAuxData::new_instance, &MavlinkStreamAA241xAuxData::get_name_static),
 	nullptr
 };
