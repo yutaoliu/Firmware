@@ -740,7 +740,7 @@ AA241xMission::task_main()
 	// Set current position at start
 	_cur_pos.N = _aa241x_local_data.N;
 	_cur_pos.E = _aa241x_local_data.E;
-	_cur_pos.D = _aa241x_local_data.D_baro;
+	_cur_pos.D = _aa241x_local_data.D_gps;
 
 	_prev_pos.N = 0.0f;
 	_prev_pos.E = 0.0f;
@@ -795,7 +795,7 @@ AA241xMission::task_main()
 			_prev_pos.E = _cur_pos.E;
 			_cur_pos.E = _aa241x_local_data.E;
 			_prev_pos.D = _cur_pos.D;
-			_cur_pos.D = _aa241x_local_data.D_baro;
+			_cur_pos.D = _aa241x_local_data.D_gps;
 		}
 
 		/* check all other subscriptions */
