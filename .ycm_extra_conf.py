@@ -60,7 +60,7 @@ flags = [
 '-x',
 'c++',
 '-undef', # get rid of standard definitions to allow us to include arm math header
-'-I', os.path.join(os.path.expanduser("~"),'gcc-arm-none-eabi-4_7-2013q3/arm-none-eabi/include'),
+'-I', '/usr/local/Cellar/gcc-arm-none-eabi/20140805/arm-none-eabi/include/',
 '-I', 'Build/px4io-v1_default.build/nuttx-export/include/',
 '-I', 'Build/px4io-v2_default.build/nuttx-export/include/',
 '-I', './NuttX/nuttx/arch/arm/include',
@@ -68,8 +68,11 @@ flags = [
 '-I', './src',
 '-I', './src/modules',
 '-I', './src/include',
+'-I', './src/platforms',
+'-I', './src/platforms/posix/include',
 '-I', './src/lib',
 '-I', './NuttX',
+'-I', './NuttX/nuttx/include',
 ]
 
 
