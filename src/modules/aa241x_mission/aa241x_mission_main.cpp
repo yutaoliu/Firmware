@@ -298,8 +298,8 @@ AA241xMission::publish_mission_status()
 	mis_stat.current_time 	= _current_time;
 	mis_stat.final_time 	= _final_time;
 	mis_stat.mission_failed = _mission_failed;
-	mis_stat.in_turn		= _in_turn;
-	mis_stat.turn_num		= _turn_num;
+	mis_stat.in_turn	= _in_turn;
+	mis_stat.turn_num	= _turn_num;
 	mis_stat.turn_degrees	= _turn_degrees;
 	mis_stat.num_violations = _num_violations;
 	mis_stat.in_violation	= _in_violation;
@@ -539,17 +539,17 @@ void AA241xMission::check_start()
 	    && line_side(_start_gate[2],_start_gate[3],_prev_pos) > 0 
 	    && -_prev_pos.D > _parameters.min_alt && -_prev_pos.D < _parameters.max_alt) {
 
-		if (_parameters.debug_mode == 1 && (_check_start_run == false || _debug_yell == true)) {
-			mavlink_log_info(_mavlink_fd, "#Valid starting position")
-		}
+          if (_parameters.debug_mode == 1 && (_check_start_run == false || _debug_yell == true)) {
+            mavlink_log_info(_mavlink_fd, "#Valid starting position")
+          }
 
 	    //check that new position is across start line
-        if (line_side(_start_gate[1],_start_gate[2],_cur_pos) < 0) {
+          if (line_side(_start_gate[1],_start_gate[2],_cur_pos) < 0) {
             _in_mission = true;
             _turn_num = 0;
-		    // MESSAGE, race started
-		    mavlink_log_info(_mavlink_fd, "#AA241x race started");
-        }
+            // MESSAGE, race started
+            mavlink_log_info(_mavlink_fd, "#AA241x race started");
+          }
 	}
 
 }
@@ -563,10 +563,10 @@ void AA241xMission::check_finished()
 	}
 
 	//check that previous position was within bounds
-	if (line_side(_start_gate[1],_start_gate[2],_cur_pos) < 0) {
-		if (line_side(_start_gate[0],_start_gate[1],_prev_pos) > 0 
-		    && line_side(_start_gate[1],_start_gate[2],_prev_pos) > 0 
-		    && line_side(_start_gate[2],_start_gate[3],_prev_pos) > 0 
+	if (line_side(_start_gate[1],_start_gate[2],_prev_pos) < 0) {
+		if (line_side(_start_gate[0],_start_gate[1],_cur_pos) > 0 
+		    && line_side(_start_gate[1],_start_gate[2],_cur_pos) > 0 
+		    && line_side(_start_gate[2],_start_gate[3],_cur_pos) > 0 
 		    && -_cur_pos.D > _parameters.min_alt && -_cur_pos.D < _parameters.max_alt) {
 		    //check that new position is across start line
 	            _in_mission = false;
