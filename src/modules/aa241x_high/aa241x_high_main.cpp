@@ -483,6 +483,7 @@ FixedwingControl::parameters_update()
 	param_get(_parameter_handles.start_pos_N, &(mission_parameters.start_pos_N));
 	param_get(_parameter_handles.start_pos_E, &(mission_parameters.start_pos_E));
 	param_get(_parameter_handles.keepout_radius, &(mission_parameters.keepout_radius));
+	param_get(_parameter_handles.gate_width, &(mission_parameters.gate_width));
 	param_get(_parameter_handles.tilt, &(mission_parameters.tilt));
 	param_get(_parameter_handles.leg_length, &(mission_parameters.leg_length));
 	param_get(_parameter_handles.ctr_lat, &(mission_parameters.ctr_lat));
