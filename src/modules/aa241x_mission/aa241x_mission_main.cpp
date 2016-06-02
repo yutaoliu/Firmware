@@ -910,7 +910,7 @@ AA241xMission::task_main()
 
         } else {// in manual mode
 	        // if still in mission when activating manual, fail the mission
-	        if (_in_mission == true && !_mission_failed) {
+	        if (_in_mission == true) {
 	            _mission_failed = true;
 	            if (_parameters.mis_fail == 1){
 				    _in_mission = false;
