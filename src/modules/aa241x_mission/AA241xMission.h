@@ -139,6 +139,7 @@ private:
 		int team_num;
 		int debug_mode;
 		int force_start;
+                int mission_restart;
 	}		_parameters;			/**< local copies of interesting parameters */
 
 	struct {
@@ -157,6 +158,7 @@ private:
 		param_t team_num;
 		param_t debug_mode;
 		param_t force_start;
+                param_t mission_restart;
 	}		_parameter_handles;		/**< handles for interesting parameters */
 
 	hrt_abstime _mission_start_time;	/**< timestamp of when entered mission */
@@ -305,6 +307,8 @@ private:
 	// accumulate degrees on a turn
 	void 	turn_accumulate();
 	bool	_turn_accumulate_run;
+        // reset the mission variables if desired
+        void    reset_mission();
 
 	hrt_abstime _debug_timestamp;
 	bool	_debug_yell;

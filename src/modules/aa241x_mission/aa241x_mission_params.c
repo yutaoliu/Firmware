@@ -108,6 +108,16 @@ PARAM_DEFINE_FLOAT(AAMIS_LEG_LEN, 243.84f);
 PARAM_DEFINE_FLOAT(AAMIS_GTE_WID, 50.0f);
 
 /**
+ * Reset the mission parameters. MUST BE SET TO ZERO FOR MISSION TO RUN!
+ *
+ * @unit none
+ * @min 0
+ * @max 1
+ * @group AA241x Mission
+ */
+PARAM_DEFINE_INT32(AA_MIS_RESET, 0);
+
+/**
  * Activate/deactivate mission failure. 1 means mission failure kills the current mission,
  * 0 means it allows the mission to continue
  *
