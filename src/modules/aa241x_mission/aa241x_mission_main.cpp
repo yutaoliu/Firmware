@@ -160,6 +160,7 @@ AA241xMission::AA241xMission() :
 	_parameter_handles.ctr_lon = param_find("AAMIS_CTR_LON");
 	_parameter_handles.ctr_alt = param_find("AAMIS_CTR_ALT");
 	_parameter_handles.team_num = param_find("AA_TEAM");
+	_parameter_handles.mission_restart = param_find("AA_MIS_RESET");
 	_parameter_handles.mis_fail = param_find("AAMIS_MIS_FAIL");
 	_parameter_handles.debug_mode = param_find("AAMIS_DEBUG");
 	_parameter_handles.force_start = param_find("AAMIS_FSTART");
@@ -192,11 +193,33 @@ AA241xMission::~AA241xMission() {
 	aa241x_mission::g_aa241x_mission = nullptr;
 }
 
+void
+AA241xMission::reset_mission()
+{
+  _in_mission = false;
+  _mission_failed = false;
+  _start_time = 0;
+  _current_time = 0.0f;
+  _final_time = 0.0f;
+
+  _in_turn = false;
+  _just_started_turn = false;
+  _turn_num = -1;
+  _turn_radians = 0.0f;
+  _turn_degrees = 0.0f;
+  _req_turn_degrees = -840.0f;
+  _num_of_turns = 2;
+  _num_violations = 0;
+  _in_violation = false;
+  _out_of_bounds = false;
+}
+
 int
 AA241xMission::parameters_update()
 {
 	param_get(_parameter_handles.min_alt, &(_parameters.min_alt));
 	param_get(_parameter_handles.max_alt, &(_parameters.max_alt));
+	param_get(_parameter_handles.mission_restart, &(_parameters.mission_restart));
 	param_get(_parameter_handles.start_pos_N, &(_parameters.start_pos_N));
 	param_get(_parameter_handles.start_pos_E, &(_parameters.start_pos_E));
 	param_get(_parameter_handles.keepout_radius, &(_parameters.keepout_radius));
@@ -301,8 +324,8 @@ AA241xMission::publish_mission_status()
 	mis_stat.current_time 	= _current_time;
 	mis_stat.final_time 	= _final_time;
 	mis_stat.mission_failed = _mission_failed;
-	mis_stat.in_turn		= _in_turn;
-	mis_stat.turn_num		= _turn_num;
+	mis_stat.in_turn	= _in_turn;
+	mis_stat.turn_num	= _turn_num;
 	mis_stat.turn_degrees	= _turn_degrees;
 	mis_stat.num_violations = _num_violations;
 	mis_stat.in_violation	= _in_violation;
@@ -474,8 +497,10 @@ void AA241xMission::check_field_bounds()
 	        _mission_failed = true;
 	        
 	        if (_parameters.mis_fail == 1){
+                            if (_in_mission) {
+                              mavlink_log_critical(_mavlink_fd, "AA241x. Mission ended");
+                            }
 			    _in_mission = false;
-			    mavlink_log_critical(_mavlink_fd, "AA241x. Mission ended");
 			}
 
 	        _out_of_bounds = true;
@@ -498,8 +523,10 @@ void AA241xMission::check_field_bounds()
 	        _mission_failed = true;
 	        
 	        if (_parameters.mis_fail == 1){
+                            if (_in_mission) {
+                              mavlink_log_critical(_mavlink_fd, "AA241x. Mission ended");
+                            }
 			    _in_mission = false;
-			    mavlink_log_critical(_mavlink_fd, "AA241x. Mission ended");
 			}
 	        _out_of_bounds = true;
 	        // TONE
@@ -515,8 +542,10 @@ void AA241xMission::check_field_bounds()
 	    _mission_failed = true;
 
 	    if (_parameters.mis_fail == 1){
-		    _in_mission = false;
-		    mavlink_log_critical(_mavlink_fd, "AA241x. Mission ended");
+                    if (_in_mission) {
+                      mavlink_log_critical(_mavlink_fd, "AA241x. Mission ended");
+                    }
+                    _in_mission = false;
 		}
 
 	    _out_of_bounds = true;
@@ -542,17 +571,17 @@ void AA241xMission::check_start()
 	    && line_side(_start_gate[2],_start_gate[3],_prev_pos) > 0 
 	    && -_prev_pos.D > _parameters.min_alt && -_prev_pos.D < _parameters.max_alt) {
 
-		if (_parameters.debug_mode == 1 && (_check_start_run == false || _debug_yell == true)) {
-			mavlink_log_info(_mavlink_fd, "#Valid starting position")
-		}
+          if (_parameters.debug_mode == 1 && (_check_start_run == false || _debug_yell == true)) {
+            mavlink_log_info(_mavlink_fd, "#Valid starting position")
+          }
 
 	    //check that new position is across start line
-        if (line_side(_start_gate[1],_start_gate[2],_cur_pos) < 0) {
+          if (line_side(_start_gate[1],_start_gate[2],_cur_pos) < 0) {
             _in_mission = true;
             _turn_num = 0;
-		    // MESSAGE, race started
-		    mavlink_log_info(_mavlink_fd, "#AA241x race started");
-        }
+            // MESSAGE, race started
+            mavlink_log_info(_mavlink_fd, "#AA241x race started");
+          }
 	}
 
 }
@@ -566,10 +595,10 @@ void AA241xMission::check_finished()
 	}
 
 	//check that previous position was within bounds
-	if (line_side(_start_gate[1],_start_gate[2],_cur_pos) < 0) {
-		if (line_side(_start_gate[0],_start_gate[1],_prev_pos) > 0 
-		    && line_side(_start_gate[1],_start_gate[2],_prev_pos) > 0 
-		    && line_side(_start_gate[2],_start_gate[3],_prev_pos) > 0 
+	if (line_side(_start_gate[1],_start_gate[2],_prev_pos) < 0) {
+		if (line_side(_start_gate[0],_start_gate[1],_cur_pos) > 0 
+		    && line_side(_start_gate[1],_start_gate[2],_cur_pos) > 0 
+		    && line_side(_start_gate[2],_start_gate[3],_cur_pos) > 0 
 		    && -_cur_pos.D > _parameters.min_alt && -_cur_pos.D < _parameters.max_alt) {
 		    //check that new position is across start line
 	            _in_mission = false;
@@ -642,6 +671,7 @@ void AA241xMission::turn_accumulate()
 	// if just entered turn then accumulate from start line
 	if (_just_started_turn) {
 	    _just_started_turn = false;
+            _turn_radians = 0.0f; // reset turn when you have just started a new turn
 	    prev_angle        = _pylon[_turn_num].angle;
 	} else { // else just use the previous position's angle relative to the pylon
 	    prev_angle        = atan2f(_prev_pos.N - _pylon[_turn_num].N, _prev_pos.E - _pylon[_turn_num].E);
@@ -822,9 +852,14 @@ AA241xMission::task_main()
 
 		}
 		
+                // reset mission parameters remotely
+                if (_parameters.mission_restart) {
+                  reset_mission();
+                }
+
 
 		//  run required auto mission code
-		if (_vcontrol_mode.flag_control_auto_enabled) {
+		if (_vcontrol_mode.flag_control_auto_enabled && !_parameters.mission_restart) {
 			_timestamp = hrt_absolute_time();
 
 			// Force mission if so desired
@@ -878,7 +913,7 @@ AA241xMission::task_main()
 
         } else {// in manual mode
 	        // if still in mission when activating manual, fail the mission
-	        if (_in_mission == true && !_mission_failed) {
+	        if (_in_mission == true) {
 	            _mission_failed = true;
 	            if (_parameters.mis_fail == 1){
 				    _in_mission = false;
