@@ -94,6 +94,8 @@
 #include "aa241x_high_params.h"
 #include "aa241x_high_aux.h"
 
+#include <matrix/math.hpp>
+
 using namespace aa241x_high;
 
 /**
@@ -674,29 +676,35 @@ FixedwingControl::publish_local_data()
 void
 FixedwingControl::set_local_data()
 {
-	// calculate the body velocities
+    // find Euler angles from quaternion
+    matrix::Eulerf att_euler = matrix::Quatf(_att.q);
+	roll = att_euler.phi();
+	pitch = att_euler.theta();
+	yaw = att_euler.psi();
+
+	// calculate the body velocities using rotation matrix
 	speed_body_u = 0.0f;		// set them to 0 just in case unable to do calculation
 	speed_body_v = 0.0f;
 	speed_body_w = 0.0f;
-	if(_att.R_valid) 	{
-		speed_body_u = PX4_R(_att.R, 0, 0) * _global_pos.vel_n + PX4_R(_att.R, 1, 0) * _global_pos.vel_e + PX4_R(_att.R, 2, 0) * _global_pos.vel_d;
-		speed_body_v = PX4_R(_att.R, 0, 1) * _global_pos.vel_n + PX4_R(_att.R, 1, 1) * _global_pos.vel_e + PX4_R(_att.R, 2, 1) * _global_pos.vel_d;
-		speed_body_w = PX4_R(_att.R, 0, 2) * _global_pos.vel_n + PX4_R(_att.R, 1, 2) * _global_pos.vel_e + PX4_R(_att.R, 2, 2) * _global_pos.vel_d;
-	} else	{
-		if (_debug && _loop_counter % 10 == 0) {
-			warnx("Did not get a valid R\n");
-		}
-	}
+	//if(_att.R_valid) 	{
+		speed_body_u = cosf(pitch)*cosf(yaw) * _global_pos.vel_n + cosf(pitch)*sinf(yaw) * _global_pos.vel_e - sinf(pitch) * _global_pos.vel_d;
+		speed_body_v = (-cosf(roll)*sinf(yaw) + sinf(roll)*sinf(pitch)*cosf(yaw)) * _global_pos.vel_n + (cosf(roll)*cosf(yaw)+sinf(roll)*sinf(pitch)*sinf(yaw)) * _global_pos.vel_e + (sinf(roll)*cosf(pitch)) * _global_pos.vel_d;
+		speed_body_w = (sinf(roll)*sinf(yaw)+cosf(roll)*sinf(pitch)*cosf(yaw)) * _global_pos.vel_n + (-sinf(roll)*cosf(yaw)+cosf(roll)*sinf(pitch)*sinf(yaw)) * _global_pos.vel_e + (cosf(roll)*cosf(pitch)) * _global_pos.vel_d;
+	//} else	{
+		//if (_debug && _loop_counter % 10 == 0) {
+			//warnx("Did not get a valid R\n");
+		//}
+	//}
 
 	// local position in NED frame [m] from center of lake lag
 	position_N = 0.0f;
 	position_E = 0.0f;
 	position_D_baro = 0.0f;
 	position_D_gps = 0.0f;
-	if (_vehicle_status.condition_global_position_valid) {
+	//if (_vehicle_status.condition_global_position_valid) {
 		position_D_gps = -_global_pos.alt + mission_parameters.ctr_alt;
 		map_projection_project(&_lake_lag_proj_ref, _global_pos.lat, _global_pos.lon, &position_N, &position_E);
-	}
+	//}
 	if (_local_pos.z_valid) {
 		position_D_baro = _local_pos.z;
 
@@ -707,10 +715,10 @@ FixedwingControl::set_local_data()
 	local_pos_ne_valid = _local_pos.xy_valid;
 	local_pos_d_valid = _local_pos.z_valid;
 
-	if (_vehicle_status.condition_global_position_valid && !_initial_offset_valid && local_pos_d_valid) {
+	//if (_vehicle_status.condition_global_position_valid && !_initial_offset_valid && local_pos_d_valid) {
 		_initial_baro_offset = position_D_gps - position_D_baro;
 		_initial_offset_valid = true;
-	}
+	//}
 
 	// ground course and speed
 	// TODO: maybe use local position....
@@ -724,9 +732,10 @@ FixedwingControl::set_aux_values()
 {
 
 	// set the euler angles and rates
-	roll = _att.roll;
-	pitch = _att.pitch;
-	yaw = _att.yaw;
+	matrix::Eulerf att_euler = matrix::Quatf(_att.q);
+	roll = att_euler.phi();
+	pitch = att_euler.theta();
+	yaw = att_euler.psi();
 
 	// set the angular rates
 	roll_rate = _att.rollspeed;
@@ -748,7 +757,7 @@ FixedwingControl::set_aux_values()
 //	air_speed = _airspeed.true_airspeed_m_s;	// speed relative to air in [m/s] (measured by pitot tube)
 
 	// status check
-	gps_ok = _vehicle_status.gps_failure; 		// boolean as to whether or not the gps data coming in is valid
+	//gps_ok = _vehicle_status.gps_failure; 		// boolean as to whether or not the gps data coming in is valid
 
 	// battery info
 	battery_voltage = _battery_status.voltage_filtered_v;
@@ -1037,7 +1046,7 @@ FixedwingControl::task_main()
 
 			/* lazily publish the setpoint only once available */
 			_actuators.timestamp = hrt_absolute_time();
-			_actuators.timestamp_sample = _att.timestamp;
+			//_actuators.timestamp_sample = _att.timestamp;
 
 
 			/* publish the actuator controls */

@@ -89,7 +89,7 @@ float ground_speed = 0.0f;		// speed relative to ground in [m/s]
 float ground_course = 0.0f; 	// this is course over ground (direction of velocity relative to North in [rad])
 
 // airspeed [m/s]
-//float air_speed = 0.0f;		// speed relative to air in [m/s] (measured by pitot tube)
+float air_speed = 0.0f;		// speed relative to air in [m/s] (measured by pitot tube)
 
 // status check
 bool gps_ok = false; 				// boolean as to whether or not the gps data coming in is valid

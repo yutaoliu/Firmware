@@ -89,6 +89,8 @@
 #include "aa241x_low_params.h"
 #include "aa241x_low_aux.h"
 
+#include <matrix/math.hpp>
+
 using namespace aa241x_low;
 
 /**
@@ -601,9 +603,10 @@ LowPriorityLoop::set_aux_values()
 {
 
 	// set the euler angles and rates
-	roll = _att.roll;
-	pitch = _att.pitch;
-	yaw = _att.yaw;
+    matrix::Eulerf att_euler = matrix::Quatf(_att.q);
+	roll = att_euler.phi();
+	pitch = att_euler.theta();
+	yaw = att_euler.psi();
 
 	// set the angular rates
 	roll_rate = _att.rollspeed;
@@ -615,15 +618,15 @@ LowPriorityLoop::set_aux_values()
 	speed_body_u = 0.0f;		// set them to 0 just in case unable to do calculation
 	speed_body_v = 0.0f;
 	speed_body_w = 0.0f;
-	if(_att.R_valid) 	{
-		speed_body_u = PX4_R(_att.R, 0, 0) * _global_pos.vel_n + PX4_R(_att.R, 1, 0) * _global_pos.vel_e + PX4_R(_att.R, 2, 0) * _global_pos.vel_d;
-		speed_body_v = PX4_R(_att.R, 0, 1) * _global_pos.vel_n + PX4_R(_att.R, 1, 1) * _global_pos.vel_e + PX4_R(_att.R, 2, 1) * _global_pos.vel_d;
-		speed_body_w = PX4_R(_att.R, 0, 2) * _global_pos.vel_n + PX4_R(_att.R, 1, 2) * _global_pos.vel_e + PX4_R(_att.R, 2, 2) * _global_pos.vel_d;
-	} else	{
-		if (_debug && _loop_counter % 10 == 0) {
-			warnx("Did not get a valid R\n");
-		}
-	}
+	//if(_att.R_valid) 	{
+		speed_body_u = cosf(pitch)*cosf(yaw) * _global_pos.vel_n + cosf(pitch)*sinf(yaw) * _global_pos.vel_e - sinf(pitch) * _global_pos.vel_d;
+		speed_body_v = (-cosf(roll)*sinf(yaw) + sinf(roll)*sinf(pitch)*cosf(yaw)) * _global_pos.vel_n + (cosf(roll)*cosf(yaw)+sinf(roll)*sinf(pitch)*sinf(yaw)) * _global_pos.vel_e + (sinf(roll)*cosf(pitch)) * _global_pos.vel_d;
+		speed_body_w = (sinf(roll)*sinf(yaw)+cosf(roll)*sinf(pitch)*cosf(yaw)) * _global_pos.vel_n + (-sinf(roll)*cosf(yaw)+cosf(roll)*sinf(pitch)*sinf(yaw)) * _global_pos.vel_e + (cosf(roll)*cosf(pitch)) * _global_pos.vel_d;
+	//} else	{
+		//if (_debug && _loop_counter % 10 == 0) {
+			//warnx("Did not get a valid R\n");
+		//}
+	//}
 
 	// body accelerations [m/s^2]
 	accel_body_x = _sensor_combined.accelerometer_m_s2[0];
@@ -663,10 +666,10 @@ LowPriorityLoop::set_aux_values()
 	ground_course = _global_pos.yaw; 	// this is course over ground (direction of velocity relative to North in [rad])
 
 	// airspeed [m/s]
-//	air_speed = _airspeed.true_airspeed_m_s;	// speed relative to air in [m/s] (measured by pitot tube)
+	air_speed = _airspeed.true_airspeed_m_s;	// speed relative to air in [m/s] (measured by pitot tube)
 
 	// status check
-	gps_ok = _vehicle_status.gps_failure; 		// boolean as to whether or not the gps data coming in is valid
+	//gps_ok = _vehicle_status.gps_failure; 		// boolean as to whether or not the gps data coming in is valid
 
 	// battery info
 	battery_voltage = _battery_status.voltage_filtered_v;

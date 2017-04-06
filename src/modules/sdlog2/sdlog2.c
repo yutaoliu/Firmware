@@ -1711,7 +1711,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 				}
 			}
 		}
-		*/
+		
 
 		if (log_type == LOG_TYPE_ALL || log_type == LOG_TYPE_NORMAL) {
 
