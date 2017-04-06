@@ -32,6 +32,8 @@
 ############################################################################
 
 set(msg_file_names
+	aa241x_local_data.msg
+	aa241x_mission_status.msg
 	actuator_armed.msg
 	actuator_controls.msg
 	actuator_direct.msg

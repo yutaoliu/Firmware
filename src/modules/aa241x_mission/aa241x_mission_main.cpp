@@ -69,7 +69,7 @@
 #include <uORB/uORB.h>
 
 #include <mathlib/mathlib.h>
-#include <mavlink/mavlink_log.h>
+#include <systemlib/mavlink_log.h>
 
 
 #include "AA241xMission.h"

@@ -1369,7 +1369,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 
 	subs.cmd_sub = -1;
 	subs.status_sub = -1;
-	subs.vtol_status_sub = -1;
+	//subs.vtol_status_sub = -1; // AA241x REMOVED
 	subs.gps_pos_sub[0] = -1;
 	subs.gps_pos_sub[1] = -1;
 	subs.sensor_sub = -1;
