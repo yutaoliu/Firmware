@@ -45,8 +45,6 @@
 #define SDLOG2_MESSAGES_H_
 
 #include "sdlog2_format.h"
-#include "../aa241x_high/aa241x_high_data_struct.h"
-#include "../aa241x_low/aa241x_low_data_struct.h"
 
 /* define message formats */
 
@@ -806,8 +804,8 @@ static const struct log_format_s log_formats[] = {
 
 	/* AA241x logging */
 	LOG_FORMAT(AMIS, "BQffBBifiBB", "InM,STim,CTim,FTim,MFail,InTrn,TrnNum,TurnDeg,NumV,InV,OoB"),
-	LOG_FORMAT(HIGH, "ffffffffffffffff", HIGH_DATA_LABELS),
-	LOG_FORMAT(LOW, "ffffffffffffffff", LOW_DATA_LABELS),
+	LOG_FORMAT(HIGH, "ffffffffffffffff", "f01,f02,f03,f04,f05,f06,f07,f08,f09,f10,f11,f12,f13,f14,f15,f16"),
+	LOG_FORMAT(LOW, "ffffffffffffffff", "f01,f02,f03,f04,f05,f06,f07,f08,f09,f10,f11,f12,f13,f14,f15,f16"),
 	LOG_FORMAT(ADAT, "ffffffff", "N,E,Dbaro,Dgps,u,v,w,GrndSpd"),
 	// TODO: ADD FORMAT FOR ADDITIONAL LOGGING HERE
 

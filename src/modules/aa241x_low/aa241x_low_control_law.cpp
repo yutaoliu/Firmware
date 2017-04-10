@@ -66,10 +66,10 @@ void low_loop()
 
 
 	// getting high data value example
-	// float my_high_data = high_data.variable_name1;
+	// float my_high_data = high_data.field1;
 
 	// setting low data value example
-	low_data.variable_name1 = my_float_variable;
+	low_data.field1 = my_float_variable;
 
 
 }

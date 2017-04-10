@@ -2405,44 +2405,44 @@ int sdlog2_thread_main(int argc, char *argv[])
 		/* --- HIGH DATA --- */
 		if (copy_if_updated(ORB_ID(aa241x_high_data), &subs.high_data_sub, &buf.high_data)) {
 			log_msg.msg_type = LOG_HIGH_MSG;
-			log_msg.body.log_HIGH.field1 = (float) buf.high_data.HIGH_FIELD1;
-			log_msg.body.log_HIGH.field2 = (float) buf.high_data.HIGH_FIELD2;
-			log_msg.body.log_HIGH.field3 = (float) buf.high_data.HIGH_FIELD3;
-			log_msg.body.log_HIGH.field4 = (float) buf.high_data.HIGH_FIELD4;
-			log_msg.body.log_HIGH.field5 = (float) buf.high_data.HIGH_FIELD5;
-			log_msg.body.log_HIGH.field6 = (float) buf.high_data.HIGH_FIELD6;
-			log_msg.body.log_HIGH.field7 = (float) buf.high_data.HIGH_FIELD7;
-			log_msg.body.log_HIGH.field8 = (float) buf.high_data.HIGH_FIELD8;
-			log_msg.body.log_HIGH.field9 = (float) buf.high_data.HIGH_FIELD9;
-			log_msg.body.log_HIGH.field10 = (float) buf.high_data.HIGH_FIELD10;
-			log_msg.body.log_HIGH.field11 = (float) buf.high_data.HIGH_FIELD11;
-			log_msg.body.log_HIGH.field12 = (float) buf.high_data.HIGH_FIELD12;
-			log_msg.body.log_HIGH.field13 = (float) buf.high_data.HIGH_FIELD13;
-			log_msg.body.log_HIGH.field14 = (float) buf.high_data.HIGH_FIELD14;
-			log_msg.body.log_HIGH.field15 = (float) buf.high_data.HIGH_FIELD15;
-			log_msg.body.log_HIGH.field16 = (float) buf.high_data.HIGH_FIELD16;
+			log_msg.body.log_HIGH.field1 = (float) buf.high_data.field1;
+			log_msg.body.log_HIGH.field2 = (float) buf.high_data.field2;
+			log_msg.body.log_HIGH.field3 = (float) buf.high_data.field3;
+			log_msg.body.log_HIGH.field4 = (float) buf.high_data.field4;
+			log_msg.body.log_HIGH.field5 = (float) buf.high_data.field5;
+			log_msg.body.log_HIGH.field6 = (float) buf.high_data.field6;
+			log_msg.body.log_HIGH.field7 = (float) buf.high_data.field7;
+			log_msg.body.log_HIGH.field8 = (float) buf.high_data.field8;
+			log_msg.body.log_HIGH.field9 = (float) buf.high_data.field9;
+			log_msg.body.log_HIGH.field10 = (float) buf.high_data.field10;
+			log_msg.body.log_HIGH.field11 = (float) buf.high_data.field11;
+			log_msg.body.log_HIGH.field12 = (float) buf.high_data.field12;
+			log_msg.body.log_HIGH.field13 = (float) buf.high_data.field13;
+			log_msg.body.log_HIGH.field14 = (float) buf.high_data.field14;
+			log_msg.body.log_HIGH.field15 = (float) buf.high_data.field15;
+			log_msg.body.log_HIGH.field16 = (float) buf.high_data.field16;
 			LOGBUFFER_WRITE_AND_COUNT(HIGH);
 		}
 
 		/* --- LOW DATA --- */
 		if (copy_if_updated(ORB_ID(aa241x_low_data), &subs.low_data_sub, &buf.low_data)) {
 			log_msg.msg_type = LOG_LOW_MSG;
-			log_msg.body.log_LOW.field1 = (float) buf.low_data.LOW_FIELD1;
-			log_msg.body.log_LOW.field2 = (float) buf.low_data.LOW_FIELD2;
-			log_msg.body.log_LOW.field3 = (float) buf.low_data.LOW_FIELD3;
-			log_msg.body.log_LOW.field4 = (float) buf.low_data.LOW_FIELD4;
-			log_msg.body.log_LOW.field5 = (float) buf.low_data.LOW_FIELD5;
-			log_msg.body.log_LOW.field6 = (float) buf.low_data.LOW_FIELD6;
-			log_msg.body.log_LOW.field7 = (float) buf.low_data.LOW_FIELD7;
-			log_msg.body.log_LOW.field8 = (float) buf.low_data.LOW_FIELD8;
-			log_msg.body.log_LOW.field9 = (float) buf.low_data.LOW_FIELD9;
-			log_msg.body.log_LOW.field10 = (float) buf.low_data.LOW_FIELD10;
-			log_msg.body.log_LOW.field11 = (float) buf.low_data.LOW_FIELD11;
-			log_msg.body.log_LOW.field12 = (float) buf.low_data.LOW_FIELD12;
-			log_msg.body.log_LOW.field13 = (float) buf.low_data.LOW_FIELD13;
-			log_msg.body.log_LOW.field14 = (float) buf.low_data.LOW_FIELD14;
-			log_msg.body.log_LOW.field15 = (float) buf.low_data.LOW_FIELD15;
-			log_msg.body.log_LOW.field16 = (float) buf.low_data.LOW_FIELD16;
+			log_msg.body.log_LOW.field1 = (float) buf.low_data.field1;
+			log_msg.body.log_LOW.field2 = (float) buf.low_data.field2;
+			log_msg.body.log_LOW.field3 = (float) buf.low_data.field3;
+			log_msg.body.log_LOW.field4 = (float) buf.low_data.field4;
+			log_msg.body.log_LOW.field5 = (float) buf.low_data.field5;
+			log_msg.body.log_LOW.field6 = (float) buf.low_data.field6;
+			log_msg.body.log_LOW.field7 = (float) buf.low_data.field7;
+			log_msg.body.log_LOW.field8 = (float) buf.low_data.field8;
+			log_msg.body.log_LOW.field9 = (float) buf.low_data.field9;
+			log_msg.body.log_LOW.field10 = (float) buf.low_data.field10;
+			log_msg.body.log_LOW.field11 = (float) buf.low_data.field11;
+			log_msg.body.log_LOW.field12 = (float) buf.low_data.field12;
+			log_msg.body.log_LOW.field13 = (float) buf.low_data.field13;
+			log_msg.body.log_LOW.field14 = (float) buf.low_data.field14;
+			log_msg.body.log_LOW.field15 = (float) buf.low_data.field15;
+			log_msg.body.log_LOW.field16 = (float) buf.low_data.field16;
 			LOGBUFFER_WRITE_AND_COUNT(LOW);
 		}
 

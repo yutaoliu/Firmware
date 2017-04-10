@@ -351,7 +351,7 @@ namespace att_control
 #endif
 static const int ERROR = -1;
 
-FixedwingControl	*g_control = nullptr;
+FixedwingControl	*high_control = nullptr;
 }
 
 
@@ -467,7 +467,7 @@ FixedwingControl::~FixedwingControl()
 		} while (_control_task != -1);
 	}
 
-	att_control::g_control = nullptr;
+	att_control::high_control = nullptr;
 }
 
 int
@@ -868,8 +868,8 @@ FixedwingControl::set_actuators()
 void
 FixedwingControl::task_main_trampoline(int argc, char *argv[])
 {
-	att_control::g_control->task_main();
-	// att_control::g_control->sim_testing(); 	// DEBUG
+	att_control::high_control->task_main();
+	// att_control::high_control->sim_testing(); 	// DEBUG
 }
 
 
@@ -1103,22 +1103,22 @@ int aa241x_high_main(int argc, char *argv[])
 
 	if (!strcmp(argv[1], "start")) {
 
-		if (att_control::g_control != nullptr)
+		if (att_control::high_control != nullptr)
 			errx(1, "already running");
 
-		att_control::g_control = new FixedwingControl;
+		att_control::high_control = new FixedwingControl;
 
-		if (att_control::g_control == nullptr)
+		if (att_control::high_control == nullptr)
 			errx(1, "alloc failed");
 
-		if (OK != att_control::g_control->start()) {
-			delete att_control::g_control;
-			att_control::g_control = nullptr;
+		if (OK != att_control::high_control->start()) {
+			delete att_control::high_control;
+			att_control::high_control = nullptr;
 			err(1, "start failed");
 		}
 
 		/* avoid memory fragmentation by not exiting start handler until the task has fully started */
-		while (att_control::g_control == nullptr || !att_control::g_control->task_running()) {
+		while (att_control::high_control == nullptr || !att_control::high_control->task_running()) {
 			usleep(50000);
 			printf(".");
 			fflush(stdout);
@@ -1129,16 +1129,16 @@ int aa241x_high_main(int argc, char *argv[])
 	}
 
 	if (!strcmp(argv[1], "stop")) {
-		if (att_control::g_control == nullptr)
+		if (att_control::high_control == nullptr)
 			errx(1, "not running");
 
-		delete att_control::g_control;
-		att_control::g_control = nullptr;
+		delete att_control::high_control;
+		att_control::high_control = nullptr;
 		exit(0);
 	}
 
 	if (!strcmp(argv[1], "status")) {
-		if (att_control::g_control) {
+		if (att_control::high_control) {
 			errx(0, "running");
 
 		} else {
