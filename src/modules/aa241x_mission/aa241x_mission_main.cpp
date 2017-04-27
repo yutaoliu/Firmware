@@ -456,17 +456,18 @@ void AA241xMission::check_field_bounds()
 	}
 	// Assign struct boundaries
 
-	_land_pos lake_boundaries[9];
+	_land_pos lake_boundaries[10];
 
-	lake_boundaries[0].E = -173.0f; lake_boundaries[0].N =  143.0f;
-	lake_boundaries[1].E = -82.0f;  lake_boundaries[1].N =  228.0f;
-	lake_boundaries[2].E = 176.0f;  lake_boundaries[2].N =   81.0f;
-	lake_boundaries[3].E = 181.0f;  lake_boundaries[3].N = -138.0f;
-	lake_boundaries[4].E =  54.0f;  lake_boundaries[4].N = -148.0f;
-	lake_boundaries[5].E =  62.0f;  lake_boundaries[5].N = -219.0f;
-	lake_boundaries[6].E = -36.0f;  lake_boundaries[6].N = -216.0f;
-	lake_boundaries[7].E = -101.0f; lake_boundaries[7].N = -142.0f;
-	lake_boundaries[8].E = -181.0f; lake_boundaries[8].N = -112.0f;
+	lake_boundaries[0].E = -5.0f;   lake_boundaries[0].N =    0.0f;
+	lake_boundaries[1].E = -18.4f;  lake_boundaries[1].N =  210.2f;
+	lake_boundaries[2].E = -91.7f;  lake_boundaries[2].N =  252.0f;
+	lake_boundaries[3].E =-162.1f;  lake_boundaries[3].N =  231.6f;
+	lake_boundaries[4].E =-182.8f;  lake_boundaries[4].N =  153.4f;
+	lake_boundaries[5].E =-144.7f;  lake_boundaries[5].N =    4.0f;
+	lake_boundaries[6].E =-162.7f;  lake_boundaries[6].N = -174.5f;
+	lake_boundaries[7].E = -129.0f; lake_boundaries[7].N = -253.0f;
+	lake_boundaries[8].E =  -93.7f; lake_boundaries[8].N = -288.4f;
+        lake_boundaries[9].E =    1.0f; lake_boundaries[9].N = -277.0f;
 	
 	// check if already out of bounds so that it doesn't yell at you 1000 times
 	bool already_out = false;
@@ -480,12 +481,12 @@ void AA241xMission::check_field_bounds()
 	_out_of_bounds = false;
 
 	//% Check if outside convex portions
-	uint8_t convex[5] = {0, 1, 2, 5, 8};
+	uint8_t convex[8] = {0, 1, 2, 3, 6, 7, 8, 9};
 
-	for (int i = 0; i < 5; i++) {
+	for (int i = 0; i < 8; i++) {
 	    // If at the last boundary (wrapping)
 		uint8_t nextpt = convex[i]+1;
-	    if (i == 4) {
+	    if (i == 7) {
 	        nextpt = convex[0];
 	    }
 	    
@@ -511,9 +512,9 @@ void AA241xMission::check_field_bounds()
 
 	// Check if outside concave portions
 
-	uint8_t concave[2] = {3, 6};
+	uint8_t concave[1] = {4};
 
-	for (int i = 0; i < 2; i++) {
+	for (int i = 0; i < 1; i++) {
 	    if (line_side(lake_boundaries[concave[i]], lake_boundaries[concave[i]+1], _cur_pos) > 0 
 	    && line_side(lake_boundaries[concave[i]+1],lake_boundaries[concave[i]+2], _cur_pos) > 0 
 	    && (_in_mission == true || _cur_pos.D < -40) ) {
