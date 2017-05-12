@@ -87,7 +87,7 @@ void flight_control() {
 	//
 	
 	roll_desired = 0.0f; // roll_desired already exists in aa241x_high_aux so no need to repeat float declaration
-
+	
 	// Now use your parameter gain and multiply by the error from desired
 	float proportionalRollCorrection = aah_parameters.proportional_roll_gain * (roll - roll_desired);
 
@@ -107,7 +107,31 @@ void flight_control() {
 	// Set output of roll servo to the control law output calculated above
 	roll_servo_out = proportionalRollCorrection;		
 	// as an example, just passing through manual control to everything but roll
-	pitch_servo_out = -man_pitch_in;
+	
+	// now copy everything to make a proportional pitch controller
+	
+	pitch_desired = 0.0f; // roll_desired already exists in aa241x_high_aux so no need to repeat float declaration
+	// Now use your parameter gain and multiply by the error from desired
+	float proportionalPitchCorrection = aah_parameters.proportional_pitch_gain * (pitch - pitch_desired);
+
+	// Note the use of x.0f, this is important to specify that these are single and not double float values!
+
+	// Do bounds checking to keep the roll correction within the -1..1 limits of the servo output
+	if (proportionalPitchCorrection > 1.0f) {
+		proportionalPitchCorrection = 1.0f;
+	} else if (proportionalPitchCorrection < -1.0f ) {
+		proportionalPitchCorrection = -1.0f;
+	}
+
+	// ENSURE THAT YOU SET THE SERVO OUTPUTS!!!
+	// outputs should be set to values between -1..1 (except throttle is 0..1)
+	// where zero is no actuation, and -1,1 are full throw in either the + or - directions
+
+	// Set output of roll servo to the control law output calculated above
+	pitch_servo_out = proportionalPitchCorrection;		
+	
+	//pitch_servo_out = man_pitch_in; // had to be flipped for our controller
+	
 	yaw_servo_out = man_yaw_in;
 	throttle_servo_out = man_throttle_in;
 }
