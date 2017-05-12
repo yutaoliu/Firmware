@@ -90,7 +90,7 @@ int aah_parameters_init(struct aah_param_handles *h)
 	h->proportional_roll_gain 	= param_find("AAH_PROPROLLGAIN");
 
 	// TODO: add the above line for each of your custom parameters........
-
+	h->proportional_pitch_gain      = param_find("AAH_PROPPITCHGAIN");
 	return OK;
 }
 
@@ -103,6 +103,6 @@ int aah_parameters_update(const struct aah_param_handles *h, struct aah_params *
 	param_get(h->proportional_roll_gain, &(p->proportional_roll_gain));
 
 	// TODO: add the above line for each of your custom parameters.....
-
+	param_get(h->proportional_pitch_gain, &(p->proportional_pitch_gain));
 	return OK;
 }
