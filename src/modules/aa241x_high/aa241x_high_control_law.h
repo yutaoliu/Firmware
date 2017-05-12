@@ -61,7 +61,7 @@
 #include <mathlib/mathlib.h>
 
 // TODO: write your function prototypes here
-
+float bound_checking(float correction_value);
 
 
 #endif /* AA241X_FW_CONTROL_MAIN_H_ */
