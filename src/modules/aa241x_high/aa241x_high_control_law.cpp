@@ -53,6 +53,18 @@ using namespace aa241x_high;
 // define global variables (can be seen by all files in aa241x_high directory unless static keyword used)
 float altitude_desired = 0.0f;
 
+/*
+ * Do bounds checking to keep the roll/pitch/yaw/throttle correction within the -1..1 limits of the servo output
+ */
+float bound_checking(float correction_value) {
+    if (correction_value > 1.0f) {
+        correction_value = 1.0f;
+    } else if (correction_value < -1.0f) {
+        correction_value = -1.0f;
+    }
+    return correction_value;
+}
+
 /**
  * Main function in which your code should be written.
  *
@@ -69,7 +81,9 @@ void flight_control() {
 	if (hrt_absolute_time() - previous_loop_timestamp > 500000.0f) { // Run if more than 0.5 seconds have passes since last loop, 
 																	 //	should only occur on first engagement since this is 59Hz loop
 		yaw_desired = yaw; 							// yaw_desired already defined in aa241x_high_aux.h
-		altitude_desired = position_D_baro; 		// altitude_desired needs to be declared outside flight_control() function
+		roll_desired = roll;
+                pitch_desired = pitch;
+		altitude_desired = -position_D_baro; 		// altitude_desired needs to be declared outside flight_control() function
 	}
 
 
@@ -81,8 +95,30 @@ void flight_control() {
 
 	// setting high data value example
 	high_data.field1 = my_float_variable;
+	
+	// Roll Correction
+        float proportionalRollCorrection = aah_parameters.proportional_roll_gain * (roll_desired - roll);
+        proportionalRollCorrection = bound_correction(proportionalRollCorrection);
 
+        // Pitch Correction
+        float proportionalPitchCorrection = aah_parameters.proportional_pitch_gain * (pitch_desired - pitch);
+        proportionalPitchCorrection = bound_correction(proportionalPitchCorrection);
 
+        // Altitude Correction
+        float current_altitude = -position_D_baro;
+        if (current_altitude > altitude_desired) {
+            // pitch down
+        } else if (current_altitude < altitude_desired) {
+            // pitch up
+        }
+
+        // Set servo output
+        roll_servo_out = proportionalRollCorrection;
+        pitch_servo_out = proportionalPitchCorrection;
+        yaw_servo_out = man_yaw_in;
+        throttle_servo_out = man_throttle_in;
+
+	/*
 	// // Make a really simple proportional roll stabilizer // //
 	//
 	
@@ -133,5 +169,5 @@ void flight_control() {
 	//pitch_servo_out = man_pitch_in; // had to be flipped for our controller
 	
 	yaw_servo_out = man_yaw_in;
-	throttle_servo_out = man_throttle_in;
+	throttle_servo_out = man_throttle_in; */
 }
