@@ -199,4 +199,3 @@ void flight_control() {
         yaw_servo_out = man_yaw_in;
         throttle_servo_out = man_throttle_in;*/
 }
-// Test comment
