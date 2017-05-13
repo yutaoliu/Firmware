@@ -61,7 +61,12 @@
 #include <mathlib/mathlib.h>
 
 // TODO: write your function prototypes here
-
+float bound_checking(float correction_value);
+float roll_control();
+float pitch_control();
+float yaw_control();
+float altitude_control();
+float throttle_control();
 
 
 #endif /* AA241X_FW_CONTROL_MAIN_H_ */

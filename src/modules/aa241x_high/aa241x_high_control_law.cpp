@@ -52,6 +52,44 @@ using namespace aa241x_high;
 
 // define global variables (can be seen by all files in aa241x_high directory unless static keyword used)
 float altitude_desired = 0.0f;
+float speed_desired = 0.0f;
+
+/*
+ * Do bounds checking to keep the roll/pitch/yaw/throttle correction within the -1..1 limits of the servo output
+ */
+float bound_checking(float correction_value) {
+    if (correction_value > 1.0f) {
+        correction_value = 1.0f;
+    } else if (correction_value < -1.0f) {
+        correction_value = -1.0f;
+    }
+    return correction_value;
+}
+
+float roll_control() {
+    float proportionalRollCorrection = aah_parameters.proportional_roll_gain * (roll_desired - roll);
+    return bound_checking(proportionalRollCorrection);
+}
+
+float pitch_control() {
+    float proportionalPitchCorrection = aah_parameters.proportional_pitch_gain * (pitch_desired - pitch);
+    return bound_checking(proportionalPitchCorrection);
+}
+
+float altitude_control() {
+    pitch_desired = aah_parameters.proportional_altitude_gain * (altitude_desired - (-position_D_baro));
+    return pitch_control();
+}
+
+float yaw_control() {
+    float proportionalYawCorrection = aah_parameters.proportional_yaw_gain * (yaw_desired - yaw);
+    return bound_checking(proportionalYawCorrection);
+}
+
+float throttle_control() {
+    float proportionalSpeedCorrection = aah_parameters.proportional_throttle_gain * (speed_desired - speed_body_u);
+    return bound_checking(proportionalSpeedCorrection);
+}
 
 /**
  * Main function in which your code should be written.
@@ -68,9 +106,12 @@ void flight_control() {
 	// An example of how to run a one time 'setup' for example to lock one's altitude and heading...
 	if (hrt_absolute_time() - previous_loop_timestamp > 500000.0f) { // Run if more than 0.5 seconds have passes since last loop, 
 																	 //	should only occur on first engagement since this is 59Hz loop
-		yaw_desired = yaw; 							// yaw_desired already defined in aa241x_high_aux.h
-		altitude_desired = position_D_baro; 		// altitude_desired needs to be declared outside flight_control() function
-	}
+                yaw_desired = yaw; 				// yaw_desired already defined in aa241x_high_aux.h
+                roll_desired = roll;
+                pitch_desired = pitch;
+                altitude_desired = -position_D_baro; 		// altitude_desired needs to be declared outside flight_control() function
+                speed_desired = speed_body_u;
+        }
 
 
 	// TODO: write all of your flight control here...
@@ -82,7 +123,59 @@ void flight_control() {
 	// setting high data value example
 	high_data.field1 = my_float_variable;
 
+        // Set servo output
+        switch (aah_parameters.caseNum) {
+        // auto roll only
+        case 0:
+            roll_servo_out = roll_control();
+            pitch_servo_out = -man_pitch_in;
+            yaw_servo_out = man_yaw_in;
+            throttle_servo_out = man_throttle_in;
+            break;
+        // auto pitch only
+        case 1:
+            roll_servo_out = man_roll_in;
+            pitch_servo_out = pitch_control();
+            yaw_servo_out = man_yaw_in;
+            throttle_servo_out = man_throttle_in;
+            break;
+        // auto yaw only
+        case 2:
+            roll_servo_out = man_roll_in;
+            pitch_servo_out = -man_pitch_in;
+            yaw_servo_out = yaw_control();
+            throttle_servo_out = man_throttle_in;
+            break;
+        // auto speed only
+        case 3:
+            roll_servo_out = man_roll_in;
+            pitch_servo_out = -man_pitch_in;
+            yaw_servo_out = man_yaw_in;
+            throttle_servo_out = throttle_control();
+            break;
+        // auto roll, pitch, yaw
+        case 4:
+            roll_servo_out = roll_control();
+            pitch_servo_out = pitch_control();
+            yaw_servo_out = yaw_control();
+            throttle_servo_out = man_throttle_in;
+            break;
+        // full auto
+        case 5:
+            roll_servo_out = roll_control();
+            pitch_servo_out = pitch_control();
+            yaw_servo_out = yaw_control();
+            throttle_servo_out = throttle_control();
+            break;
+        // full manual
+        default:
+            roll_servo_out = man_roll_in;
+            pitch_servo_out = -man_pitch_in;
+            yaw_servo_out = man_yaw_in;
+            throttle_servo_out = man_throttle_in;
+        }
 
+        /*
 	// // Make a really simple proportional roll stabilizer // //
 	//
 	
@@ -109,5 +202,5 @@ void flight_control() {
 	// as an example, just passing through manual control to everything but roll
 	pitch_servo_out = -man_pitch_in;
 	yaw_servo_out = man_yaw_in;
-	throttle_servo_out = man_throttle_in;
+        throttle_servo_out = man_throttle_in;*/
 }

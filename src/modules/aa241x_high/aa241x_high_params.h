@@ -64,6 +64,11 @@ struct aah_params {
 	float proportional_roll_gain;
 
 	// TODO: add custom parameter variable names here......
+        float proportional_pitch_gain;
+        float proportional_altitude_gain;
+        float proportional_yaw_gain;
+        float proportional_throttle_gain;
+        int caseNum;
 
 };
 
@@ -83,7 +88,11 @@ struct aah_param_handles {
 	param_t proportional_roll_gain;
 
 	// TODO: add custom parameter variable names here.......
-
+        param_t proportional_pitch_gain;
+        param_t proportional_altitude_gain;
+        param_t proportional_yaw_gain;
+        param_t proportional_throttle_gain;
+        param_t caseNum;
 };
 
 /**
