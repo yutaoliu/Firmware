@@ -79,6 +79,10 @@ PARAM_DEFINE_FLOAT(AAH_ALTITUDEGAIN, 1.0f);
 PARAM_DEFINE_FLOAT(AAH_YAWGAIN, 1.0f);
 PARAM_DEFINE_FLOAT(AAH_THROTTLEGAIN, 1.0f);
 PARAM_DEFINE_INT32(AAH_CASE, 0);
+PARAM_DEFINE_FLOAT(AAH_ROLLTRIM, 0.0f);
+PARAM_DEFINE_FLOAT(AAH_PITCHTRIM, 0.0f);
+PARAM_DEFINE_FLOAT(AAH_YAWTRIM, 0.0f);
+PARAM_DEFINE_FLOAT(AAH_INPUTSPEED, 15.0f);
 
 int aah_parameters_init(struct aah_param_handles *h)
 {
@@ -99,6 +103,10 @@ int aah_parameters_init(struct aah_param_handles *h)
         h->proportional_yaw_gain        = param_find("AAH_YAWGAIN");
         h->proportional_throttle_gain   = param_find("AAH_THROTTLEGAIN");
         h->caseNum                      = param_find("AAH_CASE");
+        h->roll_trim                    = param_find("AAH_ROLLTRIM");
+        h->pitch_trim                   = param_find("AAH_PITCHTRIM");
+        h->yaw_trim                     = param_find("AAH_YAWTRIM");
+        h->input_speed                  = param_find("AAH_INPUTSPEED");
 	return OK;
 }
 
@@ -116,5 +124,9 @@ int aah_parameters_update(const struct aah_param_handles *h, struct aah_params *
         param_get(h->proportional_yaw_gain, &(p->proportional_yaw_gain));
         param_get(h->proportional_throttle_gain, &(p->proportional_throttle_gain));
         param_get(h->caseNum, &(p->caseNum));
+        param_get(h->roll_trim, &(p->roll_trim));
+        param_get(h->pitch_trim, &(p->pitch_trim));
+        param_get(h->yaw_trim, &(p->yaw_trim));
+        param_get(h->input_speed, &(p->input_speed));
 	return OK;
 }

@@ -69,6 +69,10 @@ struct aah_params {
         float proportional_yaw_gain;
         float proportional_throttle_gain;
         int caseNum;
+        float roll_trim;
+        float pitch_trim;
+        float yaw_trim;
+        float input_speed;
 
 };
 
@@ -93,6 +97,11 @@ struct aah_param_handles {
         param_t proportional_yaw_gain;
         param_t proportional_throttle_gain;
         param_t caseNum;
+        param_t roll_trim;
+        param_t pitch_trim;
+        param_t yaw_trim;
+        param_t input_speed;
+
 };
 
 /**
