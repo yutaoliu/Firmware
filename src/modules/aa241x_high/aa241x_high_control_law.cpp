@@ -53,6 +53,8 @@ using namespace aa241x_high;
 // define global variables (can be seen by all files in aa241x_high directory unless static keyword used)
 float altitude_desired = 0.0f;
 float speed_desired = 0.0f;
+float headingN_desired = 0.0f;
+float headingE_desired = 0.0f;
 
 /*
  * Do bounds checking to keep the roll/pitch/yaw/throttle correction within the -1..1 limits of the servo output
@@ -77,7 +79,7 @@ float pitch_control() {
 }
 
 float altitude_control() {
-    pitch_desired = aah_parameters.proportional_altitude_gain * (altitude_desired - (-position_D_baro));
+    pitch_desired = aah_parameters.proportional_altitude_gain * (altitude_desired - (-position_D_gps));
     return pitch_control();
 }
 
@@ -90,6 +92,19 @@ float throttle_control() {
     float proportionalSpeedCorrection = aah_parameters.proportional_throttle_gain * (speed_desired - speed_body_u);
     return bound_checking(proportionalSpeedCorrection);
 }
+
+float heading_control_yaw() {
+    yaw_desired = atan2(headingE_desired - position_E, headingN_desired - position_N);
+    return yaw_control();
+}
+
+float heading_control_roll() {
+    float yaw_target = atan2(headingE_desired - position_E, headingN_desired - position_N);
+    roll_desired = aah_parameters.proportional_heading_gain * (yaw_target - yaw);
+    return roll_control();
+}
+
+
 
 /**
  * Main function in which your code should be written.
@@ -108,9 +123,12 @@ void flight_control() {
                 yaw_desired = yaw; 				// yaw_desired already defined in aa241x_high_aux.h
                 roll_desired = roll;
                 pitch_desired = pitch;
-                altitude_desired = -position_D_baro; 		// altitude_desired needs to be declared outside flight_control() function
+                altitude_desired = -position_D_gps; 		// altitude_desired needs to be declared outside flight_control() function
                 //speed_desired = speed_body_u;
                 speed_desired = aah_parameters.input_speed;
+                headingN_desired = position_N;
+                headingE_desired = position_E;
+
         }
 
         // TODO: write all of your flight control here...
@@ -124,53 +142,109 @@ void flight_control() {
 
         // Set servo output
         switch (aah_parameters.caseNum) {
-        // auto roll only
+        // auto roll only by using roll_control
         case 0:
             roll_servo_out = roll_control();
-            pitch_servo_out = -bound_checking(man_pitch_in + aah_parameters.pitch_trim);
-            yaw_servo_out = bound_checking(man_yaw_in + aah_parameters.yaw_trim);
+            pitch_servo_out = -man_pitch_in;
+            yaw_servo_out = man_yaw_in;
             throttle_servo_out = man_throttle_in;
             break;
-        // auto pitch only
+        // auto roll only by using heading_control_roll
         case 1:
-            roll_servo_out = bound_checking(man_roll_in + aah_parameters.roll_trim);
-            pitch_servo_out = pitch_control();
-            yaw_servo_out = bound_checking(man_yaw_in + aah_parameters.yaw_trim);
+            roll_servo_out = heading_control_roll();
+            pitch_servo_out = -man_pitch_in;
+            yaw_servo_out = man_yaw_in;
             throttle_servo_out = man_throttle_in;
             break;
-        // auto yaw only
+        // auto pitch only by using pitch_control
         case 2:
-            roll_servo_out = bound_checking(man_roll_in + aah_parameters.roll_trim);
-            pitch_servo_out = -bound_checking(man_pitch_in + aah_parameters.pitch_trim);
+            roll_servo_out = man_roll_in;
+            pitch_servo_out = pitch_control();
+            yaw_servo_out = man_yaw_in;
+            throttle_servo_out = man_throttle_in;
+            break;
+        // auto pitch only by using altitude_control
+        case 3:
+            roll_servo_out = man_roll_in;
+            pitch_servo_out = altitude_control();
+            yaw_servo_out = man_yaw_in;
+            throttle_servo_out = man_throttle_in;
+            break;
+        // auto yaw only by using yaw_control
+        case 4:
+            roll_servo_out = man_roll_in;
+            pitch_servo_out = -man_pitch_in;
             yaw_servo_out = yaw_control();
+            throttle_servo_out = man_throttle_in;
+            break;
+        // auto yaw only by using heading_control_yaw
+        case 5:
+            roll_servo_out = man_roll_in;
+            pitch_servo_out = -man_pitch_in;
+            yaw_servo_out = heading_control_yaw();
             throttle_servo_out = man_throttle_in;
             break;
         // auto speed only
-        case 3:
-            roll_servo_out = bound_checking(man_roll_in + aah_parameters.roll_trim);
-            pitch_servo_out = -bound_checking(man_pitch_in + aah_parameters.pitch_trim);
-            yaw_servo_out = bound_checking(man_yaw_in + aah_parameters.yaw_trim);
+        case 6:
+            roll_servo_out = man_roll_in;
+            pitch_servo_out = -man_pitch_in;
+            yaw_servo_out = man_yaw_in;
             throttle_servo_out = throttle_control();
             break;
-        // auto roll, pitch, yaw
-        case 4:
+        // auto roll, pitch, yaw by using roll_control, pitch_control, yaw_control, manual throttle
+        case 7:
             roll_servo_out = roll_control();
             pitch_servo_out = pitch_control();
             yaw_servo_out = yaw_control();
             throttle_servo_out = man_throttle_in;
             break;
-        // full auto
-        case 5:
+        // full auto by using roll_control, pitch_control, yaw_control
+        case 8:
             roll_servo_out = roll_control();
             pitch_servo_out = pitch_control();
             yaw_servo_out = yaw_control();
+            throttle_servo_out = throttle_control();
+            break;
+        // full auto by using roll_control, altitude_control, yaw_control
+        case 9:
+            roll_servo_out = roll_control();
+            pitch_servo_out = altitude_control();
+            yaw_servo_out = yaw_control();
+            throttle_servo_out = throttle_control();
+            break;
+        // full auto by using heading_control_roll, altitude_control, yaw_control
+        case 10:
+            roll_servo_out = heading_control_roll();
+            pitch_servo_out = altitude_control();
+            yaw_servo_out = yaw_control();
+            throttle_servo_out = throttle_control();
+            break;
+        // full auto by using roll_control, altitude_control, heading_control_yaw
+        case 11:
+            roll_servo_out = roll_control();
+            pitch_servo_out = altitude_control();
+            yaw_servo_out = heading_control_yaw();
+            throttle_servo_out = throttle_control();
+            break;
+        // only roll manual
+        case 12:
+            roll_servo_out = man_roll_in;
+            pitch_servo_out = pitch_control();
+            yaw_servo_out = yaw_control();
+            throttle_servo_out = throttle_control();
+            break;
+        // only yaw manual
+        case 14:
+            roll_servo_out = roll_control();
+            pitch_servo_out = pitch_control();
+            yaw_servo_out = man_yaw_in;
             throttle_servo_out = throttle_control();
             break;
         // full manual
         default:
-            roll_servo_out = bound_checking(man_roll_in + aah_parameters.roll_trim);
-            pitch_servo_out = -bound_checking(man_pitch_in + aah_parameters.pitch_trim);
-            yaw_servo_out = bound_checking(man_yaw_in + aah_parameters.yaw_trim);
+            roll_servo_out = man_roll_in;
+            pitch_servo_out = -man_pitch_in;
+            yaw_servo_out = man_yaw_in;
             throttle_servo_out = man_throttle_in;
         }
 
