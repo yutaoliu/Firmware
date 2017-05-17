@@ -233,6 +233,13 @@ void flight_control() {
             yaw_servo_out = yaw_control();
             throttle_servo_out = throttle_control();
             break;
+        // only pitch manual
+        case 13:
+            roll_servo_out = roll_control();
+            pitch_servo_out = -man_pitch_in;
+            yaw_servo_out = yaw_control();
+            throttle_servo_out = throttle_control();
+            break;
         // only yaw manual
         case 14:
             roll_servo_out = roll_control();
