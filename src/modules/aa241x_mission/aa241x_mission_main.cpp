@@ -456,18 +456,17 @@ void AA241xMission::check_field_bounds()
 	}
 	// Assign struct boundaries
 
-	_land_pos lake_boundaries[10];
+	_land_pos lake_boundaries[9];
 
-	lake_boundaries[0].E = -5.0f;   lake_boundaries[0].N =    0.0f;
-	lake_boundaries[1].E = -18.4f;  lake_boundaries[1].N =  210.2f;
-	lake_boundaries[2].E = -91.7f;  lake_boundaries[2].N =  252.0f;
-	lake_boundaries[3].E =-162.1f;  lake_boundaries[3].N =  231.6f;
-	lake_boundaries[4].E =-182.8f;  lake_boundaries[4].N =  153.4f;
-	lake_boundaries[5].E =-144.7f;  lake_boundaries[5].N =    4.0f;
-	lake_boundaries[6].E =-162.7f;  lake_boundaries[6].N = -174.5f;
-	lake_boundaries[7].E = -129.0f; lake_boundaries[7].N = -253.0f;
-	lake_boundaries[8].E =  -93.7f; lake_boundaries[8].N = -288.4f;
-        lake_boundaries[9].E =    1.0f; lake_boundaries[9].N = -277.0f;
+	lake_boundaries[0].E =    5.0f;  lake_boundaries[0].N =    0.0f;
+	lake_boundaries[1].E =  -18.4f;  lake_boundaries[1].N =  230.0f;
+	lake_boundaries[2].E =  -91.7f;  lake_boundaries[2].N =  275.0f;
+	lake_boundaries[3].E = -175.0f;  lake_boundaries[3].N =  255.0f;
+	lake_boundaries[4].E = -192.8f;  lake_boundaries[4].N =  153.4f;
+	lake_boundaries[5].E = -162.7f;  lake_boundaries[5].N = -174.5f;
+	lake_boundaries[6].E = -140.0f;  lake_boundaries[6].N = -260.0f;
+	lake_boundaries[7].E =  -85.0f;  lake_boundaries[7].N = -290.0f;
+        lake_boundaries[8].E =   25.0f;  lake_boundaries[8].N = -280.0f;
 	
 	// check if already out of bounds so that it doesn't yell at you 1000 times
 	bool already_out = false;
@@ -481,12 +480,12 @@ void AA241xMission::check_field_bounds()
 	_out_of_bounds = false;
 
 	//% Check if outside convex portions
-	uint8_t convex[8] = {0, 1, 2, 3, 6, 7, 8, 9};
+	uint8_t convex[9] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
 
-	for (int i = 0; i < 8; i++) {
+	for (int i = 0; i < 9; i++) {
 	    // If at the last boundary (wrapping)
 		uint8_t nextpt = convex[i]+1;
-	    if (i == 7) {
+	    if (i == 8) {
 	        nextpt = convex[0];
 	    }
 	    
@@ -511,8 +510,8 @@ void AA241xMission::check_field_bounds()
 	}
 
 	// Check if outside concave portions
-
-	uint8_t concave[1] = {4};
+	// Note: All concave portions of Coyote Hill bounds were removed
+	/*uint8_t concave[1] = {4};
 
 	for (int i = 0; i < 1; i++) {
 	    if (line_side(lake_boundaries[concave[i]], lake_boundaries[concave[i]+1], _cur_pos) > 0 
@@ -534,7 +533,7 @@ void AA241xMission::check_field_bounds()
 		    }
 	    }
 	}
-
+        */
 	// Check if violating the flight window (5m safety buffer for errors)
 	if (_in_mission == true && (-_cur_pos.D > (_parameters.max_alt + 5.0f) || -_cur_pos.D < (_parameters.min_alt - 5.0f))) {
 	    _mission_failed = true;
