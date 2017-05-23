@@ -93,7 +93,7 @@ AA241xMission::AA241xMission() :
 	_task_should_exit(false),
 	_task_running(false),
 	_control_task(-1),
-	_mavlink_fd(-1),
+	_mavlink_log_pub(nullptr),
 	_buzzer(-1),
 	_vcontrol_mode_sub(-1),
 	_global_pos_sub(-1),
@@ -345,7 +345,7 @@ AA241xMission::initialize_mission()
 
 
 	// send message that mission has started
-	//mavlink_log_info(_mavlink_fd, "#AA241x mission started");
+	mavlink_log_info(&_mavlink_log_pub, "#AA241x mission started");
 
 	_in_mission = true;
 	//_can_start = false;	// don't allow restarting of a mission
@@ -400,7 +400,7 @@ void AA241xMission::check_field_bounds()
 {
 	if (_parameters.debug_mode == 1 && (_check_field_bounds_run == false || _debug_yell == true)) {
 		_check_field_bounds_run = true;
-		//mavlink_log_info(_mavlink_fd, "Check field bounds ran")
+		//mavlink_log_info(&_mavlink_log_pub, "Check field bounds ran")
 	}
 	// Assign struct boundaries
 
@@ -443,7 +443,7 @@ void AA241xMission::check_field_bounds()
 	        
 	        if (_parameters.mis_fail == 1){
                             if (_in_mission) {
-                              //mavlink_log_critical(_mavlink_fd, "AA241x. Mission ended");
+                              mavlink_log_critical(&_mavlink_log_pub, "AA241x. Mission ended");
                             }
 			    _in_mission = false;
 			}
@@ -452,7 +452,7 @@ void AA241xMission::check_field_bounds()
 	        // TONE
 	        // send msg: aa241x mission failed, boundary violation
 	        if (!already_out) {
-		        //mavlink_log_critical(_mavlink_fd, "AA241x mission failed, lake boundary violation");
+		        mavlink_log_critical(&_mavlink_log_pub, "AA241x mission failed, boundary violation");
 		    }
 	    }
 	}
@@ -488,7 +488,7 @@ void AA241xMission::check_field_bounds()
 
 	    if (_parameters.mis_fail == 1){
                     if (_in_mission) {
-                      //mavlink_log_critical(_mavlink_fd, "AA241x. Mission ended");
+                      //mavlink_log_critical(&_mavlink_log_pub, "AA241x. Mission ended");
                     }
                     _in_mission = false;
 		}
@@ -497,7 +497,7 @@ void AA241xMission::check_field_bounds()
 	    // TONE
 	    // send msg: aa241x mission failed, boundary violation
 	    if (!already_out) {
-	        //mavlink_log_critical(_mavlink_fd, "AA241x mission failed, altitude violation");
+	        //mavlink_log_critical(&_mavlink_log_pub, "AA241x mission failed, altitude violation");
 	    }
 	}
 }
@@ -507,18 +507,18 @@ void AA241xMission::check_start()
 
 	if (_parameters.debug_mode == 1 && (_check_start_run == false || _debug_yell == true)) {
 		_check_start_run = true;
-		//mavlink_log_info(_mavlink_fd, "Check start ran")
+		//mavlink_log_info(&_mavlink_log_pub, "Check start ran")
 	}
 
 	if (!_out_of_bounds) {
 		_in_mission = true;
 
         	if (_parameters.debug_mode == 1 && (_check_start_run == false || _debug_yell == true)) {
-            	//mavlink_log_info(_mavlink_fd, "#Valid starting position")
+            	//mavlink_log_info(&_mavlink_log_pub, "#Valid starting position")
           	}
 
             	// MESSAGE, race started
-            	//mavlink_log_info(_mavlink_fd, "#AA241x race started");
+            	//mavlink_log_info(&_mavlink_log_pub, "#AA241x race started");
         }
 }
 
@@ -527,7 +527,7 @@ void AA241xMission::check_finished()
 
 	if (_parameters.debug_mode == 1 && (_check_finished_run == false || _debug_yell == true)) {
 		_check_finished_run = true;
-		//mavlink_log_info(_mavlink_fd, "Check finish ran")
+		//mavlink_log_info(&_mavlink_log_pub, "Check finish ran")
 	}
 
 	//check that previous position was within bounds
@@ -540,7 +540,7 @@ void AA241xMission::check_finished()
 	            _in_mission = false;
 	            _turn_num = -1;
 		    // MESSAGE, race completed
-		    //mavlink_log_info(_mavlink_fd, "#AA241x race completed in %.1f seconds", (double)_current_time);
+		    //mavlink_log_info(&_mavlink_log_pub, "#AA241x race completed in %.1f seconds", (double)_current_time);
 	        }
 	}
 }
@@ -551,7 +551,7 @@ void AA241xMission::check_violation()
 {	
 	if (_parameters.debug_mode == 1 && (_check_violation_run == false || _debug_yell == true)) {
 		_check_violation_run = true;
-		//mavlink_log_info(_mavlink_fd, "Check violation ran")
+		//mavlink_log_info(&_mavlink_log_pub, "Check violation ran")
 	}
 
 	// Calculate r^2 distance from pylon
@@ -571,7 +571,7 @@ void AA241xMission::check_violation()
 	    _in_violation = false;
 	    _num_violations = _num_violations + 1;
 		// MESSAGE, violation occured
-		//mavlink_log_critical(_mavlink_fd, "AA241x turn keep out violation");
+		//mavlink_log_critical(&_mavlink_log_pub, "AA241x turn keep out violation");
 	}
 
 }
@@ -589,9 +589,6 @@ AA241xMission::task_main()
 	/* inform about start */
 	warnx("Initializing..");
 	fflush(stdout);
-
-	/* open connection to mavlink logging */
-	//_mavlink_fd = open(MAVLINK_LOG_DEVICE, 0);
 
 	/* open buzzer */
 	_buzzer = open(TONEALARM0_DEVICE_PATH, O_WRONLY);
@@ -699,8 +696,8 @@ AA241xMission::task_main()
 			_debug_timestamp = hrt_absolute_time();
 			_debug_yell = true;
 
-			//mavlink_log_info(_mavlink_fd, "Current: N %.3f, E %.3f, D %.3f", (double)_cur_pos.N, (double)_cur_pos.E, (double)_cur_pos.D);
-			//mavlink_log_info(_mavlink_fd, "Previous: N %.3f, E %.3f D %.3f", (double)_prev_pos.N, (double)_prev_pos.E, (double)_prev_pos.D);
+			//mavlink_log_info(&_mavlink_log_pub, "Current: N %.3f, E %.3f, D %.3f", (double)_cur_pos.N, (double)_cur_pos.E, (double)_cur_pos.D);
+			//mavlink_log_info(&_mavlink_log_pub, "Previous: N %.3f, E %.3f D %.3f", (double)_prev_pos.N, (double)_prev_pos.E, (double)_prev_pos.D);
 
 		}
 		
@@ -731,7 +728,7 @@ AA241xMission::task_main()
 			//if (!_vehicle_status.condition_global_position_valid
 				//&& (_timestamp - _previous_loop_timestamp) > 1000000) {
 
-				//mavlink_log_critical(_mavlink_fd, "AA241x. No GPS lock, do not launch airplane");
+				//mavlink_log_critical(&_mavlink_log_pub, "AA241x. No GPS lock, do not launch airplane");
 			//}
 			
 			// If not yet in mission check if mission has started
@@ -759,10 +756,10 @@ AA241xMission::task_main()
 	            		_mission_failed = true;
 	            		if (_parameters.mis_fail == 1){
 					_in_mission = false;
-					//mavlink_log_critical(_mavlink_fd, "AA241x. Mission ended");
+					mavlink_log_critical(&_mavlink_log_pub, "AA241x. Mission ended");
 				}
 				// tone, msg output
-	            		//mavlink_log_critical(_mavlink_fd, "AA241x. Mission failed, manual mode activated during race");
+	            		//mavlink_log_critical(&_mavlink_log_pub, "AA241x. Mission failed, manual mode activated during race");
 	        	}
 		}
 		    

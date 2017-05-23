@@ -97,7 +97,7 @@ private:
 	bool	_task_running;			/**< if true, task is running in its mainloop */
 	int		_control_task;			/**< task handle for aa241x mission */
 
-	int		_mavlink_fd;			/**< file description for mavlink to be able to send warnings */
+	orb_advert_t	_mavlink_log_pub;	/*< mavlink log pub, to send messages */
 	int		_buzzer;				/**< descriptor for the buzzer */
 
 	// handles to subscriptions needed
