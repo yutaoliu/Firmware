@@ -345,7 +345,7 @@ AA241xMission::initialize_mission()
 
 
 	// send message that mission has started
-	mavlink_log_info(&_mavlink_log_pub, "#AA241x mission started");
+	mavlink_log_info(&_mavlink_log_pub, "#AA241x mission initialized");
 
 	_in_mission = true;
 	//_can_start = false;	// don't allow restarting of a mission
@@ -437,8 +437,8 @@ void AA241xMission::check_field_bounds()
 	        nextpt = convex[0];
 	    }
 	    
-	    if (line_side(lake_boundaries[convex[i]], lake_boundaries[nextpt], _cur_pos) > 0 
-	            && (_in_mission == true || _cur_pos.D < -40)) {
+	    if (line_side(lake_boundaries[convex[i]], lake_boundaries[nextpt], _cur_pos) > 0 ) {
+	            //&& (_in_mission == true || _cur_pos.D < -40)) {
 	        _mission_failed = true;
 	        
 	        if (_parameters.mis_fail == 1){
@@ -497,7 +497,7 @@ void AA241xMission::check_field_bounds()
 	    // TONE
 	    // send msg: aa241x mission failed, boundary violation
 	    if (!already_out) {
-	        //mavlink_log_critical(&_mavlink_log_pub, "AA241x mission failed, altitude violation");
+	        mavlink_log_critical(&_mavlink_log_pub, "AA241x mission failed, altitude violation");
 	    }
 	}
 }
@@ -516,10 +516,14 @@ void AA241xMission::check_start()
         	if (_parameters.debug_mode == 1 && (_check_start_run == false || _debug_yell == true)) {
             	//mavlink_log_info(&_mavlink_log_pub, "#Valid starting position")
           	}
+    
 
-            	// MESSAGE, race started
-            	//mavlink_log_info(&_mavlink_log_pub, "#AA241x race started");
-        }
+            	// MESSAGE, competition started
+            	mavlink_log_info(&_mavlink_log_pub, "#AA241x competition started");
+        } /*else {
+        // this is commented because it will spam the message at every check_start() until competition starts
+        mavlink_log_info(&_mavlink_log_pub, "#AA241x competition not started, out of bounds");
+        }*/
 }
 
 void AA241xMission::check_finished()
@@ -730,7 +734,9 @@ AA241xMission::task_main()
 
 				//mavlink_log_critical(&_mavlink_log_pub, "AA241x. No GPS lock, do not launch airplane");
 			//}
-			
+            
+			check_field_bounds();
+
 			// If not yet in mission check if mission has started
 			if (_in_mission == false) {
 				check_start();
@@ -766,7 +772,6 @@ AA241xMission::task_main()
 		// CHECK IF HARD VIOLATIONS
 		// if yea, mission_failed = true, final_time = 0
 		//
-		check_field_bounds();
 		_previous_loop_timestamp = _timestamp;
 		
 
