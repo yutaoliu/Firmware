@@ -140,7 +140,7 @@ extern uint64_t previous_loop_timestamp; 	// timestamp of start of previous loop
 // mission stuff
 extern bool in_mission;
 extern hrt_abstime start_time;
-extern float current_time;
+extern float mission_time;
 extern float final_time;
 extern bool mission_failed;
 extern bool in_turn;

@@ -144,7 +144,7 @@ uint64_t previous_loop_timestamp = 0;	// timestamp of start of previous loop
 
 bool in_mission;
 hrt_abstime start_time;
-float current_time;
+float mission_time;
 float final_time;
 bool mission_failed;
 bool in_turn;

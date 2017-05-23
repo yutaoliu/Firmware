@@ -108,7 +108,7 @@ AA241xMission::AA241xMission() :
 	_in_mission(false),
 	_mission_failed(false),
 	_start_time(0),
-	_current_time(0.0f),
+	_mission_time(0.0f),
 	_final_time(0.0f),
 
 	_in_turn(false),
@@ -196,7 +196,7 @@ AA241xMission::reset_mission()
   _in_mission = false;
   _mission_failed = false;
   _start_time = 0;
-  _current_time = 0.0f;
+  _mission_time = 0.0f;
   _final_time = 0.0f;
 
   _in_turn = false;
@@ -318,7 +318,7 @@ AA241xMission::publish_mission_status()
 	
 	mis_stat.in_mission 	= _in_mission;
 	mis_stat.start_time 	= _start_time;
-	mis_stat.current_time 	= _current_time;
+	mis_stat.mission_time 	= _mission_time;
 	mis_stat.final_time 	= _final_time;
 	mis_stat.mission_failed = _mission_failed;
 	mis_stat.in_turn	= _in_turn;
@@ -347,30 +347,10 @@ AA241xMission::initialize_mission()
 	// send message that mission has started
 	//mavlink_log_info(_mavlink_fd, "#AA241x mission started");
 
-	// trigger the buzzer audio for mission start
-	/*
-	switch(_parameters.team_num){
-	case 1:
-
-		break;
-	case 2:
-
-		break;
-	case 3:
-		ioctl(_buzzer, TONE_SET_ALARM, TONE_TRAINER_BATTLE_TUNE);
-		break;
-	case 4:
-
-		break;
-	default:
-
-		break;
-	} */
-
 	_in_mission = true;
 	//_can_start = false;	// don't allow restarting of a mission
 	_start_time = hrt_absolute_time();
-	//_mission_start_battery = _batt_stat.discharged_mah;
+
 
 	// TODO: ADD ANY ADDITIONAL INITIALIZATION REQUIRED
 }
@@ -412,38 +392,6 @@ int8_t AA241xMission::line_side(const _land_pos &a,
 	
 
 	return sgnf((b.E - a.E)*(c.N - a.N) - (b.N - a.N)*(c.E - a.E));
-}
-
-
-// build the racecourse from parameters
-void AA241xMission::build_racecourse()
-{
-	if (_parameters.debug_mode == 1 && (_build_racecourse_run == false || _debug_yell == true)) {
-		_build_racecourse_run = true;
-		//mavlink_log_info(_mavlink_fd, "Build racecourse ran")
-	}
-	// populate the start pylon with the appropriate values
-	_start_pylon.N 	= _parameters.start_pos_N;
-	_start_pylon.E 	= _parameters.start_pos_E;
-	float tiltrad 	= _parameters.tilt * deg2rad;
-
-	// set up pylons
-	_pylon[0].E  = roundf(_start_pylon.E  + _parameters.leg_length*cosf(tiltrad));
-	_pylon[0].N  = roundf(_start_pylon.N  + _parameters.leg_length*sinf(tiltrad));
-	_pylon[0].angle = atan2f(_pylon[0].N - _start_pylon.N, _pylon[0].E - _start_pylon.E) + pi/2.0f;
-	_pylon[1].E  = roundf(_pylon[0].E + _parameters.leg_length*cosf(tiltrad-2.0f*pi/3.0f));
-	_pylon[1].N  = roundf(_pylon[0].N + _parameters.leg_length*sinf(tiltrad-2.0f*pi/3.0f));
-	_pylon[1].angle = atan2f(_pylon[1].N - _pylon[0].N, _pylon[1].E - _pylon[0].E) + pi/2.0f;
-
-	// set up start gate
-	_start_gate[0].E = _start_pylon.E + _parameters.gate_width/2.0f * cosf(tiltrad - 2.0f*pi/3.0f) - 10.0f*cosf(tiltrad - pi/6.0f); // 10 insignificant, just for visibility
-	_start_gate[0].N = _start_pylon.N + _parameters.gate_width/2.0f * sinf(tiltrad - 2.0f*pi/3.0f) - 10.0f*sinf(tiltrad - pi/6.0f);
-	_start_gate[1].E = _start_pylon.E + _parameters.gate_width/2.0f * cosf(tiltrad - 2.0f*pi/3.0f);
-	_start_gate[1].N = _start_pylon.N + _parameters.gate_width/2.0f * sinf(tiltrad - 2.0f*pi/3.0f);
-	_start_gate[2].E = _start_pylon.E + _parameters.gate_width/2.0f * cosf(tiltrad + pi/3.0f);
-	_start_gate[2].N = _start_pylon.N + _parameters.gate_width/2.0f * sinf(tiltrad + pi/3.0f);
-	_start_gate[3].E = _start_pylon.E + _parameters.gate_width/2.0f * cosf(tiltrad + pi/3.0f) - 10.0f*cosf(tiltrad - pi/6.0f);
-	_start_gate[3].N = _start_pylon.N + _parameters.gate_width/2.0f * sinf(tiltrad + pi/3.0f) - 10.0f*sinf(tiltrad - pi/6.0f);
 }
 
 
@@ -562,25 +510,16 @@ void AA241xMission::check_start()
 		//mavlink_log_info(_mavlink_fd, "Check start ran")
 	}
 
-	//check that previous position was within bounds
-	if (line_side(_start_gate[0],_start_gate[1],_prev_pos) > 0 
-	    && line_side(_start_gate[1],_start_gate[2],_prev_pos) > 0 
-	    && line_side(_start_gate[2],_start_gate[3],_prev_pos) > 0 
-	    && -_prev_pos.D > _parameters.min_alt && -_prev_pos.D < _parameters.max_alt) {
+	if (!_out_of_bounds) {
+		_in_mission = true;
 
-          if (_parameters.debug_mode == 1 && (_check_start_run == false || _debug_yell == true)) {
-            //mavlink_log_info(_mavlink_fd, "#Valid starting position")
-          }
+        	if (_parameters.debug_mode == 1 && (_check_start_run == false || _debug_yell == true)) {
+            	//mavlink_log_info(_mavlink_fd, "#Valid starting position")
+          	}
 
-	    //check that new position is across start line
-          if (line_side(_start_gate[1],_start_gate[2],_cur_pos) < 0) {
-            _in_mission = true;
-            _turn_num = 0;
-            // MESSAGE, race started
-            //mavlink_log_info(_mavlink_fd, "#AA241x race started");
-          }
-	}
-
+            	// MESSAGE, race started
+            	//mavlink_log_info(_mavlink_fd, "#AA241x race started");
+        }
 }
 
 void AA241xMission::check_finished()
@@ -606,93 +545,7 @@ void AA241xMission::check_finished()
 	}
 }
 
-void AA241xMission::check_turn_start()
-{
-	if (_parameters.debug_mode == 1 && (_check_turn_start_run == false || _debug_yell == true)) {
-		_check_turn_start_run = true;
-		//mavlink_log_info(_mavlink_fd, "Check turn start ran")
-	}
-	// Calculate airplane current and previous angle relative to current pylon to turn around
 
-	float cur_angle = atan2f(_cur_pos.N - _pylon[_turn_num].N, _cur_pos.E - _pylon[_turn_num].E); // float
-	float prev_angle = atan2f(_prev_pos.N - _pylon[_turn_num].N, _prev_pos.E - _pylon[_turn_num].E); //float
-
-	// Check if the airplane has passed clockwise past the turn (assumes must
-	// have small angle
-
-	float cur_angle_diff = angular_difference(cur_angle,_pylon[_turn_num].angle); //float
-	float prev_angle_diff = angular_difference(prev_angle,_pylon[_turn_num].angle); //float
-
-	// If current angle is clockwise of required angle and previous angle is
-	// counterclockwise, plus the angular differences are less than pi/4 from
-	// the required angle (req'd so that it doesn't trigger when crossing
-	// opposite side) then start the turn
-	if (cur_angle_diff <= 0.0f && prev_angle_diff >= 0.0f && fabsf(cur_angle_diff) < 2.0f*pi/3.0f) {
-	    _in_turn = true;
-	    _just_started_turn = true;
-	    // MESSAGE, turn started
-	    //mavlink_log_info(_mavlink_fd, "#AA241x turn started");
-	}
-}
-
-void AA241xMission::check_turn_end() 
-{
-	if (_parameters.debug_mode == 1 && (_check_turn_end_run == false || _debug_yell == true)) {
-		_check_turn_end_run = true;
-		//mavlink_log_info(_mavlink_fd, "Check turn finish ran")
-	}
-
-	// Less than negative because clockwise rotation
-	if (_turn_radians < _req_turn_degrees * deg2rad) {
-	    // end turn
-	    _in_turn = false;
-	    // reset accumulator
-	    _turn_radians = 0.0f;
-      _turn_degrees = 0.0f;
-	    // step to next turn
-	    _turn_num = _turn_num + 1;
-	    // MESSAGE, turn completed
-	    //mavlink_log_info(_mavlink_fd, "#AA241x turn completed");
-	}
-}
-
-void AA241xMission::turn_accumulate()
-{
-	if (_parameters.debug_mode == 1 && (_turn_accumulate_run == false || _debug_yell == true)) {
-		_turn_accumulate_run = true;
-		//mavlink_log_info(_mavlink_fd, "Turn accumulator ran")
-	}
-
-	// initialize vars
-	float prev_angle;
-
-	// if just entered turn then accumulate from start line
-	if (_just_started_turn) {
-	    _just_started_turn = false;
-      _turn_radians = 0.0f; // reset turn when you have just started a new turn
-      _turn_degrees = 0.0f;
-	    prev_angle        = _pylon[_turn_num].angle;
-	} else { // else just use the previous position's angle relative to the pylon
-	    prev_angle        = atan2f(_prev_pos.N - _pylon[_turn_num].N, _prev_pos.E - _pylon[_turn_num].E);
-	}
-
-	// Calc current angle relative to pylon
-	float cur_angle       = atan2f(_cur_pos.N - _pylon[_turn_num].N, _cur_pos.E - _pylon[_turn_num].E);
-
-	// Calc angle traversed (assumes < 180 deg)
-	float accumAngle = angular_difference(cur_angle,prev_angle);
-
-	// Accumulate in the turn angle counter
-	_turn_radians = _turn_radians + accumAngle;
-
-	// Make sure you can't go positive (CCW accumulation) in accumulated angle
-	if (_turn_radians > 0.0f) {
-	    _turn_radians = 0.0f;
-	}
-
-	// set turn degrees
-	_turn_degrees = _turn_radians * rad2deg;
-}
 
 void AA241xMission::check_violation()
 {	
@@ -779,7 +632,7 @@ AA241xMission::task_main()
 	_prev_pos.D = 0.0f;
 
 	/* build the racecourse */
-	build_racecourse();
+	//build_racecourse();
 
 	/* wakeup source(s) */
 	px4_pollfd_struct_t fds[2] = {};
@@ -838,7 +691,7 @@ AA241xMission::task_main()
 		battery_status_update();
 
 		// Reset turn if dropped out of mission
-		if (_in_mission == false) { _turn_num = -1; }
+		//if (_in_mission == false) { _turn_num = -1; }
 
 		// Yell position every 5 seconds if debugging
 		_debug_yell = false;
@@ -861,17 +714,20 @@ AA241xMission::task_main()
 		if (_vcontrol_mode.flag_control_auto_enabled && !_parameters.mission_restart) {
 			_timestamp = hrt_absolute_time();
 
+			// This is probably not needed since we start any time we are in bounds now
 			// Force mission if so desired
-			if (_parameters.force_start == 1) {
-				_in_mission = true;
-				if (_start_time == 0) {
-					_start_time = hrt_absolute_time();
-				}
-			}
+			//if (_parameters.force_start == 1) {
+			//	_in_mission = true;
+			//	if (_start_time == 0) {
+			//		_start_time = hrt_absolute_time();
+			//	}
+			//}
 			
 
 			// Check if there is no GPS lock and warn the user upon
 			// starting auto mode if that is the case.
+			// TODO: This gps flag is missing now; find where it went and add it back in
+
 			//if (!_vehicle_status.condition_global_position_valid
 				//&& (_timestamp - _previous_loop_timestamp) > 1000000) {
 
@@ -882,50 +738,37 @@ AA241xMission::task_main()
 			if (_in_mission == false) {
 				check_start();
 				// If check start sets mission to true set the start time
-	            if (_in_mission) {
-	                _start_time = hrt_absolute_time(); // make hrt_absolute_time
-	            }
-	        }
+	            		if (_in_mission) {
+	                	_start_time = hrt_absolute_time(); // make hrt_absolute_time
+	            		}
+	        	}
 
 			if (_in_mission == true) {
-			            
-	            // Report current time
-	            _current_time = (float)(hrt_absolute_time() - _start_time)/1000000.0f;
-	            
-	            if (_turn_num < _num_of_turns) {
-	                if (!_in_turn) {
-	                    check_turn_start();
-	                }
-	                // Not an elseif so that turn accumulate on first run
-	                if (_in_turn) {
-	                    turn_accumulate();
-	                    check_violation();
-	                    check_turn_end();
-	                }
-	            } else {// turns completed; check for finishing conditions
-	                check_finished();
-	                if (!_in_mission) {
-	                    _final_time = _current_time;
-	                }
-	            }
-	        }
+	            		// Report current time
+	            		_mission_time = (float)(hrt_absolute_time() - _start_time)/1000000.0f;
 
-        } else {// in manual mode
-	        // if still in mission when activating manual, fail the mission
-	        if (_in_mission == true) {
-	            _mission_failed = true;
-	            if (_parameters.mis_fail == 1){
-				    _in_mission = false;
-				    //mavlink_log_critical(_mavlink_fd, "AA241x. Mission ended");
+				check_violation();
+				// TODO: add mission stuff here
+
+	            	}
+	        
+
+        	} else {// in manual mode
+	        	// if still in mission when activating manual, fail the mission
+	        	if (_in_mission == true) {
+	            		_mission_failed = true;
+	            		if (_parameters.mis_fail == 1){
+					_in_mission = false;
+					//mavlink_log_critical(_mavlink_fd, "AA241x. Mission ended");
 				}
-	            // tone, msg output
-	            //mavlink_log_critical(_mavlink_fd, "AA241x. Mission failed, manual mode activated during race");
-	        }
-	    }
+				// tone, msg output
+	            		//mavlink_log_critical(_mavlink_fd, "AA241x. Mission failed, manual mode activated during race");
+	        	}
+		}
 		    
-	    // CHECK IF HARD VIOLATIONS
-	    // if yea, mission_failed = true, final_time = 0
-	    //
+		// CHECK IF HARD VIOLATIONS
+		// if yea, mission_failed = true, final_time = 0
+		//
 		check_field_bounds();
 		_previous_loop_timestamp = _timestamp;
 		

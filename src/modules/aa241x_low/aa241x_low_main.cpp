@@ -702,7 +702,7 @@ LowPriorityLoop::set_aux_values()
 
 	in_mission = _mis_status.in_mission;
 	start_time = _mis_status.start_time;
-	current_time = _mis_status.current_time;
+	mission_time = _mis_status.mission_time;
 	final_time = _mis_status.final_time;
 	mission_failed = _mis_status.mission_failed;
 	in_turn = _mis_status.in_turn;

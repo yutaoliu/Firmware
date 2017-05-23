@@ -201,7 +201,7 @@ private:
 
 
 	hrt_abstime _start_time;
-	float _current_time;
+	float _mission_time;
 	float _final_time;
 
 	bool 	_in_turn;

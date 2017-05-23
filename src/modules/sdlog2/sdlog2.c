@@ -2390,7 +2390,7 @@ int sdlog2_thread_main(int argc, char *argv[])
 			log_msg.msg_type = LOG_AMIS_MSG;
 			log_msg.body.log_AMIS.in_mission = buf.mis_status.in_mission;
 			log_msg.body.log_AMIS.start_time = buf.mis_status.start_time;
-			log_msg.body.log_AMIS.current_time = buf.mis_status.current_time;
+			log_msg.body.log_AMIS.current_time = buf.mis_status.mission_time;
 			log_msg.body.log_AMIS.final_time = buf.mis_status.final_time;
 			log_msg.body.log_AMIS.mission_failed = buf.mis_status.mission_failed;
 			log_msg.body.log_AMIS.in_turn = buf.mis_status.in_turn;
