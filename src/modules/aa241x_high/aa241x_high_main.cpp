@@ -73,6 +73,7 @@
 #include <uORB/topics/vehicle_attitude_setpoint.h>
 #include <uORB/topics/manual_control_setpoint.h>
 #include <uORB/topics/actuator_controls.h>
+#include <uORB/topics/actuator_armed.h>
 #include <uORB/topics/vehicle_rates_setpoint.h>
 #include <uORB/topics/vehicle_attitude.h>
 #include <uORB/topics/vehicle_control_mode.h>
@@ -154,8 +155,11 @@ private:
 	int		_sensor_combined_sub;	/**< sensor data subscription */
 	int		_battery_status_sub;	/**< battery status subscription */
 
+
+
 	int		_mission_status_sub;	/**< aa241x mission status subscription */
 	int		_low_data_sub;			/**< low priority loop data subscription */
+	int 		_actuator_armed_sub;	/**< actuator aremd subscription */
 	// TODO: DEFINE ADDITIONAL SUBSCRIBERS HERE
 
 	// the data that will be published from this controller
@@ -185,6 +189,7 @@ private:
 	struct battery_status_s				_battery_status;	/**< battery status */
 
 	struct aa241x_mission_status_s		_mis_status;		/**< current mission status */
+	struct actuator_armed_s		_actuator_armed;		/**< actuator armed; determines failsafe */
 	// low data struct is in attached aux header file
 
 	// some flags
@@ -302,6 +307,11 @@ private:
 	 */
 	void	low_data_poll();
 
+	/**
+	 * Check failsafe mode
+	 */
+	void 	actuator_armed_poll();
+
 	// TODO: DEFINE ADDITIONAL POLL FUNCTIONS HERE, MODEL AGAINST EXISTING POLL FUNCTIONS
 
 	/**
@@ -323,6 +333,8 @@ private:
 	 * Set all the aux variables needed for control law.
 	 */
 	void 	set_aux_values();
+
+
 
 	/**
 	 * Set the actuator output values from the control law.
@@ -375,6 +387,7 @@ FixedwingControl::FixedwingControl() :
 	_battery_status_sub(-1),
 	_mission_status_sub(-1),
 	_low_data_sub(-1),
+	_actuator_armed_sub(-1),
 
 /* publications */
 	_rate_sp_pub(nullptr),
@@ -408,6 +421,7 @@ FixedwingControl::FixedwingControl() :
 	_battery_status = {};
 
 	_mis_status = {};
+	_actuator_armed = {};
 
 	_lake_lag_proj_ref = {};
 
@@ -513,6 +527,8 @@ FixedwingControl::vehicle_control_mode_poll()
 		orb_copy(ORB_ID(vehicle_control_mode), _vcontrol_mode_sub, &_vcontrol_mode);
 	}
 }
+
+
 
 void
 FixedwingControl::vehicle_manual_poll()
@@ -638,6 +654,19 @@ FixedwingControl::low_data_poll()
 
 	if (low_data_updated) {
 		orb_copy(ORB_ID(aa241x_low_data), _low_data_sub, &low_data);
+	}
+}
+
+void
+FixedwingControl::actuator_armed_poll()
+{
+	bool actuator_armed_updated;
+
+	/* Check if vehicle control mode has changed */
+	orb_check(_actuator_armed_sub, &actuator_armed_updated);
+
+	if (actuator_armed_updated) {
+		orb_copy(ORB_ID(actuator_armed), _actuator_armed_sub, &_actuator_armed);
 	}
 }
 
@@ -895,6 +924,7 @@ FixedwingControl::task_main()
 	_vehicle_status_sub = orb_subscribe(ORB_ID(vehicle_status));
 	_sensor_combined_sub = orb_subscribe(ORB_ID(sensor_combined));
 	_battery_status_sub = orb_subscribe(ORB_ID(battery_status));
+	_actuator_armed_sub = orb_subscribe(ORB_ID(actuator_armed));
 
 	_mission_status_sub = orb_subscribe(ORB_ID(aa241x_mission_status));
 	_low_data_sub = orb_subscribe(ORB_ID(aa241x_low_data));
@@ -918,6 +948,7 @@ FixedwingControl::task_main()
 	vehicle_status_poll();
 	sensor_combined_poll();
 	battery_status_poll();
+	actuator_armed_poll();
 
 
 	/* initialize projection reference */
@@ -991,6 +1022,7 @@ FixedwingControl::task_main()
 			vehicle_status_poll();
 			sensor_combined_poll();
 			battery_status_poll();
+			actuator_armed_poll();
 
 			// update aa241x data structs as needed
 			mission_status_poll();
@@ -1005,7 +1037,15 @@ FixedwingControl::task_main()
 			// set all the variables needed for the control law
 			set_aux_values();
 
-			if (_vcontrol_mode.flag_control_auto_enabled) {
+			if (_vehicle_status.failsafe) {
+			  	roll_servo_out      = 0.4f;
+			  	pitch_servo_out     = 0.0f;
+			  	yaw_servo_out       = 0.0f;
+			  	throttle_servo_out  = 0.0f;
+
+			  	set_actuators();
+
+			} else if (_vcontrol_mode.flag_control_auto_enabled) {
 
 				
 
