@@ -1038,9 +1038,9 @@ FixedwingControl::task_main()
 			set_aux_values();
 
 			if (_vehicle_status.failsafe) {
-			  	roll_servo_out      = trim_roll;
-			  	pitch_servo_out     = trim_pitch;
-			  	yaw_servo_out       = trim_yaw + 0.5f;
+			  	roll_servo_out      = roll_trim;
+			  	pitch_servo_out     = pitch_trim;
+			  	yaw_servo_out       = yaw_trim + 0.5f;
 			  	throttle_servo_out  = 0.0f;
 
 			  	set_actuators();

@@ -111,28 +111,28 @@ AA241xMission::AA241xMission() :
 	_mission_time(0.0f),
 	_final_time(0.0f),
 
-	_in_turn(false),
-	_just_started_turn(false),
-	_turn_num(-1),
-	_turn_radians(0.0f),
-	_turn_degrees(0.0f),
-	_req_turn_degrees(-840.0f),
-	_num_of_turns(2),
-	_num_violations(0),
-	_in_violation(false),
+	//_in_turn(false),
+	//_just_started_turn(false),
+	_phase_num(-1),
+	//_turn_radians(0.0f),
+	//_turn_degrees(0.0f),
+	//_req_turn_degrees(-840.0f),
+	//_num_of_turns(2),
+	_num_plumes_found(0),
+	//_in_violation(false),
 	_out_of_bounds(false),
 
 	_timestamp(0),
 	_previous_loop_timestamp(0),
 
-	_build_racecourse_run(false),
+	//_build_racecourse_run(false),
 	_check_field_bounds_run(false),
-	_check_finished_run(false),
+	//_check_finished_run(false),
 	_check_start_run(false),
-	_check_turn_start_run(false),
-	_check_turn_end_run(false),
+	//_check_turn_start_run(false),
+	//_check_turn_end_run(false),
 	_check_violation_run(false),
-	_turn_accumulate_run(false),
+	//_turn_accumulate_run(false),
 
 	_debug_timestamp(0),
 	_debug_yell(false)
@@ -199,15 +199,15 @@ AA241xMission::reset_mission()
   _mission_time = 0.0f;
   _final_time = 0.0f;
 
-  _in_turn = false;
-  _just_started_turn = false;
-  _turn_num = -1;
-  _turn_radians = 0.0f;
-  _turn_degrees = 0.0f;
-  _req_turn_degrees = -840.0f;
-  _num_of_turns = 2;
-  _num_violations = 0;
-  _in_violation = false;
+  //_in_turn = false;
+  //_just_started_turn = false;
+  _phase_num = -1;
+  //_turn_radians = 0.0f;
+  //_turn_degrees = 0.0f;
+  //_req_turn_degrees = -840.0f;
+  //_num_of_turns = 2;
+  _num_plumes_found = 0;
+  //_in_violation = false;
   _out_of_bounds = false;
 }
 
@@ -321,11 +321,11 @@ AA241xMission::publish_mission_status()
 	mis_stat.mission_time 	= _mission_time;
 	mis_stat.final_time 	= _final_time;
 	mis_stat.mission_failed = _mission_failed;
-	mis_stat.in_turn	= _in_turn;
-	mis_stat.turn_num	= _turn_num;
-	mis_stat.turn_degrees	= _turn_degrees;
-	mis_stat.num_violations = _num_violations;
-	mis_stat.in_violation	= _in_violation;
+	//mis_stat.in_turn	= _in_turn;
+	mis_stat.phase_num	= _phase_num;
+	//mis_stat.turn_degrees	= _turn_degrees;
+	mis_stat.num_plumes_found = _num_plumes_found;
+	//mis_stat.in_violation	= _in_violation;
 	mis_stat.out_of_bounds	= _out_of_bounds;
 
 
@@ -542,7 +542,7 @@ void AA241xMission::check_finished()
 		    && -_cur_pos.D > _parameters.min_alt && -_cur_pos.D < _parameters.max_alt) {
 		    //check that new position is across start line
 	            _in_mission = false;
-	            _turn_num = -1;
+	            _phase_num = -1;
 		    // MESSAGE, race completed
 		    //mavlink_log_info(&_mavlink_log_pub, "#AA241x race completed in %.1f seconds", (double)_current_time);
 	        }
@@ -559,8 +559,8 @@ void AA241xMission::check_violation()
 	}
 
 	// Calculate r^2 distance from pylon
-	float r2 =   (_cur_pos.E - _pylon[_turn_num].E)*(_cur_pos.E - _pylon[_turn_num].E)
-	     + (_cur_pos.N - _pylon[_turn_num].N)*(_cur_pos.N - _pylon[_turn_num].N);
+	float r2 =   (_cur_pos.E - _pylon[_phase_num].E)*(_cur_pos.E - _pylon[_phase_num].E)
+	     + (_cur_pos.N - _pylon[_phase_num].N)*(_cur_pos.N - _pylon[_phase_num].N);
 	 
 	// calculate minimum radius^2 (with 2.5 meter safety buffer)
 	float min_r2 = (_parameters.keepout_radius-2.5f)*(_parameters.keepout_radius-2.5f);
@@ -570,10 +570,11 @@ void AA241xMission::check_violation()
 
 	if (r2 < min_r2) {
 	    _turn_radians = 0;
-	    _in_violation = true;
+	    //_in_violation = true;
 	} else if (_in_violation) {
-	    _in_violation = false;
-	    _num_violations = _num_violations + 1;
+	    //_in_violation = false;
+	    _num_plumes_found = _num_plumes_found + 1;
+		//TODO: remove plume found from list
 		// MESSAGE, violation occured
 		//mavlink_log_critical(&_mavlink_log_pub, "AA241x turn keep out violation");
 	}
