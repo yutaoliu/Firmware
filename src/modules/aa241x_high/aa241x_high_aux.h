@@ -149,11 +149,11 @@ extern hrt_abstime start_time;
 extern float mission_time;
 extern float final_time;
 extern bool mission_failed;
-extern bool in_turn;
-extern int32_t turn_num;
-extern float turn_degrees;
-extern int32_t num_violations;
-extern bool in_violation;
+//extern bool in_turn;
+extern int32_t phase_num;
+//extern float turn_degrees;
+extern int32_t num_plumes_found;
+//extern bool in_violation;
 extern bool out_of_bounds;
 
 

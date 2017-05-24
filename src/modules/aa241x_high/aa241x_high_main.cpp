@@ -822,11 +822,11 @@ FixedwingControl::set_aux_values()
 	mission_time = _mis_status.mission_time;
 	final_time = _mis_status.final_time;
 	mission_failed = _mis_status.mission_failed;
-	in_turn = _mis_status.in_turn;
-	turn_num = _mis_status.turn_num;
-	turn_degrees = _mis_status.turn_degrees;
-	num_violations = _mis_status.num_violations;
-	in_violation = _mis_status.in_violation;
+	//in_turn = _mis_status.in_turn;
+	phase_num = _mis_status.phase_num;
+	//turn_degrees = _mis_status.turn_degrees;
+	num_plumes_found = _mis_status.num_plumes_found;
+	//in_violation = _mis_status.in_violation;
 	out_of_bounds = _mis_status.out_of_bounds;
 
 }
@@ -1038,9 +1038,9 @@ FixedwingControl::task_main()
 			set_aux_values();
 
 			if (_vehicle_status.failsafe) {
-			  	roll_servo_out      = 0.4f;
-			  	pitch_servo_out     = 0.0f;
-			  	yaw_servo_out       = 0.0f;
+			  	roll_servo_out      = trim_roll;
+			  	pitch_servo_out     = trim_pitch;
+			  	yaw_servo_out       = trim_yaw + 0.5f;
 			  	throttle_servo_out  = 0.0f;
 
 			  	set_actuators();

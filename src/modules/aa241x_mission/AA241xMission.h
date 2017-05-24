@@ -206,12 +206,12 @@ private:
 
 	bool 	_in_turn;
 	bool 	_just_started_turn;
-	int8_t _turn_num;
+	int8_t _phase_num;
 	float 	_turn_radians;
 	float 	_turn_degrees;
 	float 	_req_turn_degrees;
 	uint8_t _num_of_turns;
-	uint8_t _num_violations;
+	uint8_t _num_plumes_found;
 	bool 	_in_violation;
 	bool	_out_of_bounds;
 
