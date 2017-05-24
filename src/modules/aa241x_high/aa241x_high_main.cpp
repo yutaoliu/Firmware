@@ -1006,7 +1006,7 @@ FixedwingControl::task_main()
 			set_aux_values();
 
 
-			if (_vehicle_status.failsafe) {
+			if (_vehicle_status.rc_signal_lost) {
 			  	roll_servo_out      = roll_trim;
 			  	pitch_servo_out     = pitch_trim;
 			  	yaw_servo_out       = yaw_trim + 0.5f;
