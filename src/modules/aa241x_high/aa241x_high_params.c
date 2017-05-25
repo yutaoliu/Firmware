@@ -84,6 +84,7 @@ PARAM_DEFINE_FLOAT(AAH_ROLLTRIM, 0.0f);
 PARAM_DEFINE_FLOAT(AAH_PITCHTRIM, 0.0f);
 PARAM_DEFINE_FLOAT(AAH_YAWTRIM, 0.0f);
 PARAM_DEFINE_FLOAT(AAH_INPUTSPEED, 15.0f);
+PARAM_DEFINE_FLOAT(AAH_BANKINGANGLE, 0.0f);
 
 int aah_parameters_init(struct aah_param_handles *h)
 {
@@ -109,6 +110,7 @@ int aah_parameters_init(struct aah_param_handles *h)
         h->pitch_trim                   = param_find("AAH_PITCHTRIM");
         h->yaw_trim                     = param_find("AAH_YAWTRIM");
         h->input_speed                  = param_find("AAH_INPUTSPEED");
+        h->banking_angle                = param_find("AAH_BANKINGANGLE");
 	return OK;
 }
 
@@ -131,5 +133,6 @@ int aah_parameters_update(const struct aah_param_handles *h, struct aah_params *
         param_get(h->pitch_trim, &(p->pitch_trim));
         param_get(h->yaw_trim, &(p->yaw_trim));
         param_get(h->input_speed, &(p->input_speed));
+        param_get(h->banking_angle, &(p->banking_angle));
 	return OK;
 }

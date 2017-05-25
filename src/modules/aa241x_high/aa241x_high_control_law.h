@@ -69,6 +69,7 @@ float altitude_control();
 float throttle_control();
 float heading_control_yaw();
 float heading_control_roll();
+float coordinated_turn();
 
 
 #endif /* AA241X_FW_CONTROL_MAIN_H_ */

@@ -74,6 +74,7 @@ struct aah_params {
         float pitch_trim;
         float yaw_trim;
         float input_speed;
+        float banking_angle;
 
 
 };
@@ -104,8 +105,7 @@ struct aah_param_handles {
         param_t pitch_trim;
         param_t yaw_trim;
         param_t input_speed;
-
-
+        param_t banking_angle;
 };
 
 /**

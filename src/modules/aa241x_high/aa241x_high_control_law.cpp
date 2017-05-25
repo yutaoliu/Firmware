@@ -94,13 +94,18 @@ float throttle_control() {
 }
 
 float heading_control_yaw() {
-    yaw_desired = atan2(headingE_desired - position_E, headingN_desired - position_N);
+    yaw_desired = atan2(headingE_desired, headingN_desired) - atan2(position_E, position_N);
     return yaw_control();
 }
 
 float heading_control_roll() {
-    float yaw_target = atan2(headingE_desired - position_E, headingN_desired - position_N);
+    float yaw_target = atan2(headingE_desired, headingN_desired) - atan2(position_E, position_N);
     roll_desired = aah_parameters.proportional_heading_gain * (yaw_target - yaw);
+    return roll_control();
+}
+
+float coordinated_turn() {
+    roll_desired = aah_parameters.banking_angle;
     return roll_control();
 }
 
@@ -228,8 +233,8 @@ void flight_control() {
             break;
         // only roll manual
         case 12:
-            roll_servo_out = man_roll_in;
-            pitch_servo_out = pitch_control();
+            roll_servo_out = coordinated_turn();
+            pitch_servo_out = altitude_control();
             yaw_servo_out = yaw_control();
             throttle_servo_out = throttle_control();
             break;
