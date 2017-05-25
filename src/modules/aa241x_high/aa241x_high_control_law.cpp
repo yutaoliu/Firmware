@@ -104,6 +104,8 @@ float heading_control_roll() {
     return roll_control();
 }
 
+// banking angle = 1 --> turn right
+// bangking angle = -1 --> turn left
 float coordinated_turn() {
     roll_desired = aah_parameters.banking_angle;
     return roll_control();
