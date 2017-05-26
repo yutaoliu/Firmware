@@ -108,8 +108,10 @@ AA241xMission::AA241xMission() :
 	_in_mission(false),
 	_mission_failed(false),
 	_start_time(0),
+	_phase_start_time(0),
 	_mission_time(0.0f),
 	_final_time(0.0f),
+
 
 	//_just_started_turn(false),
 	_phase_num(-1),
@@ -118,15 +120,17 @@ AA241xMission::AA241xMission() :
 	//_req_turn_degrees(-840.0f),
 	//_num_of_turns(2),
 	_num_plumes_found(0),
-	_in_plume(false),
+	//_in_plume(false),
 	_out_of_bounds(false),
+	_all_plumes_found(false),
 
 	_timestamp(0),
 	_previous_loop_timestamp(0),
 
+
 	_build_plumes_run(false),
 	_check_field_bounds_run(false),
-	//_check_finished_run(false),
+	_check_finished_run(false),
 	_check_start_run(false),
 	//_check_turn_start_run(false),
 	//_check_turn_end_run(false),
@@ -135,6 +139,8 @@ AA241xMission::AA241xMission() :
 
 	_debug_timestamp(0),
 	_debug_yell(false)
+
+
 {
 	_vcontrol_mode = {};
 	_global_pos = {};
@@ -143,29 +149,30 @@ AA241xMission::AA241xMission() :
 	_batt_stat = {};
 	_cur_pos.N = 0.0f; _cur_pos.E = 0.0f; _cur_pos.D = 0.0f;
 	_prev_pos = _cur_pos;
-    for (int i= 0; i<5; i++) {
-      _plume_N[i] = 0.0f;
-      _plume_E[i] = 0.0f;
-      _plume_radius[i] = 0.0f;
-    }    
+    	for (int i= 0; i<5; i++) {
+		_plume_N[i] = 0.0f;
+		_plume_E[i] = 0.0f;
+		_plume_radius[i] = 0.0f;
+	}    
 
 
-	_parameter_handles.min_alt = param_find("AA_ALT_MIN");
-	_parameter_handles.max_alt = param_find("AA_ALT_MAX");
-	_parameter_handles.start_pos_N = param_find("AAMIS_SPOS_N");
-	_parameter_handles.start_pos_E = param_find("AAMIS_SPOS_E");
-	_parameter_handles.keepout_radius = param_find("AAMIS_RAD_KPT");
-	_parameter_handles.tilt = param_find("AAMIS_TILT");
-	_parameter_handles.leg_length = param_find("AAMIS_LEG_LEN");
-	_parameter_handles.gate_width = param_find("AAMIS_GTE_WID");
+	_parameter_handles.min_alt = param_find("AAMIS_ALT_MIN");
+	_parameter_handles.max_alt = param_find("AAMIS_ALT_MAX");
+	_parameter_handles.max_phase_time = param_find("AAMIS_PHASE_MAXT");
+	//_parameter_handles.start_pos_E = param_find("AAMIS_SPOS_E");
+	//_parameter_handles.keepout_radius = param_find("AAMIS_RAD_KPT");
+	//_parameter_handles.tilt = param_find("AAMIS_TILT");
+	//_parameter_handles.leg_length = param_find("AAMIS_LEG_LEN");
+	//_parameter_handles.gate_width = param_find("AAMIS_GTE_WID");
 	_parameter_handles.ctr_lat = param_find("AAMIS_CTR_LAT");
 	_parameter_handles.ctr_lon = param_find("AAMIS_CTR_LON");
 	_parameter_handles.ctr_alt = param_find("AAMIS_CTR_ALT");
-	_parameter_handles.team_num = param_find("AA_TEAM");
-	_parameter_handles.mission_restart = param_find("AA_MIS_RESET");
+	//_parameter_handles.team_num = param_find("AA_TEAM");
+	_parameter_handles.mission_restart = param_find("AAMIS_RESET");
 	_parameter_handles.mis_fail = param_find("AAMIS_MIS_FAIL");
 	_parameter_handles.debug_mode = param_find("AAMIS_DEBUG");
-	_parameter_handles.force_start = param_find("AAMIS_FSTART");
+	//_parameter_handles.force_start = param_find("AAMIS_FSTART");
+	_parameter_handles.mission_seed = param_find("AAMIS_MIS_SEED");
 
 	parameters_update();
 
@@ -198,27 +205,27 @@ AA241xMission::~AA241xMission() {
 void
 AA241xMission::reset_mission()
 {
-  _in_mission = false;
-  _mission_failed = false;
-  _start_time = 0;
-  _mission_time = 0.0f;
-  _final_time = 0.0f;
-
-  //_in_turn = false;
-  //_just_started_turn = false;
-  _phase_num = -1;
-  //_turn_radians = 0.0f;
-  //_turn_degrees = 0.0f;
-  //_req_turn_degrees = -840.0f;
-  //_num_of_turns = 2;
-  _num_plumes_found = 0;
-  _in_plume = false;
-  _out_of_bounds = false;
-  for (int i= 0; i<5; i++) {
-      _plume_N[i] = 0.0f;
-      _plume_E[i] = 0.0f;
-      _plume_radius[i] = 0.0f;
-  }
+	_in_mission = false;
+	_mission_failed = false;
+	_start_time = 0;
+	_mission_time = 0.0f;
+	_final_time = 0.0f;
+	//_in_turn = false;
+	//_just_started_turn = false;
+	_phase_num = -1;
+	//_turn_radians = 0.0f;
+	//_turn_degrees = 0.0f;
+	//_req_turn_degrees = -840.0f;
+	//_num_of_turns = 2;
+	_num_plumes_found = 0;
+	//_in_plume = false;
+	_out_of_bounds = false;
+	_phase_start_time = 0;
+	for (int i= 0; i<5; i++) {
+		_plume_N[i] = 0.0f;
+		_plume_E[i] = 0.0f;
+		_plume_radius[i] = -1.0f;
+	}
 }
 
 int
@@ -227,19 +234,20 @@ AA241xMission::parameters_update()
 	param_get(_parameter_handles.min_alt, &(_parameters.min_alt));
 	param_get(_parameter_handles.max_alt, &(_parameters.max_alt));
 	param_get(_parameter_handles.mission_restart, &(_parameters.mission_restart));
-	param_get(_parameter_handles.start_pos_N, &(_parameters.start_pos_N));
-	param_get(_parameter_handles.start_pos_E, &(_parameters.start_pos_E));
-	param_get(_parameter_handles.keepout_radius, &(_parameters.keepout_radius));
-	param_get(_parameter_handles.tilt, &(_parameters.tilt));
-	param_get(_parameter_handles.leg_length, &(_parameters.leg_length));
-	param_get(_parameter_handles.gate_width, &(_parameters.gate_width));
+	param_get(_parameter_handles.max_phase_time, &(_parameters.max_phase_time));
+	//param_get(_parameter_handles.start_pos_E, &(_parameters.start_pos_E));
+	//param_get(_parameter_handles.keepout_radius, &(_parameters.keepout_radius));
+	//param_get(_parameter_handles.tilt, &(_parameters.tilt));
+	//param_get(_parameter_handles.leg_length, &(_parameters.leg_length));
+	//param_get(_parameter_handles.gate_width, &(_parameters.gate_width));
 	param_get(_parameter_handles.ctr_lat, &(_parameters.ctr_lat));
 	param_get(_parameter_handles.ctr_lon, &(_parameters.ctr_lon));
 	param_get(_parameter_handles.ctr_alt, &(_parameters.ctr_alt));
-	param_get(_parameter_handles.team_num, &(_parameters.team_num));
+	//param_get(_parameter_handles.team_num, &(_parameters.team_num));
 	param_get(_parameter_handles.mis_fail, &(_parameters.mis_fail));
 	param_get(_parameter_handles.debug_mode, &(_parameters.debug_mode));
-	param_get(_parameter_handles.force_start, &(_parameters.force_start));
+	//param_get(_parameter_handles.force_start, &(_parameters.force_start));
+	param_get(_parameter_handles.mission_seed, &(_parameters.mission_seed));
 
 	// TODO: HANDLE ADDITIONAL PARAMETERS HERE
 
@@ -333,11 +341,11 @@ AA241xMission::publish_mission_status()
 	mis_stat.mission_failed = _mission_failed;
 	mis_stat.phase_num	= _phase_num;
 	mis_stat.num_plumes_found = _num_plumes_found;
-	mis_stat.in_plume	= _in_plume;
+	mis_stat.in_plume	= false;  //TODO: variable not used; remove it
 	mis_stat.out_of_bounds	= _out_of_bounds;
-    memcpy(&mis_stat.plume_N, _plume_N, sizeof(_plume_N));
-    memcpy(&mis_stat.plume_E, _plume_E, sizeof(_plume_E));
-    memcpy(&mis_stat.plume_radius, _plume_radius, sizeof(_plume_radius));
+	memcpy(&mis_stat.plume_N, _plume_N, sizeof(_plume_N));
+	memcpy(&mis_stat.plume_E, _plume_E, sizeof(_plume_E));
+	memcpy(&mis_stat.plume_radius, _plume_radius, sizeof(_plume_radius));
 
 
 	/* publish the mission status */
@@ -397,11 +405,9 @@ float AA241xMission::angular_difference(const float &theta1, const float &theta0
 	// b, end of line
 	// c, query point
 int8_t AA241xMission::line_side(const _land_pos &a, 
-								const _land_pos &b, 
-								const _airplane_pos &c)
+	const _land_pos &b, 
+	const _airplane_pos &c)
 {
-	
-
 	return sgnf((b.E - a.E)*(c.N - a.N) - (b.N - a.N)*(c.E - a.E));
 }
 
@@ -520,8 +526,8 @@ void AA241xMission::build_plumes() {
     _plume_N[0] =    50.0f;   _plume_E[0] =  -50.0f;   _plume_radius[0] = 30.0f;
     _plume_N[1] =  100.0f;    _plume_E[1] =  -50.0f;   _plume_radius[1] = 20.0f;
     _plume_N[2] = -100.0f;    _plume_E[2] = -100.0f;   _plume_radius[2] = 40.0f;
-    _plume_N[3] =    0.0f;    _plume_E[3] =    0.0f;   _plume_radius[3] =  0.0f;
-    _plume_N[4] =    0.0f;    _plume_E[4] =    0.0f;   _plume_radius[4] =  0.0f;
+    _plume_N[3] =    0.0f;    _plume_E[3] =    0.0f;   _plume_radius[3] =  -1.0f;
+    _plume_N[4] =    0.0f;    _plume_E[4] =    0.0f;   _plume_radius[4] =  -1.0f;
 
     // debugging message:
     mavlink_log_info(&_mavlink_log_pub, "#AA241x build_plumes() code ran");
@@ -530,20 +536,20 @@ void AA241xMission::build_plumes() {
 }
 
 
-
+// Start mission if in bounds
 void AA241xMission::check_start()
 {
 
 	if (_parameters.debug_mode == 1 && (_check_start_run == false || _debug_yell == true)) {
 		_check_start_run = true;
-		//mavlink_log_info(&_mavlink_log_pub, "Check start ran")
+		mavlink_log_info(&_mavlink_log_pub, "Check start ran");
 	}
 
 	if (!_out_of_bounds) {
 		_in_mission = true;
 
         	if (_parameters.debug_mode == 1 && (_check_start_run == false || _debug_yell == true)) {
-            	//mavlink_log_info(&_mavlink_log_pub, "#Valid starting position")
+            	mavlink_log_info(&_mavlink_log_pub, "#Valid starting position");
           	}
     
 
@@ -555,57 +561,76 @@ void AA241xMission::check_start()
         }*/
 }
 
+// Advance through mission phases and finish
 void AA241xMission::check_finished()
 {
-
 	if (_parameters.debug_mode == 1 && (_check_finished_run == false || _debug_yell == true)) {
 		_check_finished_run = true;
-		//mavlink_log_info(&_mavlink_log_pub, "Check finish ran")
+		mavlink_log_info(&_mavlink_log_pub, "Check finish ran");
 	}
 
-	//check that previous position was within bounds
-	if (line_side(_start_gate[1],_start_gate[2],_prev_pos) < 0) {
-		if (line_side(_start_gate[0],_start_gate[1],_cur_pos) > 0 
-		    && line_side(_start_gate[1],_start_gate[2],_cur_pos) > 0 
-		    && line_side(_start_gate[2],_start_gate[3],_cur_pos) > 0 
-		    && -_cur_pos.D > _parameters.min_alt && -_cur_pos.D < _parameters.max_alt) {
-		    //check that new position is across start line
-	            _in_mission = false;
-	            _phase_num = -1;
-		    // MESSAGE, race completed
-		    //mavlink_log_info(&_mavlink_log_pub, "#AA241x race completed in %.1f seconds", (double)_current_time);
-	        }
+
+	// Time in current phase
+	float time_in_phase = (float)(hrt_absolute_time() - _phase_start_time)/1000000.0f;
+
+	// Init at true; set to false if any plumes not visited
+	_all_plumes_found = true;
+
+	for (int i= 0; i<5; i++) {
+		if (_plume_radius[i] > 0) {_all_plumes_found = false;}
+	}
+
+	// Boolean if new phase should be triggered
+	bool new_phase = false;
+
+	// Move to next phase if all plumes found
+	if (_all_plumes_found) {
+		mavlink_log_info(&_mavlink_log_pub, "All plumes in phase %i found. %i total plumes found",_phase_num,_num_plumes_found);
+		new_phase = true;
+
+	// Move to next phase if time expired
+	} else if (time_in_phase > _parameters.max_phase_time) { 
+		mavlink_log_info(&_mavlink_log_pub, "Time limit in phase %i reached. %i total plumes found",_phase_num,_num_plumes_found);
+		new_phase = true;
+
+	}
+
+	if (new_phase) {
+		_phase_num += 1;
+		if (_phase_num < 4) {
+			build_plumes();
+			_all_plumes_found = false;
+			mavlink_log_info(&_mavlink_log_pub, "Phase %i started",_phase_num);
+			_phase_start_time = hrt_absolute_time();
+		} else {
+			mavlink_log_info(&_mavlink_log_pub, "Mission Completed Succesfully in %4.1f seconds",(double)_mission_time);
+			_final_time = _mission_time;
+			//TODO: anything else need to be changed to finish mission?
+		}
 	}
 }
 
 
 
-void AA241xMission::check_violation()
+void AA241xMission::check_near_plume() 
 {	
 	if (_parameters.debug_mode == 1 && (_check_violation_run == false || _debug_yell == true)) {
 		_check_violation_run = true;
-		//mavlink_log_info(&_mavlink_log_pub, "Check violation ran")
+		mavlink_log_info(&_mavlink_log_pub, "Check near plume ran")
 	}
 
-	// Calculate r^2 distance from pylon
-	float r2 =   (_cur_pos.E - _pylon[_phase_num].E)*(_cur_pos.E - _pylon[_phase_num].E)
-	     + (_cur_pos.N - _pylon[_phase_num].N)*(_cur_pos.N - _pylon[_phase_num].N);
-	 
-	// calculate minimum radius^2 (with 2.5 meter safety buffer)
-	float min_r2 = (_parameters.keepout_radius-2.5f)*(_parameters.keepout_radius-2.5f);
 
-	// Check if distance is smaller than min distance and reset accumulator if
-	// so
+	for (int i= 0; i<5; i++) {
 
-	if (r2 < min_r2) {
-	    //_turn_radians = 0;
-	    //_in_plume = true;
-	} else if (_in_plume) {
-	    //_in_plume = false;
-	    _num_plumes_found = _num_plumes_found + 1;
-		//TODO: remove plume found from list
-		// MESSAGE, violation occured
-		//mavlink_log_critical(&_mavlink_log_pub, "AA241x turn keep out violation");
+		// Calculate distance from plume center
+		float rp = sqrtf(powf(_cur_pos.E - _plume_E[i],2) + powf(_cur_pos.N - _plume_N[i],2));
+
+		// Check if inside radius
+		if (rp < _plume_radius[i]) {
+			_plume_radius[i] = -1.0f; //mark plume as visited
+			_num_plumes_found += 1;	
+		}
+
 	}
 
 }
@@ -772,7 +797,10 @@ AA241xMission::task_main()
 				check_start();
 				// If check start sets mission to true set the start time
 	            		if (_in_mission) {
-	                	_start_time = hrt_absolute_time(); // make hrt_absolute_time
+	                		_start_time = hrt_absolute_time(); // make hrt_absolute_time
+					_phase_start_time = _start_time;
+					_phase_num = 1;
+					build_plumes();
 	            		}
 	        	}
 
@@ -780,7 +808,9 @@ AA241xMission::task_main()
 	            		// Report current time
 	            		_mission_time = (float)(hrt_absolute_time() - _start_time)/1000000.0f;
 
-				check_violation();
+				check_near_plume();
+				check_finished();
+
 				// TODO: add mission stuff here
 
 	            	}

@@ -126,39 +126,41 @@ private:
 	struct {
 		float min_alt;
 		float max_alt;
-		float start_pos_N;
-		float start_pos_E;
-		float keepout_radius;
-		float tilt;
+		float max_phase_time;
+		//float start_pos_E;
+		//float keepout_radius;
+		//float tilt;
 		float ctr_lat;
 		float ctr_lon;
 		float ctr_alt;
-		float leg_length;
-		float gate_width;
+		//float leg_length;
+		//float gate_width;
 		int mis_fail;
-		int team_num;
+		//int team_num;
 		int debug_mode;
-		int force_start;
+		//int force_start;
                 int mission_restart;
+		long mission_seed;
 	}		_parameters;			/**< local copies of interesting parameters */
 
 	struct {
 		param_t min_alt;
 		param_t max_alt;
-		param_t start_pos_N;
-		param_t start_pos_E;
-		param_t keepout_radius;
-		param_t tilt;
+		param_t max_phase_time;
+		//param_t start_pos_E;
+		//param_t keepout_radius;
+		//param_t tilt;
 		param_t ctr_lat;
 		param_t ctr_lon;
 		param_t ctr_alt;
-		param_t leg_length;
-		param_t gate_width;
+		//param_t leg_length;
+		//param_t gate_width;
 		param_t mis_fail;
-		param_t team_num;
+		//param_t team_num;
 		param_t debug_mode;
-		param_t force_start;
+		//param_t force_start;
                 param_t mission_restart;
+		param_t mission_seed;
 	}		_parameter_handles;		/**< handles for interesting parameters */
 
 	hrt_abstime _mission_start_time;	/**< timestamp of when entered mission */
@@ -201,6 +203,7 @@ private:
 
 
 	hrt_abstime _start_time;
+	hrt_abstime _phase_start_time;	/**< timestamp of when entered mission */
 	float _mission_time;
 	float _final_time;
 
@@ -212,11 +215,13 @@ private:
 	//float 	_req_turn_degrees;
 	//uint8_t _num_of_turns;
 	uint8_t _num_plumes_found;
-	bool 	_in_plume;
+	//bool 	_in_plume;
 	bool	_out_of_bounds;
-    float _plume_N[5];
-    float _plume_E[5];
-    float _plume_radius[5];
+	float _plume_N[5];
+    	float _plume_E[5];
+	float _plume_radius[5];
+	// check if all plumes in current phase have been visited
+	bool	_all_plumes_found;
 
 	
 
@@ -304,8 +309,8 @@ private:
 	// check if a turn has ended
 	void 	check_turn_end();  
 	bool	_check_turn_end_run;
-	// check whether turn keepout has been violated
-	void 	check_violation(); 
+	// check whether plume visited
+	void 	check_near_plume(); 
 	bool	_check_violation_run;
 	// accumulate degrees on a turn
 	void 	turn_accumulate();
@@ -315,6 +320,8 @@ private:
 
 	hrt_abstime _debug_timestamp;
 	bool	_debug_yell;
+
+
 
 
 	/**
