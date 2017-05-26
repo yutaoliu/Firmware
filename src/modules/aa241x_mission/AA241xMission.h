@@ -204,16 +204,19 @@ private:
 	float _mission_time;
 	float _final_time;
 
-	bool 	_in_turn;
-	bool 	_just_started_turn;
-	int8_t _phase_num;
-	float 	_turn_radians;
-	float 	_turn_degrees;
-	float 	_req_turn_degrees;
-	uint8_t _num_of_turns;
+	//bool 	_in_turn;
+	//bool 	_just_started_turn;
+	int8_t  _phase_num;
+	//float 	_turn_radians;
+	//float 	_turn_degrees;
+	//float 	_req_turn_degrees;
+	//uint8_t _num_of_turns;
 	uint8_t _num_plumes_found;
-	bool 	_in_violation;
+	bool 	_in_plume;
 	bool	_out_of_bounds;
+    float _plume_N[5];
+    float _plume_E[5];
+    float _plume_radius[5];
 
 	
 
@@ -283,9 +286,9 @@ private:
 	int8_t  line_side(const _land_pos &a, 
 					  const _land_pos &b, 
 					  const _airplane_pos &c); 
-	// build the racecourse from the parameters
-	void 	build_racecourse();
-	bool	_build_racecourse_run;
+	// build the plume locations
+	void 	build_plumes();
+	bool	_build_plumes_run;
 	// check for hard field boundary violations
 	void 	check_field_bounds();
 	bool	_check_field_bounds_run; 

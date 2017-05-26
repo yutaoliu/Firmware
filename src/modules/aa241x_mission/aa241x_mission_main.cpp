@@ -111,7 +111,6 @@ AA241xMission::AA241xMission() :
 	_mission_time(0.0f),
 	_final_time(0.0f),
 
-	//_in_turn(false),
 	//_just_started_turn(false),
 	_phase_num(-1),
 	//_turn_radians(0.0f),
@@ -119,13 +118,13 @@ AA241xMission::AA241xMission() :
 	//_req_turn_degrees(-840.0f),
 	//_num_of_turns(2),
 	_num_plumes_found(0),
-	//_in_violation(false),
+	_in_plume(false),
 	_out_of_bounds(false),
 
 	_timestamp(0),
 	_previous_loop_timestamp(0),
 
-	//_build_racecourse_run(false),
+	_build_plumes_run(false),
 	_check_field_bounds_run(false),
 	//_check_finished_run(false),
 	_check_start_run(false),
@@ -144,6 +143,12 @@ AA241xMission::AA241xMission() :
 	_batt_stat = {};
 	_cur_pos.N = 0.0f; _cur_pos.E = 0.0f; _cur_pos.D = 0.0f;
 	_prev_pos = _cur_pos;
+    for (int i= 0; i<5; i++) {
+      _plume_N[i] = 0.0f;
+      _plume_E[i] = 0.0f;
+      _plume_radius[i] = 0.0f;
+    }    
+
 
 	_parameter_handles.min_alt = param_find("AA_ALT_MIN");
 	_parameter_handles.max_alt = param_find("AA_ALT_MAX");
@@ -207,8 +212,13 @@ AA241xMission::reset_mission()
   //_req_turn_degrees = -840.0f;
   //_num_of_turns = 2;
   _num_plumes_found = 0;
-  //_in_violation = false;
+  _in_plume = false;
   _out_of_bounds = false;
+  for (int i= 0; i<5; i++) {
+      _plume_N[i] = 0.0f;
+      _plume_E[i] = 0.0f;
+      _plume_radius[i] = 0.0f;
+  }
 }
 
 int
@@ -321,12 +331,13 @@ AA241xMission::publish_mission_status()
 	mis_stat.mission_time 	= _mission_time;
 	mis_stat.final_time 	= _final_time;
 	mis_stat.mission_failed = _mission_failed;
-	//mis_stat.in_turn	= _in_turn;
 	mis_stat.phase_num	= _phase_num;
-	//mis_stat.turn_degrees	= _turn_degrees;
 	mis_stat.num_plumes_found = _num_plumes_found;
-	//mis_stat.in_violation	= _in_violation;
+	mis_stat.in_plume	= _in_plume;
 	mis_stat.out_of_bounds	= _out_of_bounds;
+    memcpy(&mis_stat.plume_N, _plume_N, sizeof(_plume_N));
+    memcpy(&mis_stat.plume_E, _plume_E, sizeof(_plume_E));
+    memcpy(&mis_stat.plume_radius, _plume_radius, sizeof(_plume_radius));
 
 
 	/* publish the mission status */
@@ -502,6 +513,24 @@ void AA241xMission::check_field_bounds()
 	}
 }
 
+// build plume locations and radii here
+void AA241xMission::build_plumes() {
+
+    // first 5 plumes:
+    _plume_N[0] =    50.0f;   _plume_E[0] =  -50.0f;   _plume_radius[0] = 30.0f;
+    _plume_N[1] =  100.0f;    _plume_E[1] =  -50.0f;   _plume_radius[1] = 20.0f;
+    _plume_N[2] = -100.0f;    _plume_E[2] = -100.0f;   _plume_radius[2] = 40.0f;
+    _plume_N[3] =    0.0f;    _plume_E[3] =    0.0f;   _plume_radius[3] =  0.0f;
+    _plume_N[4] =    0.0f;    _plume_E[4] =    0.0f;   _plume_radius[4] =  0.0f;
+
+    // debugging message:
+    mavlink_log_info(&_mavlink_log_pub, "#AA241x build_plumes() code ran");
+    // MESSAGE, race completed
+    mavlink_log_info(&_mavlink_log_pub, "#AA241x plume1 N: %.1f m, E: %.1f, radius: %.1f", (double)_plume_N[0],(double)_plume_E[0],(double)_plume_radius[0]);
+}
+
+
+
 void AA241xMission::check_start()
 {
 
@@ -569,10 +598,10 @@ void AA241xMission::check_violation()
 	// so
 
 	if (r2 < min_r2) {
-	    _turn_radians = 0;
-	    //_in_violation = true;
-	} else if (_in_violation) {
-	    //_in_violation = false;
+	    //_turn_radians = 0;
+	    //_in_plume = true;
+	} else if (_in_plume) {
+	    //_in_plume = false;
 	    _num_plumes_found = _num_plumes_found + 1;
 		//TODO: remove plume found from list
 		// MESSAGE, violation occured
@@ -633,8 +662,8 @@ AA241xMission::task_main()
 	_prev_pos.E = 0.0f;
 	_prev_pos.D = 0.0f;
 
-	/* build the racecourse */
-	//build_racecourse();
+	/* build the first set of plumes */
+	build_plumes();
 
 	/* wakeup source(s) */
 	px4_pollfd_struct_t fds[2] = {};

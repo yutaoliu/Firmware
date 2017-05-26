@@ -2388,17 +2388,25 @@ int sdlog2_thread_main(int argc, char *argv[])
 		/* --- MISSION STATUS --- */
 		if (copy_if_updated(ORB_ID(aa241x_mission_status), &subs.mis_sub, &buf.mis_status)) {
 			log_msg.msg_type = LOG_AMIS_MSG;
+            //float p1N = buf.mis_status.plume_N[0]; float p1E = buf.mis_status.plume_E[0]; float p1r = buf.mis_status.plume_radius[0];
+            //float p2N = buf.mis_status.plume_N[1]; float p2E = buf.mis_status.plume_E[1]; float p2r = buf.mis_status.plume_radius[1];
+            //float p3N = buf.mis_status.plume_N[2]; float p3E = buf.mis_status.plume_E[2]; float p3r = buf.mis_status.plume_radius[2];
+            //float p4N = buf.mis_status.plume_N[3]; float p4E = buf.mis_status.plume_E[3]; float p4r = buf.mis_status.plume_radius[3];
+            //float p5N = buf.mis_status.plume_N[4]; float p5E = buf.mis_status.plume_E[4]; float p5r = buf.mis_status.plume_radius[4];
 			log_msg.body.log_AMIS.in_mission = buf.mis_status.in_mission;
 			log_msg.body.log_AMIS.start_time = buf.mis_status.start_time;
 			log_msg.body.log_AMIS.mission_time = buf.mis_status.mission_time;
 			log_msg.body.log_AMIS.final_time = buf.mis_status.final_time;
 			log_msg.body.log_AMIS.mission_failed = buf.mis_status.mission_failed;
-			//log_msg.body.log_AMIS.in_turn = buf.mis_status.in_turn;
 			log_msg.body.log_AMIS.phase_num = buf.mis_status.phase_num;
-			//log_msg.body.log_AMIS.turn_degrees = buf.mis_status.turn_degrees;
 			log_msg.body.log_AMIS.num_plumes_found = buf.mis_status.num_plumes_found;
 			//log_msg.body.log_AMIS.in_violation = buf.mis_status.in_violation;
 			log_msg.body.log_AMIS.out_of_bounds = buf.mis_status.out_of_bounds;
+            //log_msg.body.log_AMIS.p1N = p1N; log_msg.body.log_AMIS.p1E = p1E; log_msg.body.log_AMIS.p1r = p1r;
+            //log_msg.body.log_AMIS.p2N = p2N; log_msg.body.log_AMIS.p2E = p2E; log_msg.body.log_AMIS.p2r = p2r;
+            //log_msg.body.log_AMIS.p3N = p3N; log_msg.body.log_AMIS.p3E = p3E; log_msg.body.log_AMIS.p3r = p3r;
+            //log_msg.body.log_AMIS.p4N = p4N; log_msg.body.log_AMIS.p4E = p4E; log_msg.body.log_AMIS.p4r = p4r;
+            //log_msg.body.log_AMIS.p5N = p5N; log_msg.body.log_AMIS.p5E = p5E; log_msg.body.log_AMIS.p5r = p5r;
 			LOGBUFFER_WRITE_AND_COUNT(AMIS);
 		}
 

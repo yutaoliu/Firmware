@@ -822,12 +822,13 @@ FixedwingControl::set_aux_values()
 	mission_time = _mis_status.mission_time;
 	final_time = _mis_status.final_time;
 	mission_failed = _mis_status.mission_failed;
-	//in_turn = _mis_status.in_turn;
 	phase_num = _mis_status.phase_num;
-	//turn_degrees = _mis_status.turn_degrees;
 	num_plumes_found = _mis_status.num_plumes_found;
-	//in_violation = _mis_status.in_violation;
+	in_plume = _mis_status.in_plume;
 	out_of_bounds = _mis_status.out_of_bounds;
+    memcpy(&plume_N, _mis_status.plume_N, sizeof(_mis_status.plume_N));
+    memcpy(&plume_E, _mis_status.plume_E, sizeof(_mis_status.plume_E));
+    memcpy(&plume_radius, _mis_status.plume_radius, sizeof(_mis_status.plume_radius));
 
 }
 

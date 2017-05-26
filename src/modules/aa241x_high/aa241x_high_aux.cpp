@@ -147,12 +147,13 @@ hrt_abstime start_time;
 float mission_time;
 float final_time;
 bool mission_failed;
-//bool in_turn;
 int32_t phase_num;
-//float turn_degrees;
 int32_t num_plumes_found;
-//bool in_violation;
+bool in_plume;
 bool out_of_bounds;
+float plume_N[5];
+float plume_E[5];
+float plume_radius[5];
 
 
 // data from low priority thread
