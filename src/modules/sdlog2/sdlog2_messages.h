@@ -645,23 +645,7 @@ struct log_AMIS_s {
 	bool mission_failed;
 	int32_t phase_num;
 	int32_t num_plumes_found;
-	//bool in_violation;
 	bool out_of_bounds;
-    float p1N; 
-    float p1E; 
-    float p1r;
-    float p2N;
-    float p2E;
-    float p2r;
-    float p3N; 
-    float p3E; 
-    float p3r;
-    float p4N;
-    float p4E;
-    float p4r;
-    float p5N; 
-    float p5E; 
-    float p5r;
 };
 
 
