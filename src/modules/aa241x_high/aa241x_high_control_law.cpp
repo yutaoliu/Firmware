@@ -111,6 +111,22 @@ float coordinated_turn() {
     return roll_control();
 }
 
+// NEVER put a = 0
+float line_acquisition() {
+    float RMin = 10; // minimum turning radius
+    // compute distance to a line defined by (ax + by + c = 0)
+    float distance = aah_parameters.a * position_E + aah_parameters.b * position_N + aah_parameters.c;
+    if (distance > RMin) { // too far --> head normal to that line
+        float yaw_normal = atan2(-aah_parameters.b, aah_parameters.a);
+        roll_desired = aah_parameters.proportional_heading_gain * (yaw_normal - yaw);
+    } else { // close enough --> turn to acquire that line
+        float roll_correction = distance / RMin;
+        roll_desired = bound_checking(roll_correction);
+        // this is distance control, not sure if need to enforce heading control here
+    }
+    return roll_control();
+}
+
 
 
 /**
@@ -233,25 +249,18 @@ void flight_control() {
             yaw_servo_out = heading_control_yaw();
             throttle_servo_out = throttle_control();
             break;
-        // only roll manual
+        // full auto by using roll = coordinated_turn
         case 12:
             roll_servo_out = coordinated_turn();
             pitch_servo_out = altitude_control();
             yaw_servo_out = yaw_control();
             throttle_servo_out = throttle_control();
             break;
-        // only pitch manual
+        // full auto by using roll = line_acquisition
         case 13:
-            roll_servo_out = roll_control();
-            pitch_servo_out = -man_pitch_in;
+            roll_servo_out = line_acquisition();
+            pitch_servo_out = altitude_control();
             yaw_servo_out = yaw_control();
-            throttle_servo_out = throttle_control();
-            break;
-        // only yaw manual
-        case 14:
-            roll_servo_out = roll_control();
-            pitch_servo_out = pitch_control();
-            yaw_servo_out = man_yaw_in;
             throttle_servo_out = throttle_control();
             break;
         // full manual

@@ -85,6 +85,11 @@ PARAM_DEFINE_FLOAT(AAH_PITCHTRIM, 0.0f);
 PARAM_DEFINE_FLOAT(AAH_YAWTRIM, 0.0f);
 PARAM_DEFINE_FLOAT(AAH_INPUTSPEED, 15.0f);
 PARAM_DEFINE_FLOAT(AAH_BANKINGANGLE, 0.0f);
+//PARAM_DEFINE_FLOAT(AAH_INPUT_POS_E, 0.0f);
+//PARAM_DEFINE_FLOAT(AAH_INPUT_POS_N, 0.0f);
+PARAM_DEFINE_FLOAT(AAH_A_LINE, 1.0f);
+PARAM_DEFINE_FLOAT(AAH_B_LINE, 0.0f);
+PARAM_DEFINE_FLOAT(AAH_C_LINE, 1.0f);
 
 int aah_parameters_init(struct aah_param_handles *h)
 {
@@ -111,6 +116,11 @@ int aah_parameters_init(struct aah_param_handles *h)
         h->yaw_trim                     = param_find("AAH_YAWTRIM");
         h->input_speed                  = param_find("AAH_INPUTSPEED");
         h->banking_angle                = param_find("AAH_BANKINGANGLE");
+        //h->input_position_E             = param_find("AAH_INPUT_POS_E");
+        //h->input_position_N             = param_find("AAH_INPUT_POS_N");
+        h->a                            = param_find("AAH_A_LINE");
+        h->b                            = param_find("AAH_B_LINE");
+        h->c                            = param_find("AAH_C_LINE");
 	return OK;
 }
 
@@ -134,5 +144,10 @@ int aah_parameters_update(const struct aah_param_handles *h, struct aah_params *
         param_get(h->yaw_trim, &(p->yaw_trim));
         param_get(h->input_speed, &(p->input_speed));
         param_get(h->banking_angle, &(p->banking_angle));
+        //param_get(h->input_position_E, &(p->input_position_E));
+        //param_get(h->input_position_N, &(p->input_position_N));
+        param_get(h->a, &(p->a));
+        param_get(h->b, &(p->b));
+        param_get(h->c, &(p->c));
 	return OK;
 }
