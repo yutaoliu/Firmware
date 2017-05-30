@@ -549,7 +549,7 @@ void AA241xMission::check_start()
     
 
             	// MESSAGE, competition started
-            	mavlink_log_info(&_mavlink_log_pub, "#AA241x competition started");
+            	mavlink_log_info(&_mavlink_log_pub, "Valid starting position");
         } /*else {
         // this is commented because it will spam the message at every check_start() until competition starts
         mavlink_log_info(&_mavlink_log_pub, "#AA241x competition not started, out of bounds");
@@ -580,25 +580,26 @@ void AA241xMission::check_finished()
 
 	// Move to next phase if all plumes found
 	if (_all_plumes_found) {
-		mavlink_log_info(&_mavlink_log_pub, "All plumes in phase %i found. %i total plumes found",_phase_num,_num_plumes_found);
+		mavlink_log_info(&_mavlink_log_pub, "All plumes in phase %i found.",_phase_num);
 		new_phase = true;
 
 	// Move to next phase if time expired
 	} else if (time_in_phase > _parameters.max_phase_time) { 
-		mavlink_log_info(&_mavlink_log_pub, "Time limit in phase %i reached. %i total plumes found",_phase_num,_num_plumes_found);
+		mavlink_log_info(&_mavlink_log_pub, "Time limit in phase %i reached.",_phase_num);
 		new_phase = true;
 
 	}
 
 	if (new_phase) {
 		_phase_num += 1;
+		mavlink_log_info(&_mavlink_log_pub, "%i total plumes found",_phase_num,_num_plumes_found);
 		if (_phase_num < 4) {
 			build_plumes();
 			_all_plumes_found = false;
 			mavlink_log_info(&_mavlink_log_pub, "Phase %i started",_phase_num);
 			_phase_start_time = hrt_absolute_time();
 		} else {
-			mavlink_log_info(&_mavlink_log_pub, "Mission Completed Succesfully in %4.1f seconds",(double)_mission_time);
+			mavlink_log_info(&_mavlink_log_pub, "Mission completed succesfully in %5.2f seconds",(double)_mission_time);
 			_final_time = _mission_time;
 			//TODO: anything else need to be changed to finish mission?
 		}
@@ -763,17 +764,7 @@ AA241xMission::task_main()
 
 		//  run required auto mission code
 		if (_vcontrol_mode.flag_control_auto_enabled && !_parameters.mission_restart) {
-			_timestamp = hrt_absolute_time();
-
-			// This is probably not needed since we start any time we are in bounds now
-			// Force mission if so desired
-			//if (_parameters.force_start == 1) {
-			//	_in_mission = true;
-			//	if (_start_time == 0) {
-			//		_start_time = hrt_absolute_time();
-			//	}
-			//}
-			
+			_timestamp = hrt_absolute_time();	
 
 			// Check if there is no GPS lock and warn the user upon
 			// starting auto mode if that is the case.
@@ -784,11 +775,11 @@ AA241xMission::task_main()
 
 				//mavlink_log_critical(&_mavlink_log_pub, "AA241x. No GPS lock, do not launch airplane");
 			//}
-            
-			check_field_bounds();
 
 			// If not yet in mission check if mission has started
 			if (_in_mission == false) {
+				// Check if in bounds
+				check_field_bounds();
 				check_start();
 				// If check start sets mission to true set the start time
 	            		if (_in_mission) {
@@ -799,10 +790,10 @@ AA241xMission::task_main()
 	            		}
 	        	}
 
-			if (_in_mission == true) {
+			if (_in_mission == true && _phase_num < 4) {
 	            		// Report current time
 	            		_mission_time = (float)(hrt_absolute_time() - _start_time)/1000000.0f;
-
+				check_field_bounds();
 				check_near_plume();
 				check_finished();
 
