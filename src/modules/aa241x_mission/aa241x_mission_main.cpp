@@ -421,17 +421,12 @@ void AA241xMission::check_field_bounds()
 	}
 	// Assign struct boundaries
 
-	_land_pos lake_boundaries[9];
+	_land_pos lake_boundaries[4];
 
-	lake_boundaries[0].E =    5.0f;  lake_boundaries[0].N =    0.0f;
-	lake_boundaries[1].E =  -18.4f;  lake_boundaries[1].N =  230.0f;
-	lake_boundaries[2].E =  -91.7f;  lake_boundaries[2].N =  275.0f;
-	lake_boundaries[3].E = -175.0f;  lake_boundaries[3].N =  255.0f;
-	lake_boundaries[4].E = -192.8f;  lake_boundaries[4].N =  153.4f;
-	lake_boundaries[5].E = -162.7f;  lake_boundaries[5].N = -174.5f;
-	lake_boundaries[6].E = -140.0f;  lake_boundaries[6].N = -260.0f;
-	lake_boundaries[7].E =  -85.0f;  lake_boundaries[7].N = -290.0f;
-        lake_boundaries[8].E =   25.0f;  lake_boundaries[8].N = -280.0f;
+	lake_boundaries[0].E =   21.3f;  lake_boundaries[0].N = -250.0f;
+	lake_boundaries[1].E =  -98.7f;  lake_boundaries[1].N = -250.0f;
+	lake_boundaries[2].E = -137.9f;  lake_boundaries[2].N =  210.0f;
+	lake_boundaries[3].E =  -17.9f;  lake_boundaries[3].N =  210.0f;
 	
 	// check if already out of bounds so that it doesn't yell at you 1000 times
 	bool already_out = false;
@@ -445,12 +440,12 @@ void AA241xMission::check_field_bounds()
 	_out_of_bounds = false;
 
 	//% Check if outside convex portions
-	uint8_t convex[9] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
+	uint8_t convex[4] = {0, 1, 2, 3};
 
-	for (int i = 0; i < 9; i++) {
+	for (int i = 0; i < 4; i++) {
 	    // If at the last boundary (wrapping)
 		uint8_t nextpt = convex[i]+1;
-	    if (i == 8) {
+	    if (i == 3) {
 	        nextpt = convex[0];
 	    }
 	    
