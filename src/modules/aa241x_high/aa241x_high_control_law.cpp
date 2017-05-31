@@ -50,6 +50,9 @@
 // needed for variable names
 using namespace aa241x_high;
 
+// high_data
+// field1 = distance to the line
+
 // define global variables (can be seen by all files in aa241x_high directory unless static keyword used)
 float altitude_desired = 0.0f;
 float speed_desired = 0.0f;
@@ -116,18 +119,19 @@ float line_acquisition() {
     float RMin = 10; // minimum turning radius
     // compute distance to a line defined by (ax + by + c = 0)
     float distance = aah_parameters.a * position_E + aah_parameters.b * position_N + aah_parameters.c;
-    if (distance > RMin) { // too far --> head normal to that line
-        float yaw_normal = atan2(-aah_parameters.b, aah_parameters.a);
+    if (abs(distance) > RMin) { // too far --> head normal to that line
+        float yaw_normal = atan2(-aah_parameters.b, aah_parameters.a) - atan2(position_E, position_N);
         roll_desired = aah_parameters.proportional_heading_gain * (yaw_normal - yaw);
     } else { // close enough --> turn to acquire that line
         float roll_correction = distance / RMin;
-        roll_desired = bound_checking(roll_correction);
+        roll_desired = roll_correction;
         // this is distance control, not sure if need to enforce heading control here
     }
+    // logging data
+    high_data.field1 = distance;
+    high_data.field2 = roll_desired;
     return roll_control();
 }
-
-
 
 /**
  * Main function in which your code should be written.
