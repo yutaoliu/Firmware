@@ -80,6 +80,11 @@ struct aah_params {
         float a;
         float b;
         float c;
+        float unitVector_N_line;
+        float unitVector_E_line;
+        float waypoint_N;
+        float waypoint_E;
+        float input_altitude;
 
 };
 
@@ -115,6 +120,11 @@ struct aah_param_handles {
         param_t a;
         param_t b;
         param_t c;
+        param_t unitVector_N_line;
+        param_t unitVector_E_line;
+        param_t waypoint_N;
+        param_t waypoint_E;
+        param_t input_altitude;
 };
 
 /**

@@ -133,6 +133,20 @@ float line_acquisition() {
     return roll_control();
 }
 
+float line_acquisition_ver2() {
+    // unitVector_N_line, unitVector_E_line = unit vector in the direction of the line
+    // waypoint_N, waypoint_E = location of the waypoint
+    // position_E, position_N = current position of the plane
+
+    // find yaw_target
+    float y = aah_parameters.unitVector_N_line * (aah_parameters.waypoint_E - position_E)
+            - aah_parameters.unitVector_E_line* (aah_parameters.waypoint_N - position_N);
+    float unitVector_angle = atan2f(aah_parameters.unitVector_E_line, aah_parameters.unitVector_N_line);
+    // find roll_desired
+    roll_desired = aah_parameters.proportional_heading_gain * (0 - y) + unitVector_angle;
+    return roll_control();
+}
+
 /**
  * Main function in which your code should be written.
  *
@@ -263,6 +277,14 @@ void flight_control() {
         // full auto by using roll = line_acquisition
         case 13:
             roll_servo_out = line_acquisition();
+            pitch_servo_out = altitude_control();
+            yaw_servo_out = yaw_control();
+            throttle_servo_out = throttle_control();
+            break;
+        // full auto by using roll = line_acquisition_ver2, altitude = input altitude
+        case 14:
+            roll_servo_out = line_acquisition_ver2();
+            //altitude_desired = aah_parameters.input_altitude;
             pitch_servo_out = altitude_control();
             yaw_servo_out = yaw_control();
             throttle_servo_out = throttle_control();
