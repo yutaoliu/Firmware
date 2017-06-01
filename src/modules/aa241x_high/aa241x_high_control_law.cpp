@@ -190,7 +190,7 @@ float line_acquisition_ver3() {
 float line_acquisition_ver4() {
     float c = -(position_E + aah_parameters.delta_E);
     // compute distance to a line defined by (ax + by + c = 0)
-    float distance = aah_parameters.a * position_E + aah_parameters.b * position_N + c;
+    float distance = -(aah_parameters.a * position_E + aah_parameters.b * position_N + c);
     float line_heading = atan2(aah_parameters.b,aah_parameters.a);
     float yaw_target = line_heading + (PI/2 * bound_checking((aah_parameters.proportional_dist_gain * distance)/PI*2));
     roll_desired = aah_parameters.proportional_heading_gain * wrap_to_pi(yaw_target - yaw);
