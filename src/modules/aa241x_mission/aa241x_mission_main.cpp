@@ -455,7 +455,7 @@ void AA241xMission::check_field_bounds()
 	        
 	        if (_parameters.mis_fail == 1){
                             if (_in_mission) {
-                              mavlink_log_critical(&_mavlink_log_pub, "AA241x. Mission ended");
+                              mavlink_log_critical(&_mavlink_log_pub, "AA241x. Mission ended"); // probably not needed; we have the fail message below
                             }
 			    _in_mission = false;
 			}
@@ -625,6 +625,7 @@ void AA241xMission::check_near_plume()
 		if (rp < _plume_radius[i]) {
 			_plume_radius[i] = -1.0f; //mark plume as visited
 			_num_plumes_found += 1;	
+			mavlink_log_info(&_mavlink_log_pub, "Plume Found")
 		}
 
 	}
@@ -684,7 +685,7 @@ AA241xMission::task_main()
 	_prev_pos.D = 0.0f;
 
 	/* build the first set of plumes */
-	build_plumes();
+	//build_plumes();  //wait until mission starts
 
 	/* wakeup source(s) */
 	px4_pollfd_struct_t fds[2] = {};
@@ -757,9 +758,9 @@ AA241xMission::task_main()
 		}
 		
                 // reset mission parameters remotely
-                if (_parameters.mission_restart) {
-                  reset_mission();
-                }
+                //if (_parameters.mission_restart) {
+                //  reset_mission();
+                //}
 
 
 		//  run required auto mission code
@@ -783,10 +784,13 @@ AA241xMission::task_main()
 				check_start();
 				// If check start sets mission to true set the start time
 	            		if (_in_mission) {
-	                		_start_time = hrt_absolute_time(); // make hrt_absolute_time
-					_phase_start_time = _start_time;
-					_phase_num = 1;
-					build_plumes();
+	                		_start_time = hrt_absolute_time(); 	// initialize mission start time
+					_phase_start_time = _start_time;   	// initialize phase start time
+					_phase_num = 1;				// initialize phase number
+					_num_plumes_found = 0;			// reset plumes found
+					_mission_failed = false;		// reset mission fail
+					_final_time = 0.0f;			// reset final time
+					build_plumes();				// initialize plumes
 	            		}
 	        	}
 
