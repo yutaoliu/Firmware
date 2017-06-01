@@ -98,8 +98,7 @@ float throttle_control() {
 }
 
 float heading_control_yaw() {
-    yaw_desired = atan2(headingE_desired, headingN_desired) - atan2(position_E, position_N);
-    return yaw_control();
+    return 0.0f;
 }
 
 float heading_control_roll() {
@@ -108,8 +107,13 @@ float heading_control_roll() {
     return roll_control();
 }
 
+float heading_control_roll_ver2() {
+    roll_desired = aah_parameters.proportional_heading_gain * (yaw_desired - yaw);
+    return roll_control();
+}
+
 float heading_control_roll_input_desired_heading() {
-    float yaw_target = aah_parameters.heading_to_yaw_gain * (aah_parameters.input_heading_angle_deg * PI / 180) - atan2f(position_E, position_N);
+    float yaw_target = (aah_parameters.input_heading_angle_deg * PI / 180);
     roll_desired = aah_parameters.proportional_heading_gain * (yaw_target - yaw);
     return roll_control();
 }
@@ -155,7 +159,7 @@ float line_acquisition_ver2() {
 }
 
 float line_acquisition_ver3() {
-    float c = -(position_E + aah_parameters.delta_c);
+    float c = -(position_E + aah_parameters.delta_E);
     float RMin = 10; // minimum turning radius
     // compute distance to a line defined by (ax + by + c = 0)
     float distance = aah_parameters.a * position_E + aah_parameters.b * position_N + c;
@@ -174,11 +178,11 @@ float line_acquisition_ver3() {
 }
 
 float line_acquisition_ver4() {
-    float c = -(position_E + aah_parameters.delta_c);
+    float c = -(position_E + aah_parameters.delta_E);
     // compute distance to a line defined by (ax + by + c = 0)
     float distance = aah_parameters.a * position_E + aah_parameters.b * position_N + c;
-    float hdg_target = atan2f(aah_parameters.a, aah_parameters.b) + (PI/2 * bound_checking((aah_parameters.proportional_dist_gain * distance)/PI*2));
-    float yaw_target = aah_parameters.heading_to_yaw_gain * (hdg_target - atan2f(position_E, position_N));
+    float line_heading = atan2(aah_parameters.b,aah_parameters.a);
+    float yaw_target = line_heading + (PI/2 * bound_checking((aah_parameters.proportional_dist_gain * distance)/PI*2));
     roll_desired = aah_parameters.proportional_heading_gain * (yaw_target - yaw);
     // logging data
     high_data.field1 = distance;
@@ -194,8 +198,6 @@ float line_acquisition_ver4() {
  * the code you'd like executed on a loop is in this function.
  */
 void flight_control() {
-
-        float my_float_variable = 0.0f;		/**< example float variable */
 
 
         // An example of how to run a one time 'setup' for example to lock one's altitude and heading...
@@ -217,8 +219,6 @@ void flight_control() {
         // getting low data value example
         // float my_low_data = low_data.field1;
 
-        // setting high data value example
-        high_data.field1 = my_float_variable;
 
         // Set servo output
         switch (aah_parameters.caseNum) {
@@ -354,7 +354,14 @@ void flight_control() {
             throttle_servo_out = throttle_control();
             high_data.field3 = 17;
             break;
-
+        // full auto by using roll = heading_control_roll_ver2()
+        case 18:
+            roll_servo_out = heading_control_roll_ver2();
+            pitch_servo_out = altitude_control();
+            yaw_servo_out = yaw_control();
+            throttle_servo_out = throttle_control();
+            high_data.field3 = 18;
+            break;
         // full manual
         default:
             roll_servo_out = man_roll_in;
