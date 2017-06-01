@@ -184,51 +184,17 @@ AA241xMission::~AA241xMission() {
 	aa241x_mission::g_aa241x_mission = nullptr;
 }
 
-//void
-//AA241xMission::reset_mission()
-//{
-//	_in_mission = false;
-//	_mission_failed = false;
-//	_start_time = 0;
-//	_mission_time = 0.0f;
-//	_final_time = 0.0f;
-	//_in_turn = false;
-	//_just_started_turn = false;
-//	_phase_num = -1;
-	//_turn_radians = 0.0f;
-	//_turn_degrees = 0.0f;
-	//_req_turn_degrees = -840.0f;
-	//_num_of_turns = 2;
-//	_num_plumes_found = 0;
-	//_in_plume = false;
-//	_out_of_bounds = false;
-//	_phase_start_time = 0;
-//	for (int i= 0; i<5; i++) {
-//		_plume_N[i] = 0.0f;
-//		_plume_E[i] = 0.0f;
-//		_plume_radius[i] = -1.0f;
-//	}
-//s}
-
 int
 AA241xMission::parameters_update()
 {
 	param_get(_parameter_handles.min_alt, &(_parameters.min_alt));
 	param_get(_parameter_handles.max_alt, &(_parameters.max_alt));
-	//param_get(_parameter_handles.mission_restart, &(_parameters.mission_restart));
 	param_get(_parameter_handles.max_phase_time, &(_parameters.max_phase_time));
-	//param_get(_parameter_handles.start_pos_E, &(_parameters.start_pos_E));
-	//param_get(_parameter_handles.keepout_radius, &(_parameters.keepout_radius));
-	//param_get(_parameter_handles.tilt, &(_parameters.tilt));
-	//param_get(_parameter_handles.leg_length, &(_parameters.leg_length));
-	//param_get(_parameter_handles.gate_width, &(_parameters.gate_width));
 	param_get(_parameter_handles.ctr_lat, &(_parameters.ctr_lat));
 	param_get(_parameter_handles.ctr_lon, &(_parameters.ctr_lon));
 	param_get(_parameter_handles.ctr_alt, &(_parameters.ctr_alt));
-	//param_get(_parameter_handles.team_num, &(_parameters.team_num));
 	param_get(_parameter_handles.mis_fail, &(_parameters.mis_fail));
 	param_get(_parameter_handles.debug_mode, &(_parameters.debug_mode));
-	//param_get(_parameter_handles.force_start, &(_parameters.force_start));
 	param_get(_parameter_handles.mission_seed, &(_parameters.mission_seed));
 
 	// TODO: HANDLE ADDITIONAL PARAMETERS HERE
@@ -436,9 +402,9 @@ void AA241xMission::check_field_bounds()
 	        _mission_failed = true;
 	        
 	        if (_parameters.mis_fail == 1){
-                            if (_in_mission) {
-                              mavlink_log_critical(&_mavlink_log_pub, "AA241x. Mission ended"); // probably not needed; we have the fail message below
-                            }
+                            //if (_in_mission) {
+                              //mavlink_log_critical(&_mavlink_log_pub, "AA241x. Mission ended"); // probably not needed; we have the fail message below
+                            //}
 			    _in_mission = false;
 			}
 
@@ -575,7 +541,7 @@ void AA241xMission::check_finished()
 			mavlink_log_info(&_mavlink_log_pub, "Phase %i started",_phase_num);
 			_phase_start_time = hrt_absolute_time();
 		} else {
-			mavlink_log_info(&_mavlink_log_pub, "Mission completed succesfully in %5.2f seconds",(double)_mission_time);
+			mavlink_log_info(&_mavlink_log_pub, "Mission completed succesfully in %4.1f seconds",(double)_mission_time);
 			_final_time = _mission_time;
 		}
 	}
@@ -590,7 +556,6 @@ void AA241xMission::check_near_plume()
 		mavlink_log_info(&_mavlink_log_pub, "Check near plume ran")
 	}
 
-
 	for (int i= 0; i<5; i++) {
 
 		// Calculate distance from plume center
@@ -600,11 +565,9 @@ void AA241xMission::check_near_plume()
 		if (rp < _plume_radius[i]) {
 			_plume_radius[i] = -1.0f; //mark plume as visited
 			_num_plumes_found += 1;	
-			mavlink_log_info(&_mavlink_log_pub, "Plume Found")
+			mavlink_log_info(&_mavlink_log_pub, "Plume Found; %i total plumes found",_num_plumes_found)
 		}
-
 	}
-
 }
 
 void
@@ -718,18 +681,13 @@ AA241xMission::task_main()
 		vehicle_status_update();
 		battery_status_update();
 
-		// Reset turn if dropped out of mission
-		//if (_in_mission == false) { _turn_num = -1; }
-
 		// Yell position every 5 seconds if debugging
 		_debug_yell = false;
 		if (_parameters.debug_mode == 1 && (hrt_absolute_time() - _debug_timestamp > 5000000)) {
 			_debug_timestamp = hrt_absolute_time();
 			_debug_yell = true;
-
-			//mavlink_log_info(&_mavlink_log_pub, "Current: N %.3f, E %.3f, D %.3f", (double)_cur_pos.N, (double)_cur_pos.E, (double)_cur_pos.D);
-			//mavlink_log_info(&_mavlink_log_pub, "Previous: N %.3f, E %.3f D %.3f", (double)_prev_pos.N, (double)_prev_pos.E, (double)_prev_pos.D);
-
+			mavlink_log_info(&_mavlink_log_pub, "Current: N %.3f, E %.3f, D %.3f", (double)_cur_pos.N, (double)_cur_pos.E, (double)_cur_pos.D);
+			mavlink_log_info(&_mavlink_log_pub, "Previous: N %.3f, E %.3f D %.3f", (double)_prev_pos.N, (double)_prev_pos.E, (double)_prev_pos.D);
 		}
 
 
@@ -786,16 +744,10 @@ AA241xMission::task_main()
 				}
 	        	}
 		}
-		    
-		// CHECK IF HARD VIOLATIONS
-		// if yea, mission_failed = true, final_time = 0
-		//
 		_previous_loop_timestamp = _timestamp;
 		
-
 		/* publish the mission status as the last thing to do each loop */
 		publish_mission_status();
-
 	}
 
 	warnx("exiting.\n");
