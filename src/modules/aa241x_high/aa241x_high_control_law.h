@@ -72,6 +72,10 @@ float heading_control_roll();
 float coordinated_turn();
 float line_acquisition();
 float line_acquisition_ver2();
+float line_acquisition_ver3();
+float line_acquisition_ver4();
+float heading_control_roll_input_desired_heading();
+
 
 
 #endif /* AA241X_FW_CONTROL_MAIN_H_ */

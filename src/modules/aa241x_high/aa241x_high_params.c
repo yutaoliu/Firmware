@@ -90,11 +90,15 @@ PARAM_DEFINE_FLOAT(AAH_BANKINGANGLE, 0.0f);
 PARAM_DEFINE_FLOAT(AAH_LINE_A, 1.0f);
 PARAM_DEFINE_FLOAT(AAH_LINE_B, 0.0f);
 PARAM_DEFINE_FLOAT(AAH_LINE_C, 1.0f);
+PARAM_DEFINE_FLOAT(AAH_DELTA_C, 100.0f);
 PARAM_DEFINE_FLOAT(AAH_LINE_N_LINE, 0.9091019f);
 PARAM_DEFINE_FLOAT(AAH_LINE_E_LINE, -0.416573805f);
 PARAM_DEFINE_FLOAT(AAH_LINE_N_WAYPT, -88.0f);
 PARAM_DEFINE_FLOAT(AAH_LINE_E_WAYPT, -155.6017f);
 PARAM_DEFINE_FLOAT(AAH_LINE_ALT, 80.0f);
+PARAM_DEFINE_FLOAT(AAH_HEADING, 0.0f);
+PARAM_DEFINE_FLOAT(AAH_YAWHEADGAIN, 1.0f);
+PARAM_DEFINE_FLOAT(AAH_DISTGAIN, 1.0f);
 
 
 int aah_parameters_init(struct aah_param_handles *h)
@@ -132,6 +136,10 @@ int aah_parameters_init(struct aah_param_handles *h)
         h->waypoint_N                   = param_find("AAH_LINE_N_WAYPT");
         h->waypoint_E                   = param_find("AAH_LINE_E_WAYPT");
         h->input_altitude               = param_find("AAH_LINE_ALT");
+        h->input_heading_angle_deg      = param_find("AAH_HEADING");
+        h->heading_to_yaw_gain          = param_find("AAH_YAWHEADGAIN");
+        h->delta_c                      = param_find("AAH_DELTA_C");
+        h->proportional_dist_gain       = param_find("AAH_DISTGAIN");
 	return OK;
 }
 
@@ -165,5 +173,9 @@ int aah_parameters_update(const struct aah_param_handles *h, struct aah_params *
         param_get(h->waypoint_N, &(p->waypoint_N));
         param_get(h->waypoint_E, &(p->waypoint_E));
         param_get(h->input_altitude, &(p->input_altitude));
+        param_get(h->input_heading_angle_deg, &(p->input_heading_angle_deg));
+        param_get(h->heading_to_yaw_gain , &(p->heading_to_yaw_gain ));
+        param_get(h->delta_c , &(p->delta_c ));
+        param_get(h->proportional_dist_gain  , &(p->proportional_dist_gain));
 	return OK;
 }
