@@ -127,19 +127,11 @@ private:
 		float min_alt;
 		float max_alt;
 		float max_phase_time;
-		//float start_pos_E;
-		//float keepout_radius;
-		//float tilt;
 		float ctr_lat;
 		float ctr_lon;
 		float ctr_alt;
-		//float leg_length;
-		//float gate_width;
 		int mis_fail;
-		//int team_num;
 		int debug_mode;
-		//int force_start;
-                int mission_restart;
 		long mission_seed;
 	}		_parameters;			/**< local copies of interesting parameters */
 
@@ -147,30 +139,17 @@ private:
 		param_t min_alt;
 		param_t max_alt;
 		param_t max_phase_time;
-		//param_t start_pos_E;
-		//param_t keepout_radius;
-		//param_t tilt;
 		param_t ctr_lat;
 		param_t ctr_lon;
 		param_t ctr_alt;
-		//param_t leg_length;
-		//param_t gate_width;
 		param_t mis_fail;
-		//param_t team_num;
 		param_t debug_mode;
-		//param_t force_start;
-                param_t mission_restart;
 		param_t mission_seed;
 	}		_parameter_handles;		/**< handles for interesting parameters */
 
 	hrt_abstime _mission_start_time;	/**< timestamp of when entered mission */
-	//float		_mission_start_battery;	/**< the mAh used when entered the mission */
 	bool 		_in_mission;			/**< if true, currently running a mission (fire is spreading) */
-	//bool		_can_start;				/**< if false conditions for starting have been violated */
-	//bool		_early_termination;		/**< if true terminating mission early, but still need to finish running fire */
 	bool		_mission_failed;		/**< if true terminating mission entirely with a score of 0 */
-	//float		_score;					/**< the current mission score */
-	//bool		_cross_min;				/**< if plane has crossed the minimum altitude (to delay checks between takeoff and first cross) */
 
 	// 
 
@@ -191,12 +170,7 @@ private:
 		float angle;
 	}	;
 
-	_land_pos _start_gate[4];
 	_land_pos _lake_boundaries[9];
-
-	_land_pos  _start_pylon;
-	
-	_pylon_pos _pylon[2];
 
 	_airplane_pos _cur_pos;
 	_airplane_pos _prev_pos;
@@ -207,15 +181,8 @@ private:
 	float _mission_time;
 	float _final_time;
 
-	//bool 	_in_turn;
-	//bool 	_just_started_turn;
 	int8_t  _phase_num;
-	//float 	_turn_radians;
-	//float 	_turn_degrees;
-	//float 	_req_turn_degrees;
-	//uint8_t _num_of_turns;
 	uint8_t _num_plumes_found;
-	//bool 	_in_plume;
 	bool	_out_of_bounds;
 	float _plume_N[5];
     	float _plume_E[5];
@@ -307,22 +274,13 @@ private:
 	void 	check_turn_start(); 
 	bool	_check_turn_start_run;
 	// check if a turn has ended
-	void 	check_turn_end();  
-	bool	_check_turn_end_run;
+
 	// check whether plume visited
 	void 	check_near_plume(); 
 	bool	_check_violation_run;
-	// accumulate degrees on a turn
-	void 	turn_accumulate();
-	bool	_turn_accumulate_run;
-        // reset the mission variables if desired
-        void    reset_mission();
 
 	hrt_abstime _debug_timestamp;
 	bool	_debug_yell;
-
-
-
 
 	/**
 	 * Shim for calling task_main from task_create.

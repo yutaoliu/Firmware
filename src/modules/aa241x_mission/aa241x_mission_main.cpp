@@ -112,15 +112,8 @@ AA241xMission::AA241xMission() :
 	_mission_time(0.0f),
 	_final_time(0.0f),
 
-
-	//_just_started_turn(false),
 	_phase_num(-1),
-	//_turn_radians(0.0f),
-	//_turn_degrees(0.0f),
-	//_req_turn_degrees(-840.0f),
-	//_num_of_turns(2),
 	_num_plumes_found(0),
-	//_in_plume(false),
 	_out_of_bounds(false),
 	_all_plumes_found(false),
 
@@ -132,10 +125,7 @@ AA241xMission::AA241xMission() :
 	_check_field_bounds_run(false),
 	_check_finished_run(false),
 	_check_start_run(false),
-	//_check_turn_start_run(false),
-	//_check_turn_end_run(false),
 	_check_violation_run(false),
-	//_turn_accumulate_run(false),
 
 	_debug_timestamp(0),
 	_debug_yell(false)
@@ -159,19 +149,11 @@ AA241xMission::AA241xMission() :
 	_parameter_handles.min_alt = param_find("AAMIS_ALT_MIN");
 	_parameter_handles.max_alt = param_find("AAMIS_ALT_MAX");
 	_parameter_handles.max_phase_time = param_find("AAMIS_PHASE_MAXT");
-	//_parameter_handles.start_pos_E = param_find("AAMIS_SPOS_E");
-	//_parameter_handles.keepout_radius = param_find("AAMIS_RAD_KPT");
-	//_parameter_handles.tilt = param_find("AAMIS_TILT");
-	//_parameter_handles.leg_length = param_find("AAMIS_LEG_LEN");
-	//_parameter_handles.gate_width = param_find("AAMIS_GTE_WID");
 	_parameter_handles.ctr_lat = param_find("AAMIS_CTR_LAT");
 	_parameter_handles.ctr_lon = param_find("AAMIS_CTR_LON");
 	_parameter_handles.ctr_alt = param_find("AAMIS_CTR_ALT");
-	//_parameter_handles.team_num = param_find("AA_TEAM");
-	_parameter_handles.mission_restart = param_find("AAMIS_RESET");
 	_parameter_handles.mis_fail = param_find("AAMIS_MIS_FAIL");
 	_parameter_handles.debug_mode = param_find("AAMIS_DEBUG");
-	//_parameter_handles.force_start = param_find("AAMIS_FSTART");
 	_parameter_handles.mission_seed = param_find("AAMIS_MIS_SEED");
 
 	parameters_update();
@@ -202,38 +184,38 @@ AA241xMission::~AA241xMission() {
 	aa241x_mission::g_aa241x_mission = nullptr;
 }
 
-void
-AA241xMission::reset_mission()
-{
-	_in_mission = false;
-	_mission_failed = false;
-	_start_time = 0;
-	_mission_time = 0.0f;
-	_final_time = 0.0f;
+//void
+//AA241xMission::reset_mission()
+//{
+//	_in_mission = false;
+//	_mission_failed = false;
+//	_start_time = 0;
+//	_mission_time = 0.0f;
+//	_final_time = 0.0f;
 	//_in_turn = false;
 	//_just_started_turn = false;
-	_phase_num = -1;
+//	_phase_num = -1;
 	//_turn_radians = 0.0f;
 	//_turn_degrees = 0.0f;
 	//_req_turn_degrees = -840.0f;
 	//_num_of_turns = 2;
-	_num_plumes_found = 0;
+//	_num_plumes_found = 0;
 	//_in_plume = false;
-	_out_of_bounds = false;
-	_phase_start_time = 0;
-	for (int i= 0; i<5; i++) {
-		_plume_N[i] = 0.0f;
-		_plume_E[i] = 0.0f;
-		_plume_radius[i] = -1.0f;
-	}
-}
+//	_out_of_bounds = false;
+//	_phase_start_time = 0;
+//	for (int i= 0; i<5; i++) {
+//		_plume_N[i] = 0.0f;
+//		_plume_E[i] = 0.0f;
+//		_plume_radius[i] = -1.0f;
+//	}
+//s}
 
 int
 AA241xMission::parameters_update()
 {
 	param_get(_parameter_handles.min_alt, &(_parameters.min_alt));
 	param_get(_parameter_handles.max_alt, &(_parameters.max_alt));
-	param_get(_parameter_handles.mission_restart, &(_parameters.mission_restart));
+	//param_get(_parameter_handles.mission_restart, &(_parameters.mission_restart));
 	param_get(_parameter_handles.max_phase_time, &(_parameters.max_phase_time));
 	//param_get(_parameter_handles.start_pos_E, &(_parameters.start_pos_E));
 	//param_get(_parameter_handles.keepout_radius, &(_parameters.keepout_radius));
@@ -749,15 +731,10 @@ AA241xMission::task_main()
 			//mavlink_log_info(&_mavlink_log_pub, "Previous: N %.3f, E %.3f D %.3f", (double)_prev_pos.N, (double)_prev_pos.E, (double)_prev_pos.D);
 
 		}
-		
-                // reset mission parameters remotely
-                //if (_parameters.mission_restart) {
-                //  reset_mission();
-                //}
 
 
 		//  run required auto mission code
-		if (_vcontrol_mode.flag_control_auto_enabled && !_parameters.mission_restart) {
+		if (_vcontrol_mode.flag_control_auto_enabled) {
 			_timestamp = hrt_absolute_time();	
 
 			// Check if there is no GPS lock and warn the user upon

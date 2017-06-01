@@ -67,45 +67,6 @@ PARAM_DEFINE_FLOAT(AAMIS_ALT_MAX, 110.0f);
  */
 PARAM_DEFINE_FLOAT(AAMIS_PHASE_MAXT, 30.0f);
 
-/**
- * East location of starting gate pylon
- *
- * @unit minutes
- * @group AA241x Mission
- */
-//PARAM_DEFINE_FLOAT(AAMIS_SPOS_E, -96.0f);
-
-/**
- * Minimum allowed radius from pylon
- *
- * @unit meters
- * @group AA241x Mission
- */
-//PARAM_DEFINE_FLOAT(AAMIS_RAD_KPT, 5.0f);
-
-/**
- * Tilt angle of first leg of course relative to East, positive CCW
- *
- * @unit degrees
- * @group AA241x Mission
- */
-//PARAM_DEFINE_FLOAT(AAMIS_TILT, -25.0f);
-
-/**
- * Length of straight legs
- *
- * @unit meters
- * @group AA241x Mission
- */
-//PARAM_DEFINE_FLOAT(AAMIS_LEG_LEN, 243.84f);
-
-/**
- * Width of start/finish gate
- *
- * @unit meters
- * @group AA241x Mission
- */
-//PARAM_DEFINE_FLOAT(AAMIS_GTE_WID, 50.0f);
 
 /**
  * Reset the mission parameters. MUST BE SET TO ZERO FOR MISSION TO RUN!
@@ -115,7 +76,7 @@ PARAM_DEFINE_FLOAT(AAMIS_PHASE_MAXT, 30.0f);
  * @max 1
  * @group AA241x Mission
  */
-PARAM_DEFINE_INT32(AAMIS_RESET, 0);
+//PARAM_DEFINE_INT32(AAMIS_RESET, 0);
 
 /**
  * Activate/deactivate mission failure. 1 means mission failure kills the current mission,
@@ -174,21 +135,6 @@ PARAM_DEFINE_FLOAT(AAMIS_CTR_ALT, 40.0f); // TODO: update altitude
  * @group AA241x Mission
  */
 PARAM_DEFINE_INT32(AAMIS_DEBUG, 0);
-
-/**
- * Force mission to run (regardless of whether you cross the start line)
- *
- *
- * @group AA241x Mission
- */
-//PARAM_DEFINE_INT32(AAMIS_FSTART, 0);
-
-/**
- * Team number (1-5).
- *
- * @group AA241x Student Params
- */
-//PARAM_DEFINE_INT32(AA_TEAM, 0);
 
 /**
  * 2017 Mission Seed
