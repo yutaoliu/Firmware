@@ -371,10 +371,10 @@ void AA241xMission::check_field_bounds()
 
 	_land_pos lake_boundaries[4];
 
-	lake_boundaries[0].E =   21.3f;  lake_boundaries[0].N = -250.0f;
-	lake_boundaries[1].E =  -98.7f;  lake_boundaries[1].N = -250.0f;
-	lake_boundaries[2].E = -137.9f;  lake_boundaries[2].N =  210.0f;
-	lake_boundaries[3].E =  -17.9f;  lake_boundaries[3].N =  210.0f;
+	lake_boundaries[0].E =   16.9f;  lake_boundaries[0].N = -198.3f;
+	lake_boundaries[1].E = -102.7f;  lake_boundaries[1].N = -208.5f;
+	lake_boundaries[2].E = -138.3f;  lake_boundaries[2].N =  210.0f;
+	lake_boundaries[3].E =  -18.7f;  lake_boundaries[3].N =  220.2f;
 	
 	// check if already out of bounds so that it doesn't yell at you 1000 times
 	bool already_out = false;
