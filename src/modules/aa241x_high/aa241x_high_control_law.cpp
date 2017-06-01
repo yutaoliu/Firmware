@@ -72,6 +72,16 @@ float bound_checking(float correction_value) {
     return correction_value;
 }
 
+float wrap_to_pi(float correction_value) {
+    while (correction_value > PI) {
+        correction_value -= PI;
+    }
+    while (correction_value < -PI) {
+        correction_value += PI;
+    }
+    return correction_value;
+}
+
 float roll_control() {
     float proportionalRollCorrection = aah_parameters.proportional_roll_gain * (roll_desired - roll) + aah_parameters.roll_trim;
     return bound_checking(proportionalRollCorrection);
@@ -114,7 +124,7 @@ float heading_control_roll_ver2() {
 
 float heading_control_roll_input_desired_heading() {
     float yaw_target = (aah_parameters.input_heading_angle_deg * PI / 180);
-    roll_desired = aah_parameters.proportional_heading_gain * (yaw_target - yaw);
+    roll_desired = aah_parameters.proportional_heading_gain * wrap_to_pi(yaw_target - yaw);
     return roll_control();
 }
 
@@ -132,7 +142,7 @@ float line_acquisition() {
     float distance = aah_parameters.a * position_E + aah_parameters.b * position_N + aah_parameters.c;
     if (abs(distance) > RMin) { // too far --> head normal to that line
         float yaw_normal = atan2(-aah_parameters.b, aah_parameters.a) - atan2(position_E, position_N);
-        roll_desired = aah_parameters.proportional_heading_gain * (yaw_normal - yaw);
+        roll_desired = aah_parameters.proportional_heading_gain * wrap_to_pi(yaw_normal - yaw);
     } else { // close enough --> turn to acquire that line
         float roll_correction = distance / RMin;
         roll_desired = roll_correction;
@@ -165,7 +175,7 @@ float line_acquisition_ver3() {
     float distance = aah_parameters.a * position_E + aah_parameters.b * position_N + c;
     if (abs(distance) > RMin) { // too far --> head normal to that line
         float yaw_normal = atan2(-aah_parameters.b, aah_parameters.a) - atan2(position_E, position_N);
-        roll_desired = aah_parameters.proportional_heading_gain * (yaw_normal - yaw);
+        roll_desired = aah_parameters.proportional_heading_gain * wrap_to_pi(yaw_normal - yaw);
     } else { // close enough --> turn to acquire that line
         float roll_correction = distance / RMin;
         roll_desired = roll_correction;
@@ -183,7 +193,7 @@ float line_acquisition_ver4() {
     float distance = aah_parameters.a * position_E + aah_parameters.b * position_N + c;
     float line_heading = atan2(aah_parameters.b,aah_parameters.a);
     float yaw_target = line_heading + (PI/2 * bound_checking((aah_parameters.proportional_dist_gain * distance)/PI*2));
-    roll_desired = aah_parameters.proportional_heading_gain * (yaw_target - yaw);
+    roll_desired = aah_parameters.proportional_heading_gain * wrap_to_pi(yaw_target - yaw);
     // logging data
     high_data.field1 = distance;
     high_data.field2 = roll_desired;
