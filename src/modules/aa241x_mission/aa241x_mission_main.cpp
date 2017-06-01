@@ -542,12 +542,6 @@ void AA241xMission::check_start()
 
 	if (!_out_of_bounds) {
 		_in_mission = true;
-
-        	if (_parameters.debug_mode == 1 && (_check_start_run == false || _debug_yell == true)) {
-            	mavlink_log_info(&_mavlink_log_pub, "#Valid starting position");
-          	}
-    
-
             	// MESSAGE, competition started
             	mavlink_log_info(&_mavlink_log_pub, "Valid starting position");
         } /*else {
@@ -601,7 +595,6 @@ void AA241xMission::check_finished()
 		} else {
 			mavlink_log_info(&_mavlink_log_pub, "Mission completed succesfully in %5.2f seconds",(double)_mission_time);
 			_final_time = _mission_time;
-			//TODO: anything else need to be changed to finish mission?
 		}
 	}
 }
@@ -809,13 +802,11 @@ AA241xMission::task_main()
         	} else {// in manual mode
 	        	// if still in mission when activating manual, fail the mission
 	        	if (_in_mission == true) {
-	            		_mission_failed = true;
-	            		if (_parameters.mis_fail == 1){
-					_in_mission = false;
-					mavlink_log_critical(&_mavlink_log_pub, "AA241x. Mission ended");
+				_in_mission = false;
+				if (_phase_num < 4) {
+	            			_mission_failed = true;
+					mavlink_log_critical(&_mavlink_log_pub, "AA241x Mission Failed; manual mode activated");
 				}
-				// tone, msg output
-	            		//mavlink_log_critical(&_mavlink_log_pub, "AA241x. Mission failed, manual mode activated during race");
 	        	}
 		}
 		    
