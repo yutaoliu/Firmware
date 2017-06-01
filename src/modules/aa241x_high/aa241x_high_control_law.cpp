@@ -50,11 +50,15 @@
 // needed for variable names
 using namespace aa241x_high;
 
+// high_data
+// field1 = distance to the line
+
 // define global variables (can be seen by all files in aa241x_high directory unless static keyword used)
 float altitude_desired = 0.0f;
 float speed_desired = 0.0f;
 float headingN_desired = 0.0f;
 float headingE_desired = 0.0f;
+const float PI =3.14159265358979f;
 
 /*
  * Do bounds checking to keep the roll/pitch/yaw/throttle correction within the -1..1 limits of the servo output
@@ -64,6 +68,16 @@ float bound_checking(float correction_value) {
         correction_value = 1.0f;
     } else if (correction_value < -1.0f) {
         correction_value = -1.0f;
+    }
+    return correction_value;
+}
+
+float wrap_to_pi(float correction_value) {
+    while (correction_value > PI) {
+        correction_value -= PI;
+    }
+    while (correction_value < -PI) {
+        correction_value += PI;
     }
     return correction_value;
 }
@@ -94,17 +108,97 @@ float throttle_control() {
 }
 
 float heading_control_yaw() {
-    yaw_desired = atan2(headingE_desired - position_E, headingN_desired - position_N);
-    return yaw_control();
+    return 0.0f;
 }
 
 float heading_control_roll() {
-    float yaw_target = atan2(headingE_desired - position_E, headingN_desired - position_N);
+    float yaw_target = atan2(headingE_desired, headingN_desired) - atan2(position_E, position_N);
     roll_desired = aah_parameters.proportional_heading_gain * (yaw_target - yaw);
     return roll_control();
 }
 
+float heading_control_roll_ver2() {
+    roll_desired = aah_parameters.proportional_heading_gain * (yaw_desired - yaw);
+    return roll_control();
+}
 
+float heading_control_roll_input_desired_heading() {
+    float yaw_target = (aah_parameters.input_heading_angle_deg * PI / 180);
+    roll_desired = aah_parameters.proportional_heading_gain * wrap_to_pi(yaw_target - yaw);
+    return roll_control();
+}
+
+// banking angle = 1 --> turn right
+// bangking angle = -1 --> turn left
+float coordinated_turn() {
+    roll_desired = aah_parameters.banking_angle;
+    return roll_control();
+}
+
+// NEVER put a = 0
+float line_acquisition() {
+    float RMin = 10; // minimum turning radius
+    // compute distance to a line defined by (ax + by + c = 0)
+    float distance = aah_parameters.a * position_E + aah_parameters.b * position_N + aah_parameters.c;
+    if (abs(distance) > RMin) { // too far --> head normal to that line
+        float yaw_normal = atan2(-aah_parameters.b, aah_parameters.a) - atan2(position_E, position_N);
+        roll_desired = aah_parameters.proportional_heading_gain * wrap_to_pi(yaw_normal - yaw);
+    } else { // close enough --> turn to acquire that line
+        float roll_correction = distance / RMin;
+        roll_desired = roll_correction;
+        // this is distance control, not sure if need to enforce heading control here
+    }
+    // logging data
+    high_data.field1 = distance;
+    high_data.field2 = roll_desired;
+    return roll_control();
+}
+
+float line_acquisition_ver2() {
+    // unitVector_N_line, unitVector_E_line = unit vector in the direction of the line
+    // waypoint_N, waypoint_E = location of the waypoint
+    // position_E, position_N = current position of the plane
+
+    // find yaw_target
+    float y = aah_parameters.unitVector_N_line * (aah_parameters.waypoint_E - position_E)
+            - aah_parameters.unitVector_E_line * (aah_parameters.waypoint_N - position_N);
+    float unitVector_angle = atan2(aah_parameters.unitVector_E_line, aah_parameters.unitVector_N_line);
+    // find roll_desired
+    roll_desired = (0 - y) + unitVector_angle;
+    return roll_control();
+}
+
+float line_acquisition_ver3() {
+    float c = -(position_E + aah_parameters.delta_E);
+    float RMin = 10; // minimum turning radius
+    // compute distance to a line defined by (ax + by + c = 0)
+    float distance = aah_parameters.a * position_E + aah_parameters.b * position_N + c;
+    if (abs(distance) > RMin) { // too far --> head normal to that line
+        float yaw_normal = atan2(-aah_parameters.b, aah_parameters.a) - atan2(position_E, position_N);
+        roll_desired = aah_parameters.proportional_heading_gain * wrap_to_pi(yaw_normal - yaw);
+    } else { // close enough --> turn to acquire that line
+        float roll_correction = distance / RMin;
+        roll_desired = roll_correction;
+        // this is distance control, not sure if need to enforce heading control here
+    }
+    // logging data
+    high_data.field1 = distance;
+    high_data.field2 = roll_desired;
+    return roll_control();
+}
+
+float line_acquisition_ver4() {
+    float c = -(position_E + aah_parameters.delta_E);
+    // compute distance to a line defined by (ax + by + c = 0)
+    float distance = aah_parameters.a * position_E + aah_parameters.b * position_N + c;
+    float line_heading = atan2(aah_parameters.b,aah_parameters.a);
+    float yaw_target = line_heading + (PI/2 * bound_checking((aah_parameters.proportional_dist_gain * distance)/PI*2));
+    roll_desired = aah_parameters.proportional_heading_gain * wrap_to_pi(yaw_target - yaw);
+    // logging data
+    high_data.field1 = distance;
+    high_data.field2 = roll_desired;
+    return roll_control();
+}
 
 /**
  * Main function in which your code should be written.
@@ -114,8 +208,6 @@ float heading_control_roll() {
  * the code you'd like executed on a loop is in this function.
  */
 void flight_control() {
-
-        float my_float_variable = 0.0f;		/**< example float variable */
 
 
         // An example of how to run a one time 'setup' for example to lock one's altitude and heading...
@@ -137,8 +229,6 @@ void flight_control() {
         // getting low data value example
         // float my_low_data = low_data.field1;
 
-        // setting high data value example
-        high_data.field1 = my_float_variable;
 
         // Set servo output
         switch (aah_parameters.caseNum) {
@@ -226,26 +316,61 @@ void flight_control() {
             yaw_servo_out = heading_control_yaw();
             throttle_servo_out = throttle_control();
             break;
-        // only roll manual
+        // full auto by using roll = coordinated_turn
         case 12:
-            roll_servo_out = man_roll_in;
-            pitch_servo_out = pitch_control();
+            roll_servo_out = coordinated_turn();
+            pitch_servo_out = altitude_control();
             yaw_servo_out = yaw_control();
             throttle_servo_out = throttle_control();
             break;
-        // only pitch manual
+        // full auto by using roll = line_acquisition
         case 13:
-            roll_servo_out = roll_control();
-            pitch_servo_out = -man_pitch_in;
+            roll_servo_out = line_acquisition();
+            pitch_servo_out = altitude_control();
             yaw_servo_out = yaw_control();
             throttle_servo_out = throttle_control();
+            high_data.field3 = 13;
             break;
-        // only yaw manual
+        // full auto by using roll = line_acquisition_ver2
         case 14:
-            roll_servo_out = roll_control();
-            pitch_servo_out = pitch_control();
-            yaw_servo_out = man_yaw_in;
+            roll_servo_out = line_acquisition_ver2();
+            //altitude_desired = aah_parameters.input_altitude;
+            pitch_servo_out = altitude_control();
+            yaw_servo_out = yaw_control();
             throttle_servo_out = throttle_control();
+            high_data.field3 = 14;
+            break;
+        // full auto by using roll = line_acquisition_ver3
+        case 15:
+            roll_servo_out = line_acquisition_ver3();
+            pitch_servo_out = altitude_control();
+            yaw_servo_out = yaw_control();
+            throttle_servo_out = throttle_control();
+            high_data.field3 = 15;
+            break;
+        // full auto by using roll = line_acquisition_ver4
+        case 16:
+            roll_servo_out = line_acquisition_ver4();
+            pitch_servo_out = altitude_control();
+            yaw_servo_out = yaw_control();
+            throttle_servo_out = throttle_control();
+            high_data.field3 = 16;
+            break;
+        // full auto by using roll = heading_control_roll_input_desired_heading()
+        case 17:
+            roll_servo_out = heading_control_roll_input_desired_heading();
+            pitch_servo_out = altitude_control();
+            yaw_servo_out = yaw_control();
+            throttle_servo_out = throttle_control();
+            high_data.field3 = 17;
+            break;
+        // full auto by using roll = heading_control_roll_ver2()
+        case 18:
+            roll_servo_out = heading_control_roll_ver2();
+            pitch_servo_out = altitude_control();
+            yaw_servo_out = yaw_control();
+            throttle_servo_out = throttle_control();
+            high_data.field3 = 18;
             break;
         // full manual
         default:

@@ -84,6 +84,22 @@ PARAM_DEFINE_FLOAT(AAH_ROLLTRIM, 0.0f);
 PARAM_DEFINE_FLOAT(AAH_PITCHTRIM, 0.0f);
 PARAM_DEFINE_FLOAT(AAH_YAWTRIM, 0.0f);
 PARAM_DEFINE_FLOAT(AAH_INPUTSPEED, 15.0f);
+PARAM_DEFINE_FLOAT(AAH_BANKINGANGLE, 0.0f);
+//PARAM_DEFINE_FLOAT(AAH_INPUT_POS_E, 0.0f);
+//PARAM_DEFINE_FLOAT(AAH_INPUT_POS_N, 0.0f);
+PARAM_DEFINE_FLOAT(AAH_LINE_A, 1.0f);
+PARAM_DEFINE_FLOAT(AAH_LINE_B, 0.0f);
+PARAM_DEFINE_FLOAT(AAH_LINE_C, 1.0f);
+PARAM_DEFINE_FLOAT(AAH_DELTA_E, 100.0f);
+PARAM_DEFINE_FLOAT(AAH_LINE_N_LINE, 0.9091019f);
+PARAM_DEFINE_FLOAT(AAH_LINE_E_LINE, -0.416573805f);
+PARAM_DEFINE_FLOAT(AAH_LINE_N_WAYPT, -88.0f);
+PARAM_DEFINE_FLOAT(AAH_LINE_E_WAYPT, -155.6017f);
+PARAM_DEFINE_FLOAT(AAH_LINE_ALT, 80.0f);
+PARAM_DEFINE_FLOAT(AAH_HEADING, 0.0f);
+//PARAM_DEFINE_FLOAT(AAH_YAWHEADGAIN, 1.0f);
+PARAM_DEFINE_FLOAT(AAH_DISTGAIN, 1.0f);
+
 
 int aah_parameters_init(struct aah_param_handles *h)
 {
@@ -109,6 +125,21 @@ int aah_parameters_init(struct aah_param_handles *h)
         h->pitch_trim                   = param_find("AAH_PITCHTRIM");
         h->yaw_trim                     = param_find("AAH_YAWTRIM");
         h->input_speed                  = param_find("AAH_INPUTSPEED");
+        h->banking_angle                = param_find("AAH_BANKINGANGLE");
+        //h->input_position_E             = param_find("AAH_INPUT_POS_E");
+        //h->input_position_N             = param_find("AAH_INPUT_POS_N");
+        h->a                            = param_find("AAH_LINE_A");
+        h->b                            = param_find("AAH_LINE_B");
+        h->c                            = param_find("AAH_LINE_C");
+        h->unitVector_N_line            = param_find("AAH_LINE_N_LINE");
+        h->unitVector_E_line            = param_find("AAH_LINE_E_LINE");
+        h->waypoint_N                   = param_find("AAH_LINE_N_WAYPT");
+        h->waypoint_E                   = param_find("AAH_LINE_E_WAYPT");
+        h->input_altitude               = param_find("AAH_LINE_ALT");
+        h->input_heading_angle_deg      = param_find("AAH_HEADING");
+        //h->heading_to_yaw_gain          = param_find("AAH_YAWHEADGAIN");
+        h->delta_E                      = param_find("AAH_DELTA_E");
+        h->proportional_dist_gain       = param_find("AAH_DISTGAIN");
 	return OK;
 }
 
@@ -131,5 +162,20 @@ int aah_parameters_update(const struct aah_param_handles *h, struct aah_params *
         param_get(h->pitch_trim, &(p->pitch_trim));
         param_get(h->yaw_trim, &(p->yaw_trim));
         param_get(h->input_speed, &(p->input_speed));
+        param_get(h->banking_angle, &(p->banking_angle));
+        //param_get(h->input_position_E, &(p->input_position_E));
+        //param_get(h->input_position_N, &(p->input_position_N));
+        param_get(h->a, &(p->a));
+        param_get(h->b, &(p->b));
+        param_get(h->c, &(p->c));
+        param_get(h->unitVector_N_line , &(p->unitVector_N_line ));
+        param_get(h->unitVector_E_line , &(p->unitVector_E_line ));
+        param_get(h->waypoint_N, &(p->waypoint_N));
+        param_get(h->waypoint_E, &(p->waypoint_E));
+        param_get(h->input_altitude, &(p->input_altitude));
+        param_get(h->input_heading_angle_deg, &(p->input_heading_angle_deg));
+        //param_get(h->heading_to_yaw_gain , &(p->heading_to_yaw_gain ));
+        param_get(h->delta_E , &(p->delta_E ));
+        param_get(h->proportional_dist_gain  , &(p->proportional_dist_gain));
 	return OK;
 }
