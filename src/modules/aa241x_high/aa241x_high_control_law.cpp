@@ -180,6 +180,9 @@ float line_acquisition_ver4() {
     float hdg_target = atan2f(aah_parameters.a, aah_parameters.b) + (PI/2 * bound_checking((aah_parameters.proportional_dist_gain * distance)/PI*2));
     float yaw_target = aah_parameters.heading_to_yaw_gain * (hdg_target - atan2f(position_E, position_N));
     roll_desired = aah_parameters.proportional_heading_gain * (yaw_target - yaw);
+    // logging data
+    high_data.field1 = distance;
+    high_data.field2 = roll_desired;
     return roll_control();
 }
 
@@ -316,6 +319,7 @@ void flight_control() {
             pitch_servo_out = altitude_control();
             yaw_servo_out = yaw_control();
             throttle_servo_out = throttle_control();
+            high_data.field3 = 13;
             break;
         // full auto by using roll = line_acquisition_ver2
         case 14:
@@ -324,6 +328,7 @@ void flight_control() {
             pitch_servo_out = altitude_control();
             yaw_servo_out = yaw_control();
             throttle_servo_out = throttle_control();
+            high_data.field3 = 14;
             break;
         // full auto by using roll = line_acquisition_ver3
         case 15:
@@ -331,6 +336,7 @@ void flight_control() {
             pitch_servo_out = altitude_control();
             yaw_servo_out = yaw_control();
             throttle_servo_out = throttle_control();
+            high_data.field3 = 15;
             break;
         // full auto by using roll = line_acquisition_ver4
         case 16:
@@ -338,6 +344,7 @@ void flight_control() {
             pitch_servo_out = altitude_control();
             yaw_servo_out = yaw_control();
             throttle_servo_out = throttle_control();
+            high_data.field3 = 16;
             break;
         // full auto by using roll = heading_control_roll_input_desired_heading()
         case 17:
@@ -345,6 +352,7 @@ void flight_control() {
             pitch_servo_out = altitude_control();
             yaw_servo_out = yaw_control();
             throttle_servo_out = throttle_control();
+            high_data.field3 = 17;
             break;
 
         // full manual
