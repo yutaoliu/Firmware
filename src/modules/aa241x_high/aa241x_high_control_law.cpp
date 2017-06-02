@@ -59,6 +59,7 @@ float speed_desired = 0.0f;
 float headingN_desired = 0.0f;
 float headingE_desired = 0.0f;
 const float PI =3.14159265358979f;
+float input_c = 0.0f;
 
 /*
  * Do bounds checking to keep the roll/pitch/yaw/throttle correction within the -1..1 limits of the servo output
@@ -169,12 +170,11 @@ float line_acquisition_ver2() {
 }
 
 float line_acquisition_ver3() {
-    float c = -(position_E + aah_parameters.delta_E);
     float RMin = 10; // minimum turning radius
     // compute distance to a line defined by (ax + by + c = 0)
-    float distance = aah_parameters.a * position_E + aah_parameters.b * position_N + c;
+    float distance = aah_parameters.a * position_E + aah_parameters.b * position_N + input_c;
     if (abs(distance) > RMin) { // too far --> head normal to that line
-        float yaw_normal = atan2(-aah_parameters.b, aah_parameters.a) - atan2(position_E, position_N);
+        float yaw_normal = atan2(aah_parameters.a, aah_parameters.b) - atan2(position_E, position_N);
         roll_desired = aah_parameters.proportional_heading_gain * wrap_to_pi(yaw_normal - yaw);
     } else { // close enough --> turn to acquire that line
         float roll_correction = distance / RMin;
@@ -188,9 +188,8 @@ float line_acquisition_ver3() {
 }
 
 float line_acquisition_ver4() {
-    float c = -(position_E + aah_parameters.delta_E);
     // compute distance to a line defined by (ax + by + c = 0)
-    float distance = -(aah_parameters.a * position_E + aah_parameters.b * position_N + c);
+    float distance = -(aah_parameters.a * position_E + aah_parameters.b * position_N + input_c);
     float line_heading = atan2(aah_parameters.b,aah_parameters.a);
     float yaw_target = line_heading + (PI/2 * bound_checking((aah_parameters.proportional_dist_gain * distance)/PI*2));
     roll_desired = aah_parameters.proportional_heading_gain * wrap_to_pi(yaw_target - yaw);
@@ -220,6 +219,7 @@ void flight_control() {
                 speed_desired = aah_parameters.input_speed;
                 headingN_desired = position_N;
                 headingE_desired = position_E;
+                input_c = -(position_E + aah_parameters.delta_E);
 
         }
 
