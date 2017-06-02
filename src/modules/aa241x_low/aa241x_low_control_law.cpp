@@ -68,29 +68,19 @@ int currTargetIndex = 0;
 // If already reach target5, call this function again???
 void fillTargetList() {
     // Target1
-    Target target1;
-    target1.N = aal_parameters.target1_N;
-    target1.E = aal_parameters.target1_E;
+    Target target1(aal_parameters.target1_N, aal_parameters.target1_E);
     targetList.push_back(target1);
     // Target2
-    Target target2;
-    target2.N = aal_parameters.target2_N;
-    target2.E = aal_parameters.target2_E;
+    Target target2(aal_parameters.target2_N, aal_parameters.target2_E);
     targetList.push_back(target2);
     // Target3
-    Target target3;
-    target3.N = aal_parameters.target3_N;
-    target3.E = aal_parameters.target3_E;
+    Target target3(aal_parameters.target3_N, aal_parameters.target3_E);
     targetList.push_back(target3);
     // Target4
-    Target target4;
-    target4.N = aal_parameters.target4_N;
-    target4.E = aal_parameters.target4_E;
+    Target target4(aal_parameters.target4_N, aal_parameters.target4_E);
     targetList.push_back(target4);
     // Target5
-    Target target5;
-    target5.N = aal_parameters.target5_N;
-    target5.E = aal_parameters.target5_E;
+    Target target5(aal_parameters.target5_N, aal_parameters.target5_E);
     targetList.push_back(target5);
 }
 
