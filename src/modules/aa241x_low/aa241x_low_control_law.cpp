@@ -124,10 +124,11 @@ bool reachTarget() {
 
 void low_loop()
 {
+    // Set up after switch to auto mode
     if (hrt_absolute_time() - previous_loop_timestamp > 500000.0f) { // Run if more than 0.5 seconds have passes since last loop,
         fillTargetList();
-        prevTarget.N = high_data.field4;
-        prevTarget.E = high_data.field5;
+        prevTarget.N = high_data.field4; // latest position_N before switch to auto mode
+        prevTarget.E = high_data.field5; // latest position_E before switch to auto mode
         currTarget = targetList[0];
         low_data.field3 = prevTarget.N;
         low_data.field4 = prevTarget.E;
