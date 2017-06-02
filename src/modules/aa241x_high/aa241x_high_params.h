@@ -73,6 +73,7 @@ struct aah_params {
         float roll_trim;
         float pitch_trim;
         float yaw_trim;
+        float throttle_trim;
         float input_speed;
         float banking_angle;
         //float input_position_E;
@@ -117,6 +118,7 @@ struct aah_param_handles {
         param_t roll_trim;
         param_t pitch_trim;
         param_t yaw_trim;
+        param_t throttle_trim;
         param_t input_speed;
         param_t banking_angle;
         //param_t input_position_E;

@@ -83,6 +83,7 @@ PARAM_DEFINE_INT32(AAH_CASE, 0);
 PARAM_DEFINE_FLOAT(AAH_ROLLTRIM, 0.0f);
 PARAM_DEFINE_FLOAT(AAH_PITCHTRIM, 0.0f);
 PARAM_DEFINE_FLOAT(AAH_YAWTRIM, 0.0f);
+PARAM_DEFINE_FLOAT(AAH_THROTTLETRIM, 0.0f);
 PARAM_DEFINE_FLOAT(AAH_INPUTSPEED, 15.0f);
 PARAM_DEFINE_FLOAT(AAH_BANKINGANGLE, 0.0f);
 //PARAM_DEFINE_FLOAT(AAH_INPUT_POS_E, 0.0f);
@@ -124,6 +125,7 @@ int aah_parameters_init(struct aah_param_handles *h)
         h->roll_trim                    = param_find("AAH_ROLLTRIM");
         h->pitch_trim                   = param_find("AAH_PITCHTRIM");
         h->yaw_trim                     = param_find("AAH_YAWTRIM");
+        h->throttle_trim                = param_find("AAH_THROTTLETRIM");
         h->input_speed                  = param_find("AAH_INPUTSPEED");
         h->banking_angle                = param_find("AAH_BANKINGANGLE");
         //h->input_position_E             = param_find("AAH_INPUT_POS_E");
@@ -161,6 +163,7 @@ int aah_parameters_update(const struct aah_param_handles *h, struct aah_params *
         param_get(h->roll_trim, &(p->roll_trim));
         param_get(h->pitch_trim, &(p->pitch_trim));
         param_get(h->yaw_trim, &(p->yaw_trim));
+        param_get(h->throttle_trim, &(p->throttle_trim));
         param_get(h->input_speed, &(p->input_speed));
         param_get(h->banking_angle, &(p->banking_angle));
         //param_get(h->input_position_E, &(p->input_position_E));

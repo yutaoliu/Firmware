@@ -74,10 +74,10 @@ float bound_checking(float correction_value) {
 
 float wrap_to_pi(float correction_value) {
     while (correction_value > PI) {
-        correction_value -= PI;
+        correction_value -= 2*PI;
     }
     while (correction_value < -PI) {
-        correction_value += PI;
+        correction_value += 2*PI;
     }
     return correction_value;
 }
@@ -103,7 +103,7 @@ float yaw_control() {
 }
 
 float throttle_control() {
-    float proportionalSpeedCorrection = aah_parameters.proportional_throttle_gain * (speed_desired - speed_body_u);
+    float proportionalSpeedCorrection = aah_parameters.proportional_throttle_gain * (speed_desired - speed_body_u) + aah_parameters.throttle_trim;
     return bound_checking(proportionalSpeedCorrection);
 }
 
