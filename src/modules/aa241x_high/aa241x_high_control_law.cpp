@@ -161,11 +161,11 @@ float line_acquisition_ver2() {
     // position_E, position_N = current position of the plane
 
     // find yaw_target
-    float y = aah_parameters.unitVector_N_line * (aah_parameters.waypoint_E - position_E)
+    /*float y = aah_parameters.unitVector_N_line * (aah_parameters.waypoint_E - position_E)
             - aah_parameters.unitVector_E_line * (aah_parameters.waypoint_N - position_N);
     float unitVector_angle = atan2(aah_parameters.unitVector_E_line, aah_parameters.unitVector_N_line);
     // find roll_desired
-    roll_desired = (0 - y) + unitVector_angle;
+    roll_desired = (0 - y) + unitVector_angle;*/
     return roll_control();
 }
 
