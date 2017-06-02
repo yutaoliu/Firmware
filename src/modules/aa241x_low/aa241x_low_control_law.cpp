@@ -50,7 +50,7 @@
 
 using namespace aa241x_low;
 
-Target currentTarget;
+Target currTarget;
 std::vector<Target> targetList;
 int currTargetIndex = 0;
 
@@ -87,7 +87,7 @@ void fillTargetList() {
 void computeABC() {
     float computed_a = 1.0f;
     float computed_b = 0.0f;
-    float computed_c = 1.0f + currentTarget.N + currentTarget.E;
+    float computed_c = 1.0f + currTarget.N + currTarget.E;
     low_data.field1 = computed_a;
     low_data.field2 = computed_b;
     low_data.field3 = computed_c;
@@ -107,13 +107,13 @@ void low_loop()
 {
     /*if (hrt_absolute_time() - previous_loop_timestamp > 500000.0f) { // Run if more than 0.5 seconds have passes since last loop,
         fillTargetList();
-        currentTarget = targetList[0];
+        currTarget = targetList[0];
         computeABC();
     }*/
 
     /*if (high_data.field5) { // if currentTarget has reach --> maybe check from high module
         updateCurrentIndex();
-        currentTarget = targetList[currTargetIndex];
+        currTarget = targetList[currTargetIndex];
         computeABC();
     }*/
 }
