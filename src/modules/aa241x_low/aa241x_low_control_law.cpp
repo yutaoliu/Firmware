@@ -97,7 +97,7 @@ void fillTargetList() {
 void computeABC() {
     float computed_a = 1.0f;
     float computed_b = 0.0f;
-    float computed_c = 1.0f;
+    float computed_c = 1.0f + currentTarget.N + currentTarget.E;
     low_data.field1 = computed_a;
     low_data.field2 = computed_b;
     low_data.field3 = computed_c;
