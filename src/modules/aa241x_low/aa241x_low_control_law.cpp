@@ -115,11 +115,11 @@ void updateCurrentIndex() {
 
 void low_loop()
 {
-    if (hrt_absolute_time() - previous_loop_timestamp > 500000.0f) { // Run if more than 0.5 seconds have passes since last loop,
+    /*if (hrt_absolute_time() - previous_loop_timestamp > 500000.0f) { // Run if more than 0.5 seconds have passes since last loop,
         fillTargetList();
         currentTarget = targetList[0];
         computeABC();
-    }
+    }*/
 
     /*if (high_data.field5) { // if currentTarget has reach --> maybe check from high module
         updateCurrentIndex();
