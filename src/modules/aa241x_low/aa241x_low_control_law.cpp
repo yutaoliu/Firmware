@@ -50,6 +50,10 @@
 
 using namespace aa241x_low;
 
+Target currentTarget;
+std::vector<Target> targetList;
+int currTargetIndex = 0;
+
 /**
  * Main function in which your code should be written.
  *
@@ -59,17 +63,67 @@ using namespace aa241x_low;
  *
  * This loop executes at ~50Hz, but is not guaranteed to be 50Hz every time.
  */
+
+// Fill in the targetList
+// If already reach target5, call this function again???
+void fillTargetList() {
+    // Target1
+    Target target1;
+    target1.N = aal_parameters.target1_N;
+    target1.E = aal_parameters.target1_E;
+    targetList.push_back(target1);
+    // Target2
+    Target target2;
+    target2.N = aal_parameters.target2_N;
+    target2.E = aal_parameters.target2_E;
+    targetList.push_back(target2);
+    // Target3
+    Target target3;
+    target3.N = aal_parameters.target3_N;
+    target3.E = aal_parameters.target3_E;
+    targetList.push_back(target3);
+    // Target4
+    Target target4;
+    target4.N = aal_parameters.target4_N;
+    target4.E = aal_parameters.target4_E;
+    targetList.push_back(target4);
+    // Target5
+    Target target5;
+    target5.N = aal_parameters.target5_N;
+    target5.E = aal_parameters.target5_E;
+    targetList.push_back(target5);
+}
+
+void computeABC() {
+    float computed_a = 1.0f;
+    float computed_b = 0.0f;
+    float computed_c = 1.0f;
+    low_data.field1 = computed_a;
+    low_data.field2 = computed_b;
+    low_data.field3 = computed_c;
+}
+
+void updateCurrentIndex() {
+    if (currTargetIndex < 4) {
+        currTargetIndex += 1;
+    } else { // currTargetIndex = 4
+        fillTargetList(); // new set of 5 targets
+        currTargetIndex = 0;
+    }
+}
+
+
 void low_loop()
 {
+    if (hrt_absolute_time() - previous_loop_timestamp > 500000.0f) { // Run if more than 0.5 seconds have passes since last loop,
+        fillTargetList();
+        currentTarget = targetList[0];
+        computeABC();
+    }
 
-	float my_float_variable = 0.0f;		/**< example float variable */
-
-
-	// getting high data value example
-	// float my_high_data = high_data.field1;
-
-	// setting low data value example
-	low_data.field1 = my_float_variable;
-
-
+    /*if (high_data.field5) { // if currentTarget has reach --> maybe check from high module
+        updateCurrentIndex();
+        currentTarget = targetList[currTargetIndex];
+        computeABC();
+    }*/
 }

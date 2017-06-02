@@ -63,10 +63,28 @@
  * Declare variables here that you may want to access
  * in multiple different function.
  */
+typedef struct Target Target;
+struct Target {
+    float N;
+    float E;
+
+    Target() {
+        N = -2000.0f;
+        E = 1900.0f;
+    }
+
+    Target(float target_N, float target_E) {
+        N = target_N;
+        E = target_E;
+    }
+};
 
 /*
  * Declare function prototypes here.
  */
+void fillTargetList();
+void computeABC();
+void updateCurrentIndex();
 
 
 #endif /* AA241X_SLOW_H_ */
