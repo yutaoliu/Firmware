@@ -129,6 +129,7 @@ void low_loop()
         fillTargetList();
         prevTarget.N = high_data.field4; // latest position_N before switch to auto mode
         prevTarget.E = high_data.field5; // latest position_E before switch to auto mode
+        currTargetIndex = 0;
         currTarget = targetList[0];
         low_data.field3 = prevTarget.N;
         low_data.field4 = prevTarget.E;
