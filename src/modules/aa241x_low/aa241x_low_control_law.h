@@ -63,7 +63,7 @@
  * Declare variables here that you may want to access
  * in multiple different function.
  */
-typedef struct Target Target;
+
 struct Target {
     float N;
     float E;
