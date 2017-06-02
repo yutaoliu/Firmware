@@ -317,7 +317,7 @@ AA241xMission::initialize_mission()
 	_in_mission = true;
 	//_can_start = false;	// don't allow restarting of a mission
 	_start_time = hrt_absolute_time();
-
+    _num_plumes_found = 0;
 
 	// TODO: ADD ANY ADDITIONAL INITIALIZATION REQUIRED
 }
@@ -466,14 +466,12 @@ void AA241xMission::check_field_bounds()
 void AA241xMission::build_plumes() {
 
     // first 5 plumes:
-    _plume_N[0] =    50.0f;   _plume_E[0] =  -50.0f;   _plume_radius[0] = 30.0f;
-    _plume_N[1] =  100.0f;    _plume_E[1] =  -50.0f;   _plume_radius[1] = 20.0f;
-    _plume_N[2] = -100.0f;    _plume_E[2] = -100.0f;   _plume_radius[2] = 40.0f;
+    _plume_N[0] =   50.0f;    _plume_E[0] =  -50.0f;   _plume_radius[0] = 30.0f;
+    _plume_N[1] =   30.0f;    _plume_E[1] =  -50.0f;   _plume_radius[1] = 20.0f;
+    _plume_N[2] =   50.0f;    _plume_E[2] =  -80.0f;   _plume_radius[2] = 30.0f;
     _plume_N[3] =    0.0f;    _plume_E[3] =    0.0f;   _plume_radius[3] =  -1.0f;
     _plume_N[4] =    0.0f;    _plume_E[4] =    0.0f;   _plume_radius[4] =  -1.0f;
 
-    // debugging message:
-    mavlink_log_info(&_mavlink_log_pub, "#AA241x build_plumes() code ran");
     // MESSAGE, race completed
     mavlink_log_info(&_mavlink_log_pub, "#AA241x plume1 N: %.1f m, E: %.1f, radius: %.1f", (double)_plume_N[0],(double)_plume_E[0],(double)_plume_radius[0]);
 }
@@ -534,7 +532,7 @@ void AA241xMission::check_finished()
 
 	if (new_phase) {
 		_phase_num += 1;
-		mavlink_log_info(&_mavlink_log_pub, "%i total plumes found",_phase_num,_num_plumes_found);
+		mavlink_log_info(&_mavlink_log_pub, "current number of plumes found: %i",_num_plumes_found);
 		if (_phase_num < 4) {
 			build_plumes();
 			_all_plumes_found = false;
@@ -553,7 +551,7 @@ void AA241xMission::check_near_plume()
 {	
 	if (_parameters.debug_mode == 1 && (_check_violation_run == false || _debug_yell == true)) {
 		_check_violation_run = true;
-		mavlink_log_info(&_mavlink_log_pub, "Check near plume ran")
+		mavlink_log_info(&_mavlink_log_pub, "Check near plume ran");
 	}
 
 	for (int i= 0; i<5; i++) {
@@ -563,9 +561,10 @@ void AA241xMission::check_near_plume()
 
 		// Check if inside radius
 		if (rp < _plume_radius[i]) {
-			_plume_radius[i] = -1.0f; //mark plume as visited
 			_num_plumes_found += 1;	
-			mavlink_log_info(&_mavlink_log_pub, "Plume Found; %i total plumes found",_num_plumes_found)
+			mavlink_log_info(&_mavlink_log_pub, "Plume Found; %i total plumes found",_num_plumes_found);
+            mavlink_log_info(&_mavlink_log_pub, "Plume found: N: %.1f m, E: %.1f, radius: %.1f", (double)_plume_N[i],(double)_plume_E[i],(double)_plume_radius[i]);
+            _plume_radius[i] = -1.0f; //mark plume as visited
 		}
 	}
 }
