@@ -51,6 +51,7 @@
 using namespace aa241x_low;
 
 Target currTarget;
+Target prevTarget;
 std::vector<Target> targetList;
 int currTargetIndex = 0;
 
@@ -67,7 +68,7 @@ int currTargetIndex = 0;
 // Fill in the targetList
 // If already reach target5, call this function again???
 void fillTargetList() {
-    // Target1
+    /*// Target1
     Target target1(aal_parameters.target1_N, aal_parameters.target1_E);
     targetList.push_back(target1);
     // Target2
@@ -81,39 +82,69 @@ void fillTargetList() {
     targetList.push_back(target4);
     // Target5
     Target target5(aal_parameters.target5_N, aal_parameters.target5_E);
-    targetList.push_back(target5);
+    targetList.push_back(target5);*/
+
+    // Target1
+    Target target1(high_data.field4, high_data.field5 + 150);
+    Target target2(high_data.field4 + 150, high_data.field5 + 150);
+    Target target3(high_data.field4 + 150, high_data.field5);
+    Target target4(high_data.field4, high_data.field5); // initial position
+    targetList.push_back(target1);
+    targetList.push_back(target2);
+    targetList.push_back(target3);
+    targetList.push_back(target4);
 }
 
 void computeABC() {
-    float computed_a = 1.0f;
-    float computed_b = 0.0f;
-    float computed_c = 1.0f + currTarget.N + currTarget.E;
-    low_data.field1 = computed_a;
-    low_data.field2 = computed_b;
-    low_data.field3 = computed_c;
+    float theta = atan2(currTarget.E - prevTarget.E, currTarget.N - prevTarget.N);
+    float computed_a = cos(theta);
+    float computed_b = sin(theta);
+    float computed_c = -(computed_a * prevTarget.E + computed_b * prevTarget.N);
+    low_data.field1 = theta;
+    low_data.field2 = computed_c;
 }
 
 void updateCurrentIndex() {
-    if (currTargetIndex < 4) {
+    if (currTargetIndex < 3) {
         currTargetIndex += 1;
-    } else { // currTargetIndex = 4
-        fillTargetList(); // new set of 5 targets
+    } else { // currTargetIndex = 1
+        fillTargetList(); // new set of 4 targets
         currTargetIndex = 0;
     }
 }
 
+bool reachTarget() {
+    if (position_E > currTarget.E - 10 && position_E < currTarget.E + 10) {
+        if (position_N > currTarget.N - 10 && position_N < currTarget.N + 10) {
+            return true;
+        }
+    }
+    return false;
+}
 
 void low_loop()
 {
-    /*if (hrt_absolute_time() - previous_loop_timestamp > 500000.0f) { // Run if more than 0.5 seconds have passes since last loop,
+    if (hrt_absolute_time() - previous_loop_timestamp > 500000.0f) { // Run if more than 0.5 seconds have passes since last loop,
         fillTargetList();
+        prevTarget.N = high_data.field4;
+        prevTarget.E = high_data.field5;
         currTarget = targetList[0];
+        low_data.field3 = prevTarget.N;
+        low_data.field4 = prevTarget.E;
+        low_data.field5 = currTarget.N;
+        low_data.field6 = currTarget.E;
         computeABC();
-    }*/
+    }
 
-    /*if (high_data.field5) { // if currentTarget has reach --> maybe check from high module
+    if (reachTarget()) { // if currentTarget has reach
+        prevTarget.N = currTarget.N;
+        prevTarget.E = currTarget.E;
         updateCurrentIndex();
         currTarget = targetList[currTargetIndex];
+        low_data.field3 = prevTarget.N;
+        low_data.field4 = prevTarget.E;
+        low_data.field5 = currTarget.N;
+        low_data.field6 = currTarget.E;
         computeABC();
-    }*/
+    }
 }

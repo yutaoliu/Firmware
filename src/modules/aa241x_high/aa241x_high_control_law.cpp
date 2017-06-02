@@ -199,6 +199,20 @@ float line_acquisition_ver4() {
     return roll_control();
 }
 
+float line_acquisition_ver5() {
+    float theta = low_data.field1;
+    float c = low_data.field2;
+    float a = cos(theta);
+    float b = sin(theta);
+    float distance = -(a * position_E + b * position_N + c);
+    float yaw_target = theta + (PI/2 * bound_checking((aah_parameters.proportional_dist_gain * distance)/PI*2));
+    roll_desired = aah_parameters.proportional_heading_gain * wrap_to_pi(yaw_target - yaw);
+    // logging data
+    high_data.field1 = distance;
+    high_data.field2 = roll_desired;
+    return roll_control();
+}
+
 /**
  * Main function in which your code should be written.
  *
@@ -220,7 +234,8 @@ void flight_control() {
                 headingN_desired = position_N;
                 headingE_desired = position_E;
                 input_c = -(position_E + aah_parameters.delta_E);
-
+                high_data.field4 = position_N;
+                high_data.field5 = position_E;
         }
 
         // TODO: write all of your flight control here...
@@ -353,9 +368,9 @@ void flight_control() {
             throttle_servo_out = throttle_control();
             high_data.field3 = 14;
             break;
-        // full auto by using roll = line_acquisition_ver3
+        // full auto by using roll = line_acquisition_ver5
         case 15:
-            roll_servo_out = line_acquisition_ver3();
+            roll_servo_out = line_acquisition_ver5();
             pitch_servo_out = altitude_control();
             yaw_servo_out = yaw_control();
             throttle_servo_out = throttle_control();
@@ -401,9 +416,9 @@ void flight_control() {
             throttle_servo_out = man_throttle_in;
             high_data.field3 = 20;
             break;
-        // roll = line_acquisition_ver3(), manual throttle
+        // roll = line_acquisition_ver5(), manual throttle
         case 21:
-            roll_servo_out = line_acquisition_ver3();
+            roll_servo_out = line_acquisition_ver5();
             pitch_servo_out = altitude_control();
             yaw_servo_out = yaw_control();
             throttle_servo_out = man_throttle_in;

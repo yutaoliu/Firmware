@@ -79,12 +79,14 @@ struct Target {
     }
 };
 
+
 /*
  * Declare function prototypes here.
  */
 void fillTargetList();
 void computeABC();
 void updateCurrentIndex();
+bool reachTarget();
 
 
 #endif /* AA241X_SLOW_H_ */
