@@ -238,6 +238,7 @@ void flight_control() {
             pitch_servo_out = -man_pitch_in;
             yaw_servo_out = man_yaw_in;
             throttle_servo_out = man_throttle_in;
+            high_data.field3 = 0;
             break;
         // auto roll only by using heading_control_roll
         case 1:
@@ -245,6 +246,7 @@ void flight_control() {
             pitch_servo_out = -man_pitch_in;
             yaw_servo_out = man_yaw_in;
             throttle_servo_out = man_throttle_in;
+            high_data.field3 = 1;
             break;
         // auto pitch only by using pitch_control
         case 2:
@@ -252,6 +254,7 @@ void flight_control() {
             pitch_servo_out = pitch_control();
             yaw_servo_out = man_yaw_in;
             throttle_servo_out = man_throttle_in;
+            high_data.field3 = 2;
             break;
         // auto pitch only by using altitude_control
         case 3:
@@ -259,6 +262,7 @@ void flight_control() {
             pitch_servo_out = altitude_control();
             yaw_servo_out = man_yaw_in;
             throttle_servo_out = man_throttle_in;
+            high_data.field3 = 3;
             break;
         // auto yaw only by using yaw_control
         case 4:
@@ -266,6 +270,7 @@ void flight_control() {
             pitch_servo_out = -man_pitch_in;
             yaw_servo_out = yaw_control();
             throttle_servo_out = man_throttle_in;
+            high_data.field3 = 4;
             break;
         // auto yaw only by using heading_control_yaw
         case 5:
@@ -273,6 +278,7 @@ void flight_control() {
             pitch_servo_out = -man_pitch_in;
             yaw_servo_out = heading_control_yaw();
             throttle_servo_out = man_throttle_in;
+            high_data.field3 = 5;
             break;
         // auto speed only
         case 6:
@@ -280,6 +286,7 @@ void flight_control() {
             pitch_servo_out = -man_pitch_in;
             yaw_servo_out = man_yaw_in;
             throttle_servo_out = throttle_control();
+            high_data.field3 = 6;
             break;
         // auto roll, pitch, yaw by using roll_control, pitch_control, yaw_control, manual throttle
         case 7:
@@ -287,6 +294,7 @@ void flight_control() {
             pitch_servo_out = pitch_control();
             yaw_servo_out = yaw_control();
             throttle_servo_out = man_throttle_in;
+            high_data.field3 = 7;
             break;
         // full auto by using roll_control, pitch_control, yaw_control
         case 8:
@@ -294,6 +302,7 @@ void flight_control() {
             pitch_servo_out = pitch_control();
             yaw_servo_out = yaw_control();
             throttle_servo_out = throttle_control();
+            high_data.field3 = 8;
             break;
         // full auto by using roll_control, altitude_control, yaw_control
         case 9:
@@ -301,6 +310,7 @@ void flight_control() {
             pitch_servo_out = altitude_control();
             yaw_servo_out = yaw_control();
             throttle_servo_out = throttle_control();
+            high_data.field3 = 9;
             break;
         // full auto by using heading_control_roll, altitude_control, yaw_control
         case 10:
@@ -308,6 +318,7 @@ void flight_control() {
             pitch_servo_out = altitude_control();
             yaw_servo_out = yaw_control();
             throttle_servo_out = throttle_control();
+            high_data.field3 = 10;
             break;
         // full auto by using roll_control, altitude_control, heading_control_yaw
         case 11:
@@ -315,6 +326,7 @@ void flight_control() {
             pitch_servo_out = altitude_control();
             yaw_servo_out = heading_control_yaw();
             throttle_servo_out = throttle_control();
+            high_data.field3 = 11;
             break;
         // full auto by using roll = coordinated_turn
         case 12:
@@ -322,6 +334,7 @@ void flight_control() {
             pitch_servo_out = altitude_control();
             yaw_servo_out = yaw_control();
             throttle_servo_out = throttle_control();
+            high_data.field3 = 12;
             break;
         // full auto by using roll = line_acquisition
         case 13:
@@ -371,6 +384,38 @@ void flight_control() {
             yaw_servo_out = yaw_control();
             throttle_servo_out = throttle_control();
             high_data.field3 = 18;
+            break;
+        // roll = coordinated_turn, manual throttle
+        case 19:
+            roll_servo_out = coordinated_turn();
+            pitch_servo_out = altitude_control();
+            yaw_servo_out = yaw_control();
+            throttle_servo_out = man_throttle_in;
+            high_data.field3 = 19;
+            break;
+        // roll = heading_control_roll_input_desired_heading(), manual throttle
+        case 20:
+            roll_servo_out = heading_control_roll_input_desired_heading();
+            pitch_servo_out = altitude_control();
+            yaw_servo_out = yaw_control();
+            throttle_servo_out = man_throttle_in;
+            high_data.field3 = 20;
+            break;
+        // roll = line_acquisition_ver3(), manual throttle
+        case 21:
+            roll_servo_out = line_acquisition_ver3();
+            pitch_servo_out = altitude_control();
+            yaw_servo_out = yaw_control();
+            throttle_servo_out = man_throttle_in;
+            high_data.field3 = 21;
+            break;
+        // roll = line_acquisition_ver4(), manual throttle
+        case 22:
+            roll_servo_out = line_acquisition_ver4();
+            pitch_servo_out = altitude_control();
+            yaw_servo_out = yaw_control();
+            throttle_servo_out = man_throttle_in;
+            high_data.field3 = 22;
             break;
         // full manual
         default:
