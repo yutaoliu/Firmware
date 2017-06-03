@@ -432,6 +432,22 @@ void flight_control() {
             throttle_servo_out = man_throttle_in;
             high_data.field3 = 22;
             break;
+        // Bixler - full auto by using roll = line_acquisition_ver5 (turn 15 and 45 degree)
+        case 23:
+            roll_servo_out = line_acquisition_ver5();
+            pitch_servo_out = altitude_control();
+            yaw_servo_out = yaw_control();
+            throttle_servo_out = throttle_control();
+            high_data.field3 = 23;
+            break;
+        // Bacon - roll = line_acquisition_ver5(), manual throttle (turn 15 and 45 degree)
+        case 24:
+            roll_servo_out = line_acquisition_ver5();
+            pitch_servo_out = altitude_control();
+            yaw_servo_out = yaw_control();
+            throttle_servo_out = man_throttle_in;
+            high_data.field3 = 24;
+            break;
         // full manual
         default:
             roll_servo_out = man_roll_in;

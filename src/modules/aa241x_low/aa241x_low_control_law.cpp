@@ -49,11 +49,17 @@
 #include <uORB/uORB.h>
 
 using namespace aa241x_low;
+const float g = 9.8f;
+const float rho = 1.225f;
+const float PI =3.14159265358979f;
 
 Target currTarget;
 Target prevTarget;
 std::vector<Target> targetList;
 int currTargetIndex = 0;
+
+/*std::vector<float> distances;
+Aircraft aircraft = Aircraft(0.87, 0.8, 6.0, 0.103, 10.0, 15.0);*/
 
 /**
  * Main function in which your code should be written.
@@ -84,15 +90,27 @@ void fillTargetList() {
     Target target5(aal_parameters.target5_N, aal_parameters.target5_E);
     targetList.push_back(target5);*/
 
-    // Target1
-    Target target1(high_data.field4, high_data.field5 + 150);
-    Target target2(high_data.field4 + 150, high_data.field5 + 150);
-    Target target3(high_data.field4 + 150, high_data.field5);
-    Target target4(high_data.field4, high_data.field5); // initial position
-    targetList.push_back(target1);
-    targetList.push_back(target2);
-    targetList.push_back(target3);
-    targetList.push_back(target4);
+    targetList.clear();
+    if ((int) high_data.field3 == 15 || (int) high_data.field3 == 21) {
+        Target target1(high_data.field4, high_data.field5 + 150);
+        Target target2(high_data.field4 + 150, high_data.field5 + 150);
+        Target target3(high_data.field4 + 150, high_data.field5);
+        Target target4(high_data.field4, high_data.field5); // initial position
+        targetList.push_back(target1);
+        targetList.push_back(target2);
+        targetList.push_back(target3);
+        targetList.push_back(target4);
+    } else {
+        Target target1(high_data.field4, high_data.field5 + 150);
+        Target target2(high_data.field4 + (150*sinf(15.0f*PI/180.0f)), high_data.field5 + 150 + (150*cosf(15.0f*PI/180.0f)));
+        Target target3(high_data.field4 + (150*cosf(22.5f*PI/180.0f)*2*cosf(52.5f*PI/180.0f)), high_data.field5 + 150 + (150*cosf(22.5f*PI/180.0f)*2*sinf(52.5f*PI/180.0f)));
+        Target target4(high_data.field4, high_data.field5); // initial position
+        targetList.push_back(target1);
+        targetList.push_back(target2);
+        targetList.push_back(target3);
+        targetList.push_back(target4);
+    }
+
 }
 
 void computeABC() {
@@ -121,6 +139,14 @@ bool reachTarget() {
     }
     return false;
 }
+
+/*void computeDistance() {
+    for (int i = 0; i < targetList.size(); i++) {
+        Target target = targetList[i];
+        float d = sqrt(pow((position_N - target.N), 2) + pow((position_E- target.E), 2));
+        distances.push_back(d);
+    }
+}*/
 
 void low_loop()
 {
