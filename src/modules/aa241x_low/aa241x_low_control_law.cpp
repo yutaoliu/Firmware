@@ -84,26 +84,28 @@ void fillTargetList() {
     Target target3(aal_parameters.target3_N, aal_parameters.target3_E);
     targetList.push_back(target3);
     // Target4
-    Target target4(aal_parameters.target4_N, aal_parameters.target4_E);
+    Target target4(aal_parameters.target4_N, aal_parameters.target4_E)
     targetList.push_back(target4);
     // Target5
     Target target5(aal_parameters.target5_N, aal_parameters.target5_E);
     targetList.push_back(target5);*/
 
+    // Target(North, East)
+
     targetList.clear();
     if ((int) high_data.field3 == 15 || (int) high_data.field3 == 21) {
-        Target target1(high_data.field4, high_data.field5 + 150);
-        Target target2(high_data.field4 + 150, high_data.field5 + 150);
-        Target target3(high_data.field4 + 150, high_data.field5);
+        Target target1(high_data.field4, high_data.field5 + aal_parameters.distance);
+        Target target2(high_data.field4 + aal_parameters.distance, high_data.field5 + aal_parameters.distance);
+        Target target3(high_data.field4 + aal_parameters.distance, high_data.field5);
         Target target4(high_data.field4, high_data.field5); // initial position
         targetList.push_back(target1);
         targetList.push_back(target2);
         targetList.push_back(target3);
         targetList.push_back(target4);
     } else {
-        Target target1(high_data.field4, high_data.field5 + 150);
-        Target target2(high_data.field4 + (150*sinf(15.0f*PI/180.0f)), high_data.field5 + 150 + (150*cosf(15.0f*PI/180.0f)));
-        Target target3(high_data.field4 + (150*cosf(22.5f*PI/180.0f)*2*cosf(52.5f*PI/180.0f)), high_data.field5 + 150 + (150*cosf(22.5f*PI/180.0f)*2*sinf(52.5f*PI/180.0f)));
+        Target target1(high_data.field4 + aal_parameters.distance, high_data.field5);
+        Target target2(high_data.field4 + aal_parameters.distance + (aal_parameters.distance*cosf(15.0f*PI/180.0f)) , high_data.field5 + (aal_parameters.distance*sinf(15.0f*PI/180.0f)));
+        Target target3(high_data.field4 + aal_parameters.distance + (aal_parameters.distance*cosf(22.5f*PI/180.0f)*2*sinf(52.5f*PI/180.0f)), high_data.field5 + (aal_parameters.distance*cosf(22.5f*PI/180.0f)*2*cosf(52.5f*PI/180.0f)));
         Target target4(high_data.field4, high_data.field5); // initial position
         targetList.push_back(target1);
         targetList.push_back(target2);
@@ -119,7 +121,9 @@ void computeABC() {
     float computed_b = sin(theta);
     float computed_c = -(computed_a * prevTarget.E + computed_b * prevTarget.N);
     low_data.field1 = theta;
-    low_data.field2 = computed_c;
+    low_data.field2 = computed_a;
+    low_data.field3 = computed_b;
+    low_data.field4 = computed_c;
 }
 
 void updateCurrentIndex() {
@@ -132,10 +136,8 @@ void updateCurrentIndex() {
 }
 
 bool reachTarget() {
-    if (position_E > currTarget.E - 10 && position_E < currTarget.E + 10) {
-        if (position_N > currTarget.N - 10 && position_N < currTarget.N + 10) {
-            return true;
-        }
+    if (abs(position_E - currTarget.E) <= aal_parameters.targetBoundary && abs(position_N - currTarget.N) <= aal_parameters.targetBoundary) {
+        return true;
     }
     return false;
 }
@@ -157,10 +159,11 @@ void low_loop()
         prevTarget.E = high_data.field5; // latest position_E before switch to auto mode
         currTargetIndex = 0;
         currTarget = targetList[0];
-        low_data.field3 = prevTarget.N;
-        low_data.field4 = prevTarget.E;
-        low_data.field5 = currTarget.N;
-        low_data.field6 = currTarget.E;
+        low_data.field5 = prevTarget.N;
+        low_data.field6 = prevTarget.E;
+        low_data.field7 = currTarget.N;
+        low_data.field8 = currTarget.E;
+        low_data.field9 = currTargetIndex;
         computeABC();
     }
 
@@ -169,10 +172,11 @@ void low_loop()
         prevTarget.E = currTarget.E;
         updateCurrentIndex();
         currTarget = targetList[currTargetIndex];
-        low_data.field3 = prevTarget.N;
-        low_data.field4 = prevTarget.E;
-        low_data.field5 = currTarget.N;
-        low_data.field6 = currTarget.E;
+        low_data.field5 = prevTarget.N;
+        low_data.field6 = prevTarget.E;
+        low_data.field7 = currTarget.N;
+        low_data.field8 = currTarget.E;
+        low_data.field9 = currTargetIndex;
         computeABC();
     }
 }

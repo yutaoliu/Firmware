@@ -201,9 +201,9 @@ float line_acquisition_ver4() {
 
 float line_acquisition_ver5() {
     float theta = low_data.field1;
-    float c = low_data.field2;
-    float a = cos(theta);
-    float b = sin(theta);
+    float a = low_data.field2;
+    float b = low_data.field3;
+    float c = low_data.field4;
     float distance = -(a * position_E + b * position_N + c);
     float yaw_target = theta + (PI/2 * bound_checking((aah_parameters.proportional_dist_gain * distance)/PI*2));
     roll_desired = aah_parameters.proportional_heading_gain * wrap_to_pi(yaw_target - yaw);

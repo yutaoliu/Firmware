@@ -59,7 +59,7 @@
  * @unit meter 						(the unit attribute (not required, just helps for sanity))
  * @group AA241x Low Params			(always include this)
  */
-PARAM_DEFINE_FLOAT(AAL_TARGET1_N, -2000.0f);
+/*PARAM_DEFINE_FLOAT(AAL_TARGET1_N, -2000.0f);
 PARAM_DEFINE_FLOAT(AAL_TARGET1_E, 1900.0f);
 PARAM_DEFINE_FLOAT(AAL_TARGET2_N, -2000.0f);
 PARAM_DEFINE_FLOAT(AAL_TARGET2_E, 1900.0f);
@@ -68,7 +68,9 @@ PARAM_DEFINE_FLOAT(AAL_TARGET3_E, 1900.0f);
 PARAM_DEFINE_FLOAT(AAL_TARGET4_N, -2000.0f);
 PARAM_DEFINE_FLOAT(AAL_TARGET4_E, 1900.0f);
 PARAM_DEFINE_FLOAT(AAL_TARGET5_N, -2000.0f);
-PARAM_DEFINE_FLOAT(AAL_TARGET5_E, 1900.0f);
+PARAM_DEFINE_FLOAT(AAL_TARGET5_E, 1900.0f);*/
+PARAM_DEFINE_FLOAT(AAL_DISTANCE, 100.0f);
+PARAM_DEFINE_FLOAT(AAL_BOUNDARY, 20.0f);
 
 // TODO: define custom parameters here
 
@@ -84,7 +86,7 @@ int aal_parameters_init(struct aal_param_handles *h)
 	 * NOTE: the string passed to param_find is the same as the name provided
 	 * in the above PARAM_DEFINE_FLOAT
 	 */
-        h->target1_N	=	param_find("AAL_TARGET1_N");
+        /*h->target1_N	=	param_find("AAL_TARGET1_N");
         h->target1_E	=	param_find("AAL_TARGET1_E");
         h->target2_N	=	param_find("AAL_TARGET2_N");
         h->target2_E	=	param_find("AAL_TARGET2_E");
@@ -93,7 +95,9 @@ int aal_parameters_init(struct aal_param_handles *h)
         h->target4_N	=	param_find("AAL_TARGET4_N");
         h->target4_E	=	param_find("AAL_TARGET4_E");
         h->target5_N	=	param_find("AAL_TARGET5_N");
-        h->target5_E	=	param_find("AAL_TARGET5_E");
+        h->target5_E	=	param_find("AAL_TARGET5_E");*/
+        h->distance     =       param_find("AAL_DISTANCE");
+        h->targetBoundary =     param_find("AAL_BOUNDARY");
 	return OK;
 }
 
@@ -102,7 +106,7 @@ int aal_parameters_update(const struct aal_param_handles *h, struct aal_params *
 
 	// for each of your custom parameters, make sure to add this line with
 	// the corresponding variable name
-        param_get(h->target1_N, &(p->target1_N));
+        /*param_get(h->target1_N, &(p->target1_N));
         param_get(h->target1_E, &(p->target1_E));
         param_get(h->target2_N, &(p->target2_N));
         param_get(h->target2_E, &(p->target2_E));
@@ -111,6 +115,8 @@ int aal_parameters_update(const struct aal_param_handles *h, struct aal_params *
         param_get(h->target4_N, &(p->target4_N));
         param_get(h->target4_E, &(p->target4_E));
         param_get(h->target5_N, &(p->target5_N));
-        param_get(h->target5_E, &(p->target5_E));
+        param_get(h->target5_E, &(p->target5_E));*/
+        param_get(h->distance, &(p->distance));
+        param_get(h->targetBoundary, &(p->targetBoundary));
 	return OK;
 }
