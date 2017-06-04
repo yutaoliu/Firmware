@@ -127,10 +127,10 @@ void computeABC() {
 }
 
 void updateCurrentIndex() {
-    if (currTargetIndex < 3) {
+    if (currTargetIndex < targetList.size() - 1) {
         currTargetIndex += 1;
-    } else { // currTargetIndex = 1
-        fillTargetList(); // new set of 4 targets
+    } else { // currTargetIndex = targetList.size() - 1
+        fillTargetList(); // new set of targets
         currTargetIndex = 0;
     }
 }
