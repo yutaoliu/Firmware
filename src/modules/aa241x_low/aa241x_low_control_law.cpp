@@ -164,6 +164,8 @@ void low_loop()
         low_data.field7 = currTarget.N;
         low_data.field8 = currTarget.E;
         low_data.field9 = currTargetIndex;
+        low_data.field10 = aal_parameters.distance;
+        low_data.field11 = aal_parameters.targetBoundary;
         computeABC();
     }
 
@@ -177,6 +179,8 @@ void low_loop()
         low_data.field7 = currTarget.N;
         low_data.field8 = currTarget.E;
         low_data.field9 = currTargetIndex;
+        low_data.field10 = aal_parameters.distance;
+        low_data.field11 = aal_parameters.targetBoundary;
         computeABC();
     }
 }
