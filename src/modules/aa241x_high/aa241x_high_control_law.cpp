@@ -196,6 +196,8 @@ float line_acquisition_ver4() {
     // logging data
     high_data.field1 = distance;
     high_data.field2 = roll_desired;
+    high_data.field7 = aah_parameters.proportional_dist_gain;
+    high_data.field8 = aah_parameters.proportional_heading_gain;
     return roll_control();
 }
 
@@ -210,6 +212,8 @@ float line_acquisition_ver5() {
     // logging data
     high_data.field1 = distance;
     high_data.field2 = roll_desired;
+    high_data.field7 = aah_parameters.proportional_dist_gain;
+    high_data.field8 = aah_parameters.proportional_heading_gain;
     return roll_control();
 }
 
