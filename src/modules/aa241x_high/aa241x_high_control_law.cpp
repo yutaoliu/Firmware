@@ -236,6 +236,7 @@ void flight_control() {
                 input_c = -(position_E + aah_parameters.delta_E);
                 high_data.field4 = position_N;
                 high_data.field5 = position_E;
+                high_data.field6 = aah_parameters.delta_E;
         }
 
         // TODO: write all of your flight control here...
