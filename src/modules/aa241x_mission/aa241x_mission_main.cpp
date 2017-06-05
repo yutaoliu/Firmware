@@ -376,14 +376,6 @@ void AA241xMission::check_field_bounds()
 	lake_boundaries[2].E = -138.3f;  lake_boundaries[2].N =  210.0f;
 	lake_boundaries[3].E =  -18.7f;  lake_boundaries[3].N =  220.2f;
 	
-	// check if already out of bounds so that it doesn't yell at you 1000 times
-	bool already_out = false;
-	
-	if (_out_of_bounds) {
-		already_out = true;
-	}
-
-
 	//% Set inbounds to start
 	_out_of_bounds = false;
 
@@ -391,30 +383,21 @@ void AA241xMission::check_field_bounds()
 	uint8_t convex[4] = {0, 1, 2, 3};
 
 	for (int i = 0; i < 4; i++) {
-	    // If at the last boundary (wrapping)
+		// If at the last boundary (wrapping)
 		uint8_t nextpt = convex[i]+1;
-	    if (i == 3) {
-	        nextpt = convex[0];
-	    }
-	    
-	    if (line_side(lake_boundaries[convex[i]], lake_boundaries[nextpt], _cur_pos) > 0 ) {
-	            //&& (_in_mission == true || _cur_pos.D < -40)) {
-	        _mission_failed = true;
-	        
-	        if (_parameters.mis_fail == 1){
-                            //if (_in_mission) {
-                              //mavlink_log_critical(&_mavlink_log_pub, "AA241x. Mission ended"); // probably not needed; we have the fail message below
-                            //}
-			    _in_mission = false;
-			}
+		if (i == 3) {
+			nextpt = convex[0];
+		}
 
-	        _out_of_bounds = true;
-	        // TONE
-	        // send msg: aa241x mission failed, boundary violation
-	        if (!already_out) {
-		        mavlink_log_critical(&_mavlink_log_pub, "AA241x mission failed, boundary violation");
-		    }
-	    }
+		if (line_side(lake_boundaries[convex[i]], lake_boundaries[nextpt], _cur_pos) > 0 ) {
+			// If not already out of bounds, send mavlink
+		        if (!_out_of_bounds) {
+			        mavlink_log_critical(&_mavlink_log_pub, "AA241x mission failed, out of bounds");
+				_out_of_bounds = true;
+			}
+		        _mission_failed = true;
+			_in_mission = false;
+		}
 	}
 
 	// Check if outside concave portions
@@ -423,42 +406,26 @@ void AA241xMission::check_field_bounds()
 
 	for (int i = 0; i < 1; i++) {
 	    if (line_side(lake_boundaries[concave[i]], lake_boundaries[concave[i]+1], _cur_pos) > 0 
-	    && line_side(lake_boundaries[concave[i]+1],lake_boundaries[concave[i]+2], _cur_pos) > 0 
-	    && (_in_mission == true || _cur_pos.D < -40) ) {
+	    && line_side(lake_boundaries[concave[i]+1],lake_boundaries[concave[i]+2], _cur_pos) > 0) {
 	        _mission_failed = true;
-	        
-	        if (_parameters.mis_fail == 1){
-                            if (_in_mission) {
-                              //mavlink_log_critical(_mavlink_fd, "AA241x. Mission ended");
-                            }
-			    _in_mission = false;
-			}
-	        _out_of_bounds = true;
-	        // TONE
-	        // send msg: aa241x mission failed, boundary violation
-	        if (!already_out) {
-		        //mavlink_log_critical(_mavlink_fd, "AA241x mission failed, lake boundary violation");
-		    }
+		_in_mission = false;
+	        // If not already out of bounds, send mavlink
+	        if (!_out_of_bounds) {
+		        mavlink_log_critical(_mavlink_fd, "AA241x mission failed, out of bounds");
+			_out_of_bounds = true;
+		}
 	    }
 	}
         */
+
 	// Check if violating the flight window (5m safety buffer for errors)
-	if (_in_mission == true && (-_cur_pos.D > (_parameters.max_alt + 5.0f) || -_cur_pos.D < (_parameters.min_alt - 5.0f))) {
-	    _mission_failed = true;
-
-	    if (_parameters.mis_fail == 1){
-                    if (_in_mission) {
-                      //mavlink_log_critical(&_mavlink_log_pub, "AA241x. Mission ended");
-                    }
-                    _in_mission = false;
+	if (-_cur_pos.D > (_parameters.max_alt + 5.0f) || -_cur_pos.D < (_parameters.min_alt - 5.0f)) {
+		_mission_failed = true;
+		_in_mission = false;
+		if (!_out_of_bounds) {
+			mavlink_log_critical(&_mavlink_log_pub, "AA241x mission failed, altitude violation");
+			_out_of_bounds = true;
 		}
-
-	    _out_of_bounds = true;
-	    // TONE
-	    // send msg: aa241x mission failed, boundary violation
-	    if (!already_out) {
-	        mavlink_log_critical(&_mavlink_log_pub, "AA241x mission failed, altitude violation");
-	    }
 	}
 }
 
@@ -562,7 +529,10 @@ void AA241xMission::check_start()
 		_in_mission = true;
             	// MESSAGE, competition started
             	mavlink_log_info(&_mavlink_log_pub, "Valid starting position");
-        } 
+        } else {
+        	_mission_failed = true;
+		mavlink_log_critical(&_mavlink_log_pub, "Invalid starting position; mission failed");
+        }
 }
 
 // Advance through mission phases and finish
@@ -601,14 +571,14 @@ void AA241xMission::check_finished()
 
 	if (new_phase) {
 		_phase_num += 1;
-		mavlink_log_info(&_mavlink_log_pub, "current number of plumes found: %i",_num_plumes_found);
+		mavlink_log_info(&_mavlink_log_pub, "Current number of plumes found: %i",_num_plumes_found);
 		if (_phase_num < 4) {
 			build_plumes();
 			_all_plumes_found = false;
 			mavlink_log_info(&_mavlink_log_pub, "Phase %i started",_phase_num);
 			_phase_start_time = hrt_absolute_time();
 		} else {
-			mavlink_log_info(&_mavlink_log_pub, "Mission completed succesfully in %4.1f seconds",(double)_mission_time);
+			mavlink_log_info(&_mavlink_log_pub, "Mission completed successfully in %4.1f seconds",(double)_mission_time);
 			_final_time = _mission_time;
 		}
 	}
@@ -632,8 +602,8 @@ void AA241xMission::check_near_plume()
 		if (rp < _plume_radius[i]) {
 			_num_plumes_found += 1;	
 			mavlink_log_info(&_mavlink_log_pub, "Plume Found; %i total plumes found",_num_plumes_found);
-            mavlink_log_info(&_mavlink_log_pub, "Plume found: N: %.1f m, E: %.1f, radius: %.1f", (double)_plume_N[i],(double)_plume_E[i],(double)_plume_radius[i]);
-            _plume_radius[i] = -1.0f; //mark plume as visited
+			//mavlink_log_info(&_mavlink_log_pub, "Plume found: N: %.1f m, E: %.1f, radius: %.1f", (double)_plume_N[i],(double)_plume_E[i],(double)_plume_radius[i]);
+			_plume_radius[i] = -1.0f; //mark plume as visited
 		}
 	}
 }
@@ -774,7 +744,7 @@ AA241xMission::task_main()
 			//}
 
 			// If not yet in mission check if mission has started
-			if (_in_mission == false) {
+			if (_in_mission == false && _mission_failed == false) {
 				// Check if in bounds
 				check_field_bounds();
 				check_start();
@@ -784,13 +754,12 @@ AA241xMission::task_main()
 					_phase_start_time = _start_time;   	// initialize phase start time
 					_phase_num = 1;				// initialize phase number
 					_num_plumes_found = 0;			// reset plumes found
-					_mission_failed = false;		// reset mission fail
 					_final_time = 0.0f;			// reset final time
 					build_plumes();				// initialize plumes
 	            		}
 	        	}
 
-			if (_in_mission == true && _phase_num < 4) {
+			if (_in_mission == true && _phase_num < 4 && _mission_failed == false) {
 	            		// Report current time
 	            		_mission_time = (float)(hrt_absolute_time() - _start_time)/1000000.0f;
 				check_field_bounds();
@@ -804,10 +773,10 @@ AA241xMission::task_main()
 
         	} else {// in manual mode
 	        	// if still in mission when activating manual, fail the mission
+			_mission_failed = false;		// reset mission fail when exiting mission mode
 	        	if (_in_mission == true) {
 				_in_mission = false;
 				if (_phase_num < 4) {
-	            			_mission_failed = true;
 					mavlink_log_critical(&_mavlink_log_pub, "AA241x Mission Failed; manual mode activated");
 				}
 	        	}
