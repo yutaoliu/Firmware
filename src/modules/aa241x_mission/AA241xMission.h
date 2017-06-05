@@ -45,6 +45,7 @@
 #define AA241XMISSION_H_
 #include <drivers/drv_hrt.h>
 #include <time.h>
+#include <string>
 #include <mathlib/mathlib.h>
 #include <systemlib/mavlink_log.h>
 
@@ -132,7 +133,7 @@ private:
 		float ctr_alt;
 		int mis_fail;
 		int debug_mode;
-		long mission_seed;
+		int mission_seed;
 	}		_parameters;			/**< local copies of interesting parameters */
 
 	struct {
@@ -164,17 +165,15 @@ private:
 		float D;
 	} 	;
 
-	struct _pylon_pos {
-		float N;
-		float E;
-		float angle;
+	struct _keys {
+		uint64_t key_one;
+		uint64_t key_two;
 	}	;
 
-	_land_pos _lake_boundaries[9];
+	_land_pos _lake_boundaries[4];
 
 	_airplane_pos _cur_pos;
 	_airplane_pos _prev_pos;
-
 
 	hrt_abstime _start_time;
 	hrt_abstime _phase_start_time;	/**< timestamp of when entered mission */
@@ -184,9 +183,9 @@ private:
 	int8_t  _phase_num;
 	uint8_t _num_plumes_found;
 	bool	_out_of_bounds;
-	float _plume_N[5];
-    	float _plume_E[5];
-	float _plume_radius[5];
+	float   _plume_N[5];
+    float   _plume_E[5];
+	float   _plume_radius[5];
 	// check if all plumes in current phase have been visited
 	bool	_all_plumes_found;
 
@@ -258,6 +257,8 @@ private:
 	int8_t  line_side(const _land_pos &a, 
 					  const _land_pos &b, 
 					  const _airplane_pos &c); 
+    // assign key based on student chosen parameter
+    void    assign_key();
 	// build the plume locations
 	void 	build_plumes();
 	bool	_build_plumes_run;

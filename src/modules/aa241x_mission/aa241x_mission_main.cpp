@@ -47,9 +47,10 @@
 #include <px4_tasks.h>
 #include <px4_posix.h>
 
+#include <cstring>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+#include <string>
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -81,7 +82,6 @@
  * @ingroup apps
  */
 extern "C" __EXPORT int aa241x_mission_main(int argc, char *argv[]);
-
 
 namespace aa241x_mission
 {
@@ -462,18 +462,90 @@ void AA241xMission::check_field_bounds()
 	}
 }
 
+
 // build plume locations and radii here
 void AA241xMission::build_plumes() {
 
-    // first 5 plumes:
-    _plume_N[0] =   50.0f;    _plume_E[0] =  -50.0f;   _plume_radius[0] = 30.0f;
-    _plume_N[1] =   30.0f;    _plume_E[1] =  -50.0f;   _plume_radius[1] = 20.0f;
-    _plume_N[2] =   50.0f;    _plume_E[2] =  -80.0f;   _plume_radius[2] = 30.0f;
-    _plume_N[3] =    0.0f;    _plume_E[3] =    0.0f;   _plume_radius[3] =  -1.0f;
-    _plume_N[4] =    0.0f;    _plume_E[4] =    0.0f;   _plume_radius[4] =  -1.0f;
+    // students choose a number from 0 to size(keys)
+    _keys _mission_seeds[10];
+    _mission_seeds[0].key_one = 123456789012345678; _mission_seeds[0].key_two = 901234567890123456;
+    _mission_seeds[1].key_one = 483681881232343773; _mission_seeds[1].key_two = 381433262493621552;
+    _mission_seeds[2].key_one = 483681881232343773; _mission_seeds[2].key_two = 381433262493621552;
+    _mission_seeds[3].key_one = 483681881232343773; _mission_seeds[3].key_two = 381433262493621552;
+    _mission_seeds[4].key_one = 483681881232343773; _mission_seeds[4].key_two = 381433262493621552;
+    _mission_seeds[5].key_one = 483681881232343773; _mission_seeds[5].key_two = 381433262493621552;
+    _mission_seeds[6].key_one = 483681881232343773; _mission_seeds[6].key_two = 381433262493621552;
+    _mission_seeds[7].key_one = 483681881232343773; _mission_seeds[7].key_two = 381433262493621552;
+    _mission_seeds[8].key_one = 483681881232343773; _mission_seeds[8].key_two = 381433262493621552;
+    _mission_seeds[9].key_one = 483681881232343773; _mission_seeds[9].key_two = 381433262493621552;
 
-    // MESSAGE, race completed
-    mavlink_log_info(&_mavlink_log_pub, "#AA241x plume1 N: %.1f m, E: %.1f, radius: %.1f", (double)_plume_N[0],(double)_plume_E[0],(double)_plume_radius[0]);
+    int k = _parameters.mission_seed;
+    _keys key;
+    key = _mission_seeds[k];
+
+    //
+    int cell[5] = {0,0,0,0,0};
+    int diameter[5] = {-2,-2,-2,-2,-2};
+    float North[5] = {0.0,0.0,0.0,0.0,0.0};
+    float East[5] = {0.0,0.0,0.0,0.0,0.0};
+    // lower left corner:
+    float coord_E =  -93.574;
+    float coord_N = -197.675;
+
+    // parse key:
+    uint64_t key_cur, N, n, cur, old, star;
+    if (_phase_num == 1){
+        key_cur = key.key_one / pow(10,9);
+    }
+    else if (_phase_num == 2){
+        key_cur = key.key_one/pow(10,9);
+        key_cur = key_cur*pow(10,9);
+        key_cur = key.key_one - key_cur;
+        key_cur = key_cur*pow(10,3) + key.key_two/pow(10,15);
+    }
+    else if (_phase_num == 3){
+        key_cur = key.key_two/pow(10,15);
+        key_cur = key_cur*pow(10,15);
+        key_cur = key.key_two - key_cur;
+    }
+    else {key_cur = 0;}
+
+    old = 0;
+    star = 3*(_phase_num+1);
+    for (int i= 0; i<(_phase_num+2); i++) {
+        n = star - i*3;
+        cur = key_cur/pow(10,n);
+        N   = cur - old; 
+        old = cur*1000;
+        
+        cell[i] = (int)N/10;
+        diameter[i] = (int)N - cell[i]*10;
+    }
+
+    // convert cells to East, North coordinates:
+    for (int i = 0; i<5; i++) {
+        if (diameter[i] > 0) {
+            int findrow = cell[i]/5;
+            int findcol = cell[i]%5;
+            North[i] = 10.0f + (float)findrow*20.0f;
+            East[i] = 10.0f + (float)findcol*20.0f;
+
+            // rotate coordinates:
+            float theta = atanf(1/11.75)*180/pi; // angle of Coyote Hill fly-area rectangle to vertical
+            North[i] = coord_N + cosf(theta)*North[i] - sinf(theta)*East[i];
+            East[i]  = coord_E + sinf(theta)*North[i] + cosf(theta)*East[i];
+        } 
+    }
+
+    // assign plume data:
+    for (int i = 0; i<5; i++) {
+        _plume_N[i] = North[i];
+        _plume_E[i] = East[i];
+        _plume_radius[i] = (float)diameter[i]*20/2;
+    }
+
+    // MESSAGE, debugging
+    //mavlink_log_info(&_mavlink_log_pub, "#AA241x plume1 N: %.1f m, E: %.1f, radius: %.1f", (double)_plume_N[0],(double)_plume_E[0],(double)_plume_radius[0]);
 }
 
 
@@ -490,10 +562,7 @@ void AA241xMission::check_start()
 		_in_mission = true;
             	// MESSAGE, competition started
             	mavlink_log_info(&_mavlink_log_pub, "Valid starting position");
-        } /*else {
-        // this is commented because it will spam the message at every check_start() until competition starts
-        mavlink_log_info(&_mavlink_log_pub, "#AA241x competition not started, out of bounds");
-        }*/
+        } 
 }
 
 // Advance through mission phases and finish
