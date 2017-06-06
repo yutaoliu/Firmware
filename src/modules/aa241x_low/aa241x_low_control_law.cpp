@@ -94,10 +94,14 @@ void fillTargetList() {
     // Target(East, North, Radius)
     targetList.clear();
     if ((int) high_data.field3 == 15 || (int) high_data.field3 == 21) {
-        Target target1(high_data.field5 + aal_parameters.distance, high_data.field4, aal_parameters.targetBoundary);
+        /*Target target1(high_data.field5 + aal_parameters.distance, high_data.field4, aal_parameters.targetBoundary);
         Target target2(high_data.field5 + aal_parameters.distance, high_data.field4 + aal_parameters.distance, aal_parameters.targetBoundary);
         Target target3(high_data.field5, high_data.field4 + aal_parameters.distance, aal_parameters.targetBoundary);
-        Target target4(high_data.field5, high_data.field4, aal_parameters.targetBoundary); // initial position
+        Target target4(high_data.field5, high_data.field4, aal_parameters.targetBoundary); // initial position*/
+        Target target1(1900.0, -2400.0, aal_parameters.targetBoundary);
+        Target target2(1900.0, -2500.0, aal_parameters.targetBoundary);
+        Target target3(1975.0, -2450.0, aal_parameters.targetBoundary);
+        Target target4(1850.0, -2450.0, aal_parameters.targetBoundary);
         targetList.push_back(target1);
         targetList.push_back(target2);
         targetList.push_back(target3);
