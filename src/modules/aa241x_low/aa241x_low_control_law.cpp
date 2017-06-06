@@ -98,19 +98,23 @@ void fillTargetList() {
         Target target2(high_data.field5 + aal_parameters.distance, high_data.field4 + aal_parameters.distance, aal_parameters.targetBoundary);
         Target target3(high_data.field5, high_data.field4 + aal_parameters.distance, aal_parameters.targetBoundary);
         Target target4(high_data.field5, high_data.field4, aal_parameters.targetBoundary); // initial position*/
-        Target target1(1900.0, -2400.0, aal_parameters.targetBoundary);
-        Target target2(1900.0, -2500.0, aal_parameters.targetBoundary);
-        Target target3(1975.0, -2450.0, aal_parameters.targetBoundary);
-        Target target4(1850.0, -2450.0, aal_parameters.targetBoundary);
+        Target target1 = Target(1900.0, -2400.0, aal_parameters.targetBoundary);
+        Target target2 = Target(1900.0, -2500.0, aal_parameters.targetBoundary);
+        Target target3 = Target(1975.0, -2450.0, aal_parameters.targetBoundary);
+        Target target4 = Target(1850.0, -2450.0, aal_parameters.targetBoundary);
         targetList.push_back(target1);
         targetList.push_back(target2);
         targetList.push_back(target3);
         targetList.push_back(target4);
+        /* for (int i = 0; i < 5; i++) {
+         *      Target target = Target(plume_E[i], plume_N[i], plume_radius[i]);
+         *      targetList.push_back(target);
+         * }*/
     } else {
-        Target target1(high_data.field5, high_data.field4 + aal_parameters.distance, aal_parameters.targetBoundary);
-        Target target2(high_data.field5 + (aal_parameters.distance*sinf(15.0f*PI/180.0f)), high_data.field4 + aal_parameters.distance + (aal_parameters.distance*cosf(15.0f*PI/180.0f)), aal_parameters.targetBoundary);
-        Target target3(high_data.field5 + (aal_parameters.distance*cosf(22.5f*PI/180.0f)*2*cosf(52.5f*PI/180.0f)), high_data.field4 + aal_parameters.distance + (aal_parameters.distance*cosf(22.5f*PI/180.0f)*2*sinf(52.5f*PI/180.0f)), aal_parameters.targetBoundary);
-        Target target4(high_data.field5, high_data.field4, aal_parameters.targetBoundary); // initial position
+        Target target1 = Target(high_data.field5, high_data.field4 + aal_parameters.distance, aal_parameters.targetBoundary);
+        Target target2 = Target(high_data.field5 + (aal_parameters.distance*sinf(15.0f*PI/180.0f)), high_data.field4 + aal_parameters.distance + (aal_parameters.distance*cosf(15.0f*PI/180.0f)), aal_parameters.targetBoundary);
+        Target target3 = Target(high_data.field5 + (aal_parameters.distance*cosf(22.5f*PI/180.0f)*2*cosf(52.5f*PI/180.0f)), high_data.field4 + aal_parameters.distance + (aal_parameters.distance*cosf(22.5f*PI/180.0f)*2*sinf(52.5f*PI/180.0f)), aal_parameters.targetBoundary);
+        Target target4 = Target(high_data.field5, high_data.field4, aal_parameters.targetBoundary); // initial position
         targetList.push_back(target1);
         targetList.push_back(target2);
         targetList.push_back(target3);
