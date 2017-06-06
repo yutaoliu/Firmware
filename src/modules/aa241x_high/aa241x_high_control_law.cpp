@@ -217,6 +217,13 @@ float line_acquisition_ver5() {
     return roll_control();
 }
 
+bool inBoundary() {
+    if (position_E <= 2000 && position_E >= 1800 && position_N <= -2200 && position_N >= -2600) {
+        return true;
+    }
+    return false;
+}
+
 /**
  * Main function in which your code should be written.
  *
@@ -248,7 +255,6 @@ void flight_control() {
 
         // getting low data value example
         // float my_low_data = low_data.field1;
-
 
         // Set servo output
         switch (aah_parameters.caseNum) {
@@ -453,6 +459,17 @@ void flight_control() {
             throttle_servo_out = man_throttle_in;
             high_data.field3 = 24;
             break;
+        case 25:
+            if (!inBoundary()) {
+                roll_desired = -1.0;
+                roll_servo_out = roll_control();
+            } else {
+                roll_servo_out = heading_control_roll_input_desired_heading();
+            }
+            pitch_servo_out = altitude_control();
+            yaw_servo_out = yaw_control();
+            throttle_servo_out = throttle_control();
+            high_data.field3 = 25;
         // full manual
         default:
             roll_servo_out = man_roll_in;

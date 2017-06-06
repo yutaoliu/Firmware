@@ -78,6 +78,7 @@ float line_acquisition_ver4();
 float heading_control_roll_input_desired_heading();
 float wrap_to_pi(float correction_value);
 float line_acquisition_ver5();
+bool inBoundary();
 
 
 
