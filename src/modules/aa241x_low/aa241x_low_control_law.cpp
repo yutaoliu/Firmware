@@ -183,4 +183,8 @@ void low_loop()
         low_data.field11 = aal_parameters.targetBoundary;
         computeABC();
     }
+
+    //distance to target
+    float distanceToTarget = sqrt(pow((position_N - currTarget.N), 2) + pow((position_E- currTarget.E), 2));
+    low_data.field12 = distanceToTarget;
 }
