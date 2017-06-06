@@ -498,7 +498,7 @@ void AA241xMission::build_plumes() {
             East[i] = 10.0f + (float)findcol*20.0f;
 
             // rotate coordinates:
-            float theta = atanf(1/11.75)*180/pi; // angle of Coyote Hill fly-area rectangle to vertical
+            float theta = atanf(1/11.75); // angle of Coyote Hill fly-area rectangle to vertical
             North[i] = coord_N + cosf(theta)*North[i] - sinf(theta)*East[i];
             East[i]  = coord_E + sinf(theta)*North[i] + cosf(theta)*East[i];
         } 
