@@ -82,6 +82,7 @@ struct aah_params {
         float b;
         float c;
         float delta_E;
+        float delta_N;
         //float unitVector_N_line;
         //float unitVector_E_line;
         //float waypoint_N;
@@ -127,6 +128,7 @@ struct aah_param_handles {
         param_t b;
         param_t c;
         param_t delta_E;
+        param_t delta_N;
         //param_t unitVector_N_line;
         //param_t unitVector_E_line;
         //param_t waypoint_N;

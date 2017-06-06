@@ -244,7 +244,6 @@ void flight_control() {
                 speed_desired = aah_parameters.input_speed;
                 headingN_desired = position_N;
                 headingE_desired = position_E;
-                input_c = -(position_E + aah_parameters.delta_E);
                 high_data.field4 = position_N;
                 high_data.field5 = position_E;
                 high_data.field6 = aah_parameters.delta_E;
@@ -370,10 +369,10 @@ void flight_control() {
             throttle_servo_out = throttle_control();
             high_data.field3 = 13;
             break;
-        // full auto by using roll = line_acquisition_ver2
+        // full auto by using roll = line_acquisition_ver4 North
         case 14:
-            roll_servo_out = line_acquisition_ver2();
-            //altitude_desired = aah_parameters.input_altitude;
+            input_c = -(high_data.field4 + aah_parameters.delta_N);
+            roll_servo_out = line_acquisition_ver4();
             pitch_servo_out = altitude_control();
             yaw_servo_out = yaw_control();
             throttle_servo_out = throttle_control();
@@ -387,8 +386,9 @@ void flight_control() {
             throttle_servo_out = throttle_control();
             high_data.field3 = 15;
             break;
-        // full auto by using roll = line_acquisition_ver4
+        // full auto by using roll = line_acquisition_ver4 East
         case 16:
+            input_c = -(high_data.field5 + aah_parameters.delta_E);
             roll_servo_out = line_acquisition_ver4();
             pitch_servo_out = altitude_control();
             yaw_servo_out = yaw_control();
@@ -470,6 +470,14 @@ void flight_control() {
             yaw_servo_out = yaw_control();
             throttle_servo_out = throttle_control();
             high_data.field3 = 25;
+            break;
+        case 26: // line_acquisition_ver5() with fixed coordinates
+            roll_servo_out = line_acquisition_ver5();
+            pitch_servo_out = altitude_control();
+            yaw_servo_out = yaw_control();
+            throttle_servo_out = man_throttle_in;
+            high_data.field3 = 26;
+            break;
         // full manual
         default:
             roll_servo_out = man_roll_in;

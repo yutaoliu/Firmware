@@ -92,6 +92,7 @@ PARAM_DEFINE_FLOAT(AAH_LINE_A, 1.0f);
 PARAM_DEFINE_FLOAT(AAH_LINE_B, 0.0f);
 PARAM_DEFINE_FLOAT(AAH_LINE_C, 1.0f);
 PARAM_DEFINE_FLOAT(AAH_DELTA_E, 100.0f);
+PARAM_DEFINE_FLOAT(AAH_DELTA_N, 100.0f);
 //PARAM_DEFINE_FLOAT(AAH_LINE_N_LINE, 0.9091019f);
 //PARAM_DEFINE_FLOAT(AAH_LINE_E_LINE, -0.416573805f);
 //PARAM_DEFINE_FLOAT(AAH_LINE_N_WAYPT, -88.0f);
@@ -141,6 +142,7 @@ int aah_parameters_init(struct aah_param_handles *h)
         h->input_heading_angle_deg      = param_find("AAH_HEADING");
         //h->heading_to_yaw_gain          = param_find("AAH_YAWHEADGAIN");
         h->delta_E                      = param_find("AAH_DELTA_E");
+        h->delta_N                      = param_find("AAH_DELTA_N");
         h->proportional_dist_gain       = param_find("AAH_DISTGAIN");
 	return OK;
 }
@@ -179,6 +181,7 @@ int aah_parameters_update(const struct aah_param_handles *h, struct aah_params *
         param_get(h->input_heading_angle_deg, &(p->input_heading_angle_deg));
         //param_get(h->heading_to_yaw_gain , &(p->heading_to_yaw_gain ));
         param_get(h->delta_E , &(p->delta_E ));
+        param_get(h->delta_N , &(p->delta_N ));
         param_get(h->proportional_dist_gain  , &(p->proportional_dist_gain));
 	return OK;
 }
