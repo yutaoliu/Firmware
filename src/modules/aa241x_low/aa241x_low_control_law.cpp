@@ -51,6 +51,7 @@
 using namespace aa241x_low;
 const float g = 9.8f;
 const float rho = 1.225f;
+const float rMin = 15.0f;
 const float PI =3.14159265358979f;
 
 Target currTarget;
@@ -90,23 +91,22 @@ void fillTargetList() {
     Target target5(aal_parameters.target5_N, aal_parameters.target5_E);
     targetList.push_back(target5);*/
 
-    // Target(North, East)
-
+    // Target(East, North, Radius)
     targetList.clear();
     if ((int) high_data.field3 == 15 || (int) high_data.field3 == 21) {
-        Target target1(high_data.field4, high_data.field5 + aal_parameters.distance);
-        Target target2(high_data.field4 + aal_parameters.distance, high_data.field5 + aal_parameters.distance);
-        Target target3(high_data.field4 + aal_parameters.distance, high_data.field5);
-        Target target4(high_data.field4, high_data.field5); // initial position
+        Target target1(high_data.field5 + aal_parameters.distance, high_data.field4, aal_parameters.targetBoundary);
+        Target target2(high_data.field5 + aal_parameters.distance, high_data.field4 + aal_parameters.distance, aal_parameters.targetBoundary);
+        Target target3(high_data.field5, high_data.field4 + aal_parameters.distance, aal_parameters.targetBoundary);
+        Target target4(high_data.field5, high_data.field4, aal_parameters.targetBoundary); // initial position
         targetList.push_back(target1);
         targetList.push_back(target2);
         targetList.push_back(target3);
         targetList.push_back(target4);
     } else {
-        Target target1(high_data.field4 + aal_parameters.distance, high_data.field5);
-        Target target2(high_data.field4 + aal_parameters.distance + (aal_parameters.distance*cosf(15.0f*PI/180.0f)) , high_data.field5 + (aal_parameters.distance*sinf(15.0f*PI/180.0f)));
-        Target target3(high_data.field4 + aal_parameters.distance + (aal_parameters.distance*cosf(22.5f*PI/180.0f)*2*sinf(52.5f*PI/180.0f)), high_data.field5 + (aal_parameters.distance*cosf(22.5f*PI/180.0f)*2*cosf(52.5f*PI/180.0f)));
-        Target target4(high_data.field4, high_data.field5); // initial position
+        Target target1(high_data.field5, high_data.field4 + aal_parameters.distance, aal_parameters.targetBoundary);
+        Target target2(high_data.field5 + (aal_parameters.distance*sinf(15.0f*PI/180.0f)), high_data.field4 + aal_parameters.distance + (aal_parameters.distance*cosf(15.0f*PI/180.0f)), aal_parameters.targetBoundary);
+        Target target3(high_data.field5 + (aal_parameters.distance*cosf(22.5f*PI/180.0f)*2*cosf(52.5f*PI/180.0f)), high_data.field4 + aal_parameters.distance + (aal_parameters.distance*cosf(22.5f*PI/180.0f)*2*sinf(52.5f*PI/180.0f)), aal_parameters.targetBoundary);
+        Target target4(high_data.field5, high_data.field4, aal_parameters.targetBoundary); // initial position
         targetList.push_back(target1);
         targetList.push_back(target2);
         targetList.push_back(target3);
@@ -142,13 +142,71 @@ bool reachTarget() {
     return false;
 }
 
-/*void computeDistance() {
+void findClosestTarget() {
+    // Find the closest target to the current plane's position
+    float minLength = 1000000; // Just put in some large number
+    int minIndex = 0;
+    // Coordinate(East, North)
+    Coordinate A = Coordinate(position_E - vel_E, position_N - vel_N); // A = position - velocity
+    Coordinate B = Coordinate(position_E, position_N); // B = position
+    Coordinate D; // D = target
     for (int i = 0; i < targetList.size(); i++) {
-        Target target = targetList[i];
-        float d = sqrt(pow((position_N - target.N), 2) + pow((position_E- target.E), 2));
-        distances.push_back(d);
+        D = Coordinate(targetList[i].E, targetList[i].N);
+        float length = exitPath(A, B, D, false);
+        // update minLength and minIndex
+        if (length < minLength) {
+            minLength = length;
+            minIndex = i;
+        }
     }
-}*/
+    // update currTarget = the closest target
+    currTarget = targetList[minIndex];
+    // update prevTarget = tangent point on the circle to currTarget = C
+    exitPath(A, B, Coordinate(currTarget.E, currTarget.N), true);
+}
+
+// A = position - velocity
+// B = position
+// D = target
+// C = tangent point
+float exitPath(Coordinate A, Coordinate B, Coordinate D, bool isUpdatePrevTarget) {
+    // Translation
+    Coordinate ATranslate = Coordinate(A.E - B.E, A.N - B.N);
+    Coordinate BTranslate = Coordinate(0, 0);
+    Coordinate DTranslate = Coordinate(D.E - B.E, D.N - B.N);
+    // Rotation
+    Coordinate AB = Coordinate (BTranslate.E - ATranslate.E, BTranslate.N - ATranslate.N);
+    float normAB = sqrt(pow(AB.E, 2) + pow(AB.N, 2));
+    float cost = AB.E / normAB;
+    float sint = AB.N / normAB;
+    //Coordinate ARotate = Coordinate((sint*ATranslate.E) + (-cost*ATranslate.N), (cost*ATranslate.E) + (sint*ATranslate.N));
+    //Coordinate BRotate = Coordinate((sint*BTranslate.E) + (-cost*BTranslate.N), (cost*BTranslate.E) + (sint*BTranslate.N));
+    Coordinate DRotate = Coordinate((sint*DTranslate.E) + (-cost*DTranslate.N), (cost*DTranslate.E) + (sint*DTranslate.N));
+    // Compute length and C (tangent point)
+    float beta = 1.0;
+    Coordinate CRotate;
+    if ((DRotate.E > 0 && pow(DRotate.E - rMin, 2) + pow(DRotate.N, 2) > pow(rMin, 2))
+            || (DRotate.E < 0 && pow(DRotate.E + rMin, 2) + pow(DRotate.N, 2) < pow(rMin, 2))) {
+        // right turn
+        // system of equations --> get beta
+        beta = 1.0;
+        CRotate = Coordinate(rMin - rMin*cosf(beta), rMin*sinf(beta));
+    } else {
+        // left turn
+        // system of equations --> get beta
+        beta = 1.0;
+        CRotate = Coordinate(-rMin + rMin*cosf(beta), rMin*sinf(beta));
+    }
+    if (isUpdatePrevTarget) {
+        Coordinate C;
+        // C = Rot.'*CRotate + B
+        prevTarget.N = C.N;
+        prevTarget.E = C.E;
+    }
+    float normDC = sqrt(pow(DRotate.E - CRotate.E, 2) + pow(DRotate.N - CRotate.N, 2));
+    float length = normDC + rMin*beta;
+    return length;
+}
 
 void low_loop()
 {

@@ -64,61 +64,38 @@
  * in multiple different function.
  */
 
-struct Target {
+struct Coordinate {
     float N;
     float E;
 
-    Target() {
+    Coordinate() {
         N = -2000.0;
         E = 1900.0;
     }
 
-    Target(float target_N, float target_E) {
+    Coordinate(float coordinate_E, float coordinate_N) {
+        N = coordinate_N;
+        E = coordinate_E;
+    }
+};
+
+struct Target {
+    float N;
+    float E;
+    float radius;
+
+    Target() {
+        N = -2000.0;
+        E = 1900.0;
+        radius = 20.0;
+    }
+
+    Target(float target_E, float target_N, float target_radius) {
         N = target_N;
         E = target_E;
+        radius = target_radius;
     }
 };
-
-/*struct Aircraft {
-    float m;
-    float S;
-    float b;
-    float Rmin;
-    float velocity;
-
-    Aircraft(float input_m, float input_S, float input_b, float input_Rmin, float input_velocity) {
-        m = input_m;
-        S = input_S;
-        b = input_b;
-        Rmin = input_Rmin;
-        velocity = input_velocity;
-    }
-};
-
-struct Field {
-    float corners;
-    float limits;
-
-    Field(float input_corners, float input_limits) {
-        corners = input_corners;
-        limits = input_limits;
-    }
-};
-
-struct Targets {
-    float number;
-    float position;
-    float radius;
-    float distances;
-
-    Targets(float input_number, float input_position, float input_radius, float input_distances) {
-        number = input_number;
-        position = input_position;
-        radius = input_radius;
-        distances = input_distances;
-    }
-};*/
-
 
 /*
  * Declare function prototypes here.
@@ -127,8 +104,10 @@ void fillTargetList();
 void computeABC();
 void updateCurrentIndex();
 bool reachTarget();
+void findClosestTarget();
+float exitPath(Coordinate A, Coordinate B, Coordinate D, bool isUpdatePrevTarget);
 
-void computeDistance();
+
 
 
 #endif /* AA241X_SLOW_H_ */
