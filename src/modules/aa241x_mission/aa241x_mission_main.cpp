@@ -494,13 +494,14 @@ void AA241xMission::build_plumes() {
         if (diameter[i] > 0) {
             int findrow = cell[i]/5;
             int findcol = cell[i]%5;
-            North[i] = 10.0f + (float)findrow*20.0f;
-            East[i] = 10.0f + (float)findcol*20.0f;
+            float np, ep;
+            np = 10.0f + (float)findrow*20.0f;
+            ep = 10.0f + (float)findcol*20.0f;
 
             // rotate coordinates:
-            float theta = atanf(1/11.75); // angle of Coyote Hill fly-area rectangle to vertical
-            North[i] = coord_N + cosf(theta)*North[i] - sinf(theta)*East[i];
-            East[i]  = coord_E + sinf(theta)*North[i] + cosf(theta)*East[i];
+            float theta = -atanf(1/11.75); // angle of Coyote Hill fly-area rectangle to vertical
+            North[i] = coord_N + cosf(theta)*np - sinf(theta)*ep;
+            East[i]  = coord_E + sinf(theta)*np + cosf(theta)*ep;
         } 
     }
 
@@ -602,7 +603,7 @@ void AA241xMission::check_near_plume()
 		if (rp < _plume_radius[i]) {
 			_num_plumes_found += 1;	
 			mavlink_log_info(&_mavlink_log_pub, "Plume Found; %i total plumes found",_num_plumes_found);
-			//mavlink_log_info(&_mavlink_log_pub, "Plume found: N: %.1f m, E: %.1f, radius: %.1f", (double)_plume_N[i],(double)_plume_E[i],(double)_plume_radius[i]);
+			mavlink_log_info(&_mavlink_log_pub, "Plume found: N: %.1f m, E: %.1f, radius: %.1f", (double)_plume_N[i],(double)_plume_E[i],(double)_plume_radius[i]);
 			_plume_radius[i] = -1.0f; //mark plume as visited
 		}
 	}
