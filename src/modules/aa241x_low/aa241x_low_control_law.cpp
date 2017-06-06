@@ -137,6 +137,10 @@ void updateCurrentIndex() {
 
 bool reachTarget() {
     if (abs(position_E - currTarget.E) <= aal_parameters.targetBoundary && abs(position_N - currTarget.N) <= aal_parameters.targetBoundary) {
+        // remove reached target from targetList
+        // targetList.erase(currTargetIndex);
+        // if targetList has no element left, fill the targetList with new set of 5 targets
+        // if (targetList.size() == 0) fillTargetList();
         return true;
     }
     return false;
@@ -159,8 +163,9 @@ void findClosestTarget() {
             minIndex = i;
         }
     }
-    // update currTarget = the closest target
-    currTarget = targetList[minIndex];
+    // update currTargetIndex, currTarget = the closest target
+    currTargetIndex = minIndex;
+    currTarget = targetList[currTargetIndex];
     // update prevTarget = tangent point on the circle to currTarget = C
     exitPath(A, B, Coordinate(currTarget.E, currTarget.N), true);
 }
@@ -217,6 +222,8 @@ void low_loop()
         prevTarget.E = high_data.field5; // latest position_E before switch to auto mode
         currTargetIndex = 0;
         currTarget = targetList[0];
+        // update currTargetIndex, currTarget, prevTarget --> replace the above 4 lines with findClosestTarget()
+        // findClosestTarget();
         low_data.field5 = prevTarget.N;
         low_data.field6 = prevTarget.E;
         low_data.field7 = currTarget.N;
@@ -232,6 +239,8 @@ void low_loop()
         prevTarget.E = currTarget.E;
         updateCurrentIndex();
         currTarget = targetList[currTargetIndex];
+        // update currTargetIndex, currTarget, prevTarget --> replace the above 4 lines with findClosestTarget()
+        // findClosestTarget();
         low_data.field5 = prevTarget.N;
         low_data.field6 = prevTarget.E;
         low_data.field7 = currTarget.N;
