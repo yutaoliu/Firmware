@@ -392,7 +392,7 @@ void AA241xMission::check_field_bounds()
 		if (line_side(lake_boundaries[convex[i]], lake_boundaries[nextpt], _cur_pos) > 0 ) {
 			// If not already out of bounds, send mavlink
 		        if (!_out_of_bounds) {
-			        mavlink_log_critical(&_mavlink_log_pub, "AA241x mission failed, out of bounds");
+			        mavlink_log_critical(&_mavlink_log_pub, "Out of bounds at %5.1f E, %5.1f N; mission failed",(double)_cur_pos.E,(double)_cur_pos.N);
 				_out_of_bounds = true;
 			}
 		        _mission_failed = true;
@@ -528,7 +528,7 @@ void AA241xMission::check_start()
 	if (!_out_of_bounds) {
 		_in_mission = true;
             	// MESSAGE, competition started
-            	mavlink_log_info(&_mavlink_log_pub, "Valid starting position");
+            	mavlink_log_info(&_mavlink_log_pub, "Valid starting position at %5.1f E, %5.1f N",(double)_cur_pos.E,(double)_cur_pos.N);
         } else {
         	_mission_failed = true;
 		mavlink_log_critical(&_mavlink_log_pub, "Invalid starting position; mission failed");
@@ -725,7 +725,8 @@ AA241xMission::task_main()
 			_debug_timestamp = hrt_absolute_time();
 			_debug_yell = true;
 			mavlink_log_info(&_mavlink_log_pub, "Current: N %.3f, E %.3f, D %.3f", (double)_cur_pos.N, (double)_cur_pos.E, (double)_cur_pos.D);
-			mavlink_log_info(&_mavlink_log_pub, "Previous: N %.3f, E %.3f D %.3f", (double)_prev_pos.N, (double)_prev_pos.E, (double)_prev_pos.D);
+			mavlink_log_info(&_mavlink_log_pub, "Origin at (%9.6f, %9.6f)",(double)_parameters.ctr_lat,(double)_parameters.ctr_lon)
+			//mavlink_log_info(&_mavlink_log_pub, "Previous: N %.3f, E %.3f D %.3f", (double)_prev_pos.N, (double)_prev_pos.E, (double)_prev_pos.D);
 		}
 
 
