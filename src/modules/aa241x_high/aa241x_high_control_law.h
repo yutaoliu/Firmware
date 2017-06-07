@@ -62,22 +62,18 @@
 
 // TODO: write your function prototypes here
 float bound_checking(float correction_value);
+float wrap_to_pi(float correction_value);
 float roll_control();
 float pitch_control();
 float yaw_control();
 float altitude_control();
 float throttle_control();
-float heading_control_roll();
-float heading_control_roll_ver2();
-float heading_control_yaw();
-float coordinated_turn();
-float line_acquisition();
-float line_acquisition_ver2();
-float line_acquisition_ver3();
-float line_acquisition_ver4();
 float heading_control_roll_input_desired_heading();
-float wrap_to_pi(float correction_value);
-float line_acquisition_ver5();
+float coordinated_turn();
+float line_acquisition_straightline();
+float line_acquisition_transitions();
+float line_acquisition_ver6();
+float go_to_target();
 bool inBoundary();
 
 

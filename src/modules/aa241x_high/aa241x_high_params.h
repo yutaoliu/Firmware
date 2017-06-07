@@ -76,21 +76,15 @@ struct aah_params {
         float throttle_trim;
         float input_speed;
         float banking_angle;
-        //float input_position_E;
-        //float input_position_N;
         float a;
         float b;
         float c;
         float delta_E;
         float delta_N;
-        //float unitVector_N_line;
-        //float unitVector_E_line;
-        //float waypoint_N;
-        //float waypoint_E;
-        //float input_altitude;
         float input_heading_angle_deg;
-        //float heading_to_yaw_gain;
         float proportional_dist_gain;
+        float target_E;
+        float target_N;
 
 };
 
@@ -122,21 +116,15 @@ struct aah_param_handles {
         param_t throttle_trim;
         param_t input_speed;
         param_t banking_angle;
-        //param_t input_position_E;
-        //param_t input_position_N;
         param_t a;
         param_t b;
         param_t c;
         param_t delta_E;
         param_t delta_N;
-        //param_t unitVector_N_line;
-        //param_t unitVector_E_line;
-        //param_t waypoint_N;
-        //param_t waypoint_E;
-        //param_t input_altitude;
         param_t input_heading_angle_deg;
-        //param_t heading_to_yaw_gain;
         param_t proportional_dist_gain;
+        param_t target_E;
+        param_t target_N;
 };
 
 /**

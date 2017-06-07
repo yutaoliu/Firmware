@@ -58,16 +58,6 @@ extern "C" {
  */
 struct aal_params {
 
-        /*float target1_N;
-        float target1_E;
-        float target2_N;
-        float target2_E;
-        float target3_N;
-        float target3_E;
-        float target4_N;
-        float target4_E;
-        float target5_N;
-        float target5_E;*/
         float distance;
         float targetBoundary;
 };
@@ -84,16 +74,6 @@ struct aal_params {
  */
 struct aal_param_handles {
 
-        /*param_t target1_N;
-        param_t target1_E;
-        param_t target2_N;
-        param_t target2_E;
-        param_t target3_N;
-        param_t target3_E;
-        param_t target4_N;
-        param_t target4_E;
-        param_t target5_N;
-        param_t target5_E;*/
         param_t distance;
         param_t targetBoundary;
 };
