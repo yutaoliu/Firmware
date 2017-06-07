@@ -248,7 +248,7 @@ float go_to_target(){
     high_data.field8 = aah_parameters.proportional_heading_gain;
     if(target_reached_28==0){
         if(sqrt((aah_parameters.target_E-position_E)^2+(aah_parameters.target_N-position_N)^2)<20) {
-            target_reached=1;
+            target_reached_28=1;
         }
     return roll_control();
     }
