@@ -603,7 +603,7 @@ void AA241xMission::check_near_plume()
 		if (rp < _plume_radius[i]) {
 			_num_plumes_found += 1;	
 			mavlink_log_info(&_mavlink_log_pub, "Plume Found; %i total plumes found",_num_plumes_found);
-			mavlink_log_info(&_mavlink_log_pub, "Plume found: N: %.1f m, E: %.1f, radius: %.1f", (double)_plume_N[i],(double)_plume_E[i],(double)_plume_radius[i]);
+			//mavlink_log_info(&_mavlink_log_pub, "Plume found: N: %.1f m, E: %.1f, radius: %.1f", (double)_plume_N[i],(double)_plume_E[i],(double)_plume_radius[i]);
 			_plume_radius[i] = -1.0f; //mark plume as visited
 		}
 	}
