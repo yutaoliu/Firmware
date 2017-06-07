@@ -1047,11 +1047,11 @@ FixedwingControl::task_main()
 
 			  	set_actuators();
 
-			}else if (_vcontrol_mode.flag_control_auto_enabled) {
+                        /*}else if (_vcontrol_mode.flag_control_auto_enabled) {
 
 				
 
-                                set_actuators();
+                                set_actuators();*/
 
                         }else if (_vcontrol_mode.flag_control_auto_enabled) {
 
