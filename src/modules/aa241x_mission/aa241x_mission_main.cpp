@@ -155,6 +155,8 @@ AA241xMission::AA241xMission() :
 	_parameter_handles.mis_fail = param_find("AAMIS_MIS_FAIL");
 	_parameter_handles.debug_mode = param_find("AAMIS_DEBUG");
 	_parameter_handles.mission_seed = param_find("AAMIS_MIS_SEED");
+	_parameter_handles.lake_lag = param_find("AAMIS_LAKE_LAG");
+	_parameter_handles.bounds_enforced = param_find("AAMIS_BOUND_ON");	
 
 	parameters_update();
 
@@ -196,6 +198,8 @@ AA241xMission::parameters_update()
 	param_get(_parameter_handles.mis_fail, &(_parameters.mis_fail));
 	param_get(_parameter_handles.debug_mode, &(_parameters.debug_mode));
 	param_get(_parameter_handles.mission_seed, &(_parameters.mission_seed));
+	param_get(_parameter_handles.lake_lag, &(_parameters.lake_lag));
+	param_get(_parameter_handles.bounds_enforced, &(_parameters.bounds_enforced));
 
 	// TODO: HANDLE ADDITIONAL PARAMETERS HERE
 
@@ -367,68 +371,133 @@ void AA241xMission::check_field_bounds()
 		_check_field_bounds_run = true;
 		//mavlink_log_info(&_mavlink_log_pub, "Check field bounds ran")
 	}
-	// Assign struct boundaries
 
-	_land_pos lake_boundaries[4];
 
-	lake_boundaries[0].E =   16.9f;  lake_boundaries[0].N = -198.3f;
-	lake_boundaries[1].E = -102.7f;  lake_boundaries[1].N = -208.5f;
-	lake_boundaries[2].E = -138.3f;  lake_boundaries[2].N =  210.0f;
-	lake_boundaries[3].E =  -18.7f;  lake_boundaries[3].N =  220.2f;
-	
 	//% Set inbounds to start
 	_out_of_bounds = false;
 
-	//% Check if outside convex portions
-	uint8_t convex[4] = {0, 1, 2, 3};
+	//// Coyote Hill Boundary check ////
+	if (_parameters.lake_lag == 0 && _parameters.bounds_enforced == 1) {
+		// Assign struct boundaries
 
-	for (int i = 0; i < 4; i++) {
-		// If at the last boundary (wrapping)
-		uint8_t nextpt = convex[i]+1;
-		if (i == 3) {
-			nextpt = convex[0];
+		_land_pos lake_boundaries[4];
+
+		lake_boundaries[0].E =   16.9f;  lake_boundaries[0].N = -198.3f;
+		lake_boundaries[1].E = -102.7f;  lake_boundaries[1].N = -208.5f;
+		lake_boundaries[2].E = -138.3f;  lake_boundaries[2].N =  210.0f;
+		lake_boundaries[3].E =  -18.7f;  lake_boundaries[3].N =  220.2f;
+	
+
+		//% Check if outside convex portions
+		uint8_t convex[4] = {0, 1, 2, 3};
+
+		for (int i = 0; i < 4; i++) {
+			// If at the last boundary (wrapping)
+			uint8_t nextpt = convex[i]+1;
+			if (i == 3) {
+				nextpt = convex[0];
+			}
+
+			if (line_side(lake_boundaries[convex[i]], lake_boundaries[nextpt], _cur_pos) > 0 ) {
+				// If not already out of bounds, send mavlink
+			        if (!_out_of_bounds) {
+				        mavlink_log_critical(&_mavlink_log_pub, "Out of bounds at %5.1f E, %5.1f N; mission failed",(double)_cur_pos.E,(double)_cur_pos.N);
+					_out_of_bounds = true;
+				}
+			        _mission_failed = true;
+				_in_mission = false;
+			}
+		}
+	
+		// Check if outside concave portions
+		// Note: All concave portions of Coyote Hill bounds were removed
+		/*uint8_t concave[1] = {4};
+	
+		for (int i = 0; i < 1; i++) {
+		    if (line_side(lake_boundaries[concave[i]], lake_boundaries[concave[i]+1], _cur_pos) > 0 
+		    && line_side(lake_boundaries[concave[i]+1],lake_boundaries[concave[i]+2], _cur_pos) > 0) {
+		        _mission_failed = true;
+			_in_mission = false;
+		        // If not already out of bounds, send mavlink
+		        if (!_out_of_bounds) {
+			        mavlink_log_critical(_mavlink_fd, "AA241x mission failed, out of bounds");
+				_out_of_bounds = true;
+			}
+		    }
+		}
+        	*/
+
+	//// Lake Lag Boundary Check ////
+	} else if (_parameters.bounds_enforced == 1) {
+		// Assign struct boundaries
+
+		_land_pos lake_boundaries[9];
+
+		lake_boundaries[0].E = -173.0f; lake_boundaries[0].N =  143.0f;
+		lake_boundaries[1].E = -82.0f;  lake_boundaries[1].N =  228.0f;
+		lake_boundaries[2].E = 176.0f;  lake_boundaries[2].N =   81.0f;
+		lake_boundaries[3].E = 181.0f;  lake_boundaries[3].N = -138.0f;
+		lake_boundaries[4].E =  54.0f;  lake_boundaries[4].N = -148.0f;
+		lake_boundaries[5].E =  62.0f;  lake_boundaries[5].N = -219.0f;
+		lake_boundaries[6].E = -36.0f;  lake_boundaries[6].N = -216.0f;
+		lake_boundaries[7].E = -101.0f; lake_boundaries[7].N = -142.0f;
+		lake_boundaries[8].E = -181.0f; lake_boundaries[8].N = -112.0f;
+
+		//% Check if outside convex portions
+		uint8_t convex[5] = {0, 1, 2, 5, 8};
+
+		for (int i = 0; i < 5; i++) {
+			// If at the last boundary (wrapping)
+			uint8_t nextpt = convex[i]+1;
+			if (i == 4) {
+				nextpt = convex[0];
+			}
+
+			if (line_side(lake_boundaries[convex[i]], lake_boundaries[nextpt], _cur_pos) > 0 ) {
+				// If not already out of bounds, send mavlink
+			        if (!_out_of_bounds) {
+				        mavlink_log_critical(&_mavlink_log_pub, "Out of bounds at %5.1f E, %5.1f N; mission failed",(double)_cur_pos.E,(double)_cur_pos.N);
+					_out_of_bounds = true;
+				}
+			        _mission_failed = true;
+				_in_mission = false;
+			}
 		}
 
-		if (line_side(lake_boundaries[convex[i]], lake_boundaries[nextpt], _cur_pos) > 0 ) {
-			// If not already out of bounds, send mavlink
+
+		// Check if outside concave portions
+		// Note: All concave portions of Coyote Hill bounds were removed
+		uint8_t concave[2] = {3, 6};
+	
+		for (int i = 0; i < 2; i++) {
+		    if (line_side(lake_boundaries[concave[i]], lake_boundaries[concave[i]+1], _cur_pos) > 0 
+		    && line_side(lake_boundaries[concave[i]+1],lake_boundaries[concave[i]+2], _cur_pos) > 0) {
+		        _mission_failed = true;
+			_in_mission = false;
+		        // If not already out of bounds, send mavlink
 		        if (!_out_of_bounds) {
 			        mavlink_log_critical(&_mavlink_log_pub, "Out of bounds at %5.1f E, %5.1f N; mission failed",(double)_cur_pos.E,(double)_cur_pos.N);
 				_out_of_bounds = true;
 			}
-		        _mission_failed = true;
+		    }
+		}
+
+	}
+
+	if (_parameters.bounds_enforced == 1) {
+		// Altitude check same for lag and coyote hill
+		// Check if violating the flight window (5m safety buffer for errors)
+		if (-_cur_pos.D > (_parameters.max_alt + 5.0f) || -_cur_pos.D < (_parameters.min_alt - 5.0f)) {
+			_mission_failed = true;
 			_in_mission = false;
+			if (!_out_of_bounds) {
+				mavlink_log_critical(&_mavlink_log_pub, "AA241x mission failed, altitude violation");
+				_out_of_bounds = true;
+			}
 		}
 	}
-
-	// Check if outside concave portions
-	// Note: All concave portions of Coyote Hill bounds were removed
-	/*uint8_t concave[1] = {4};
-
-	for (int i = 0; i < 1; i++) {
-	    if (line_side(lake_boundaries[concave[i]], lake_boundaries[concave[i]+1], _cur_pos) > 0 
-	    && line_side(lake_boundaries[concave[i]+1],lake_boundaries[concave[i]+2], _cur_pos) > 0) {
-	        _mission_failed = true;
-		_in_mission = false;
-	        // If not already out of bounds, send mavlink
-	        if (!_out_of_bounds) {
-		        mavlink_log_critical(_mavlink_fd, "AA241x mission failed, out of bounds");
-			_out_of_bounds = true;
-		}
-	    }
-	}
-        */
-
-	// Check if violating the flight window (5m safety buffer for errors)
-	if (-_cur_pos.D > (_parameters.max_alt + 5.0f) || -_cur_pos.D < (_parameters.min_alt - 5.0f)) {
-		_mission_failed = true;
-		_in_mission = false;
-		if (!_out_of_bounds) {
-			mavlink_log_critical(&_mavlink_log_pub, "AA241x mission failed, altitude violation");
-			_out_of_bounds = true;
-		}
-	}
-}
-
+}	
+	
 
 // build plume locations and radii here
 void AA241xMission::build_plumes() {
@@ -576,10 +645,14 @@ void AA241xMission::check_start()
 		mavlink_log_info(&_mavlink_log_pub, "Check start ran");
 	}
 
-	if (!_out_of_bounds) {
+	if (!_parameters.bounds_enforced == 1) {
+		mavlink_log_critical(&_mavlink_log_pub, "Boundaries not enforced; started at %5.1f E, %5.1f N",(double)_cur_pos.E,(double)_cur_pos.N);
+		_in_mission = true;
+	} else if (!_out_of_bounds) {
 		_in_mission = true;
             	// MESSAGE, competition started
             	mavlink_log_info(&_mavlink_log_pub, "Valid starting position at %5.1f E, %5.1f N",(double)_cur_pos.E,(double)_cur_pos.N);
+
         } else {
         	_mission_failed = true;
 		mavlink_log_critical(&_mavlink_log_pub, "Invalid starting position; mission failed");
