@@ -82,7 +82,7 @@ void fillTargetList() {
     Target target2;
     Target target3;
     Target target4;
-    if ((int) high_data.field3 == 9 || (int) high_data.field3 == 18 || (int) high_data.field3 == 26) {
+    if ((int) high_data.field3 == 9 || (int) high_data.field3 == 18 || (int) high_data.field3 == 26 || (int) high_data.field3 == 28) {
         target1.N = high_data.field4;
         target1.E = high_data.field5 + aal_parameters.distance;
         target1.radius = aal_parameters.targetBoundary;
@@ -133,7 +133,7 @@ void computeABC() {
     float computed_a = cos(theta);
     float computed_b = sin(theta);
     float computed_c = -(computed_a * prevTarget.E + computed_b * prevTarget.N);
-    if ((int) high_data.field3 == 26 || (int) high_data.field3 == 27) {
+    if ((int) high_data.field3 == 26 || (int) high_data.field3 == 27 || (int) high_data.field3 == 28 || (int) high_data.field3 == 29) {
         computed_b = -sin(theta);
         computed_c = -(cosf(theta) * prevTarget.E) + (sinf(theta) * prevTarget.N);
     }
@@ -161,6 +161,17 @@ bool reachTarget() {
         return true;
     }
     return false;
+}
+
+bool missTarget() {
+    // perpendicular line equation: tan(theta)*x + y - currY - (tan(theta)*currX) = 0
+    float theta = atan2(currTarget.E - prevTarget.E, currTarget.N - prevTarget.N);
+    float prevTargetValue = (tanf(theta) * prevTarget.E) + prevTarget.N - currTarget.N - (tanf(theta) * currTarget.E);
+    float currPositionValue = (tanf(theta) * position_E) + position_N - currTarget.N - (tanf(theta) * currTarget.E);
+    if ((prevTargetValue > 0 && currPositionValue > 0) || (prevTargetValue < 0 && currPositionValue < 0)) {
+        return false;
+    }
+    return true;
 }
 
 void findClosestTarget() {
@@ -251,21 +262,40 @@ void low_loop()
         computeABC();
     }
 
-    if (reachTarget()) { // if currentTarget has reach
-        prevTarget.N = currTarget.N;
-        prevTarget.E = currTarget.E;
-        updateCurrentIndex();
-        currTarget = targetList[currTargetIndex];
-        // update currTargetIndex, currTarget, prevTarget --> replace the above 4 lines with findClosestTarget()
-        // findClosestTarget();
-        low_data.field5 = prevTarget.N;
-        low_data.field6 = prevTarget.E;
-        low_data.field7 = currTarget.N;
-        low_data.field8 = currTarget.E;
-        low_data.field9 = currTargetIndex;
-        low_data.field10 = aal_parameters.distance;
-        low_data.field11 = aal_parameters.targetBoundary;
-        computeABC();
+    if ((int) high_data.field3 == 28 || (int) high_data.field3 == 29) {
+        if (reachTarget() || missTarget()) {
+            prevTarget.N = currTarget.N;
+            prevTarget.E = currTarget.E;
+            updateCurrentIndex();
+            currTarget = targetList[currTargetIndex];
+            // update currTargetIndex, currTarget, prevTarget --> replace the above 4 lines with findClosestTarget()
+            // findClosestTarget();
+            low_data.field5 = prevTarget.N;
+            low_data.field6 = prevTarget.E;
+            low_data.field7 = currTarget.N;
+            low_data.field8 = currTarget.E;
+            low_data.field9 = currTargetIndex;
+            low_data.field10 = aal_parameters.distance;
+            low_data.field11 = aal_parameters.targetBoundary;
+            computeABC();
+        }
+    } else {
+        if (reachTarget()) { // if currentTarget has reach
+            prevTarget.N = currTarget.N;
+            prevTarget.E = currTarget.E;
+            updateCurrentIndex();
+            currTarget = targetList[currTargetIndex];
+            // update currTargetIndex, currTarget, prevTarget --> replace the above 4 lines with findClosestTarget()
+            // findClosestTarget();
+            low_data.field5 = prevTarget.N;
+            low_data.field6 = prevTarget.E;
+            low_data.field7 = currTarget.N;
+            low_data.field8 = currTarget.E;
+            low_data.field9 = currTargetIndex;
+            low_data.field10 = aal_parameters.distance;
+            low_data.field11 = aal_parameters.targetBoundary;
+            computeABC();
+        }
     }
 
     /*if (hrt_absolute_time() - startTime > 31000000.0) { // 31 seconds
