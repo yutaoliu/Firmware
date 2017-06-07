@@ -217,6 +217,47 @@ float line_acquisition_ver5() {
     return roll_control();
 }
 
+float line_acquisition_ver6() {
+    float theta = aah_parameters.input_heading_angle_deg * PI / 180;
+    float a = cos(theta);
+    float b = sin(theta);
+    float c = -((high_data.field5+aah_parameters.delta_E)*a+high_data.field4*b);
+    float distance = -(a * position_E + b * position_N + c);
+    float yaw_target = theta + (PI/2 * bound_checking((aah_parameters.proportional_dist_gain * distance)/PI*2));
+    roll_desired = aah_parameters.proportional_heading_gain * wrap_to_pi(yaw_target - yaw);
+    // logging data
+    high_data.field1 = distance;
+    high_data.field2 = roll_desired;
+    high_data.field7 = aah_parameters.proportional_dist_gain;
+    high_data.field8 = aah_parameters.proportional_heading_gain;
+    return roll_control();
+}
+
+float go_to_target(){
+    float theta = atan2(aah_parameters.target_E-high_data.field5,aah_parameters.target_N-high_data.field4);
+    float a = cos(theta);
+    float b = sin(theta);
+    float c = -(high_data.field5*a+high_data.field4*b);
+    float distance = -(a * position_E + b * position_N + c);
+    float yaw_target = theta + (PI/2 * bound_checking((aah_parameters.proportional_dist_gain * distance)/PI*2));
+    roll_desired = aah_parameters.proportional_heading_gain * wrap_to_pi(yaw_target - yaw);
+    // logging data
+    high_data.field1 = distance;
+    high_data.field2 = roll_desired;
+    high_data.field7 = aah_parameters.proportional_dist_gain;
+    high_data.field8 = aah_parameters.proportional_heading_gain;
+    if(target_reached_28==0){
+        if(sqrt((aah_parameters.target_E-position_E)^2+(aah_parameters.target_N-position_N)^2)<20) {
+            target_reached=1;
+        }
+    return roll_control();
+    }
+    else {
+        return coordinated_turn();
+    }
+}
+
+
 bool inBoundary() {
     if (position_E <= 2000 && position_E >= 1800 && position_N <= -2200 && position_N >= -2600) {
         return true;
@@ -478,6 +519,21 @@ void flight_control() {
             throttle_servo_out = man_throttle_in;
             high_data.field3 = 26;
             break;
+        case 27: // line acquisition with arbitrary heading, delta_E meters to the East
+            roll_servo_out = line_acquisition_ver6();
+            pitch_servo_out = altitude_control();
+            yaw_servo_out = yaw_control();
+            throttle_servo_out = throttle_control();
+            high_data.field3 = 27;
+                break;
+         case 28: // Go to target, then circle it
+            target_reached_28=0;
+            roll_servo_out = go_to_target();
+            pitch_servo_out = altitude_control();
+            yaw_servo_out = yaw_control();
+            throttle_servo_out = throttle_control();
+            high_data.field3 = 27;
+                break;
         // full manual
         default:
             roll_servo_out = man_roll_in;
