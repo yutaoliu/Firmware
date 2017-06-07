@@ -45,6 +45,7 @@
 #define AA241XMISSION_H_
 #include <drivers/drv_hrt.h>
 #include <time.h>
+#include <string>
 #include <mathlib/mathlib.h>
 #include <systemlib/mavlink_log.h>
 
@@ -97,7 +98,7 @@ private:
 	bool	_task_running;			/**< if true, task is running in its mainloop */
 	int		_control_task;			/**< task handle for aa241x mission */
 
-	int		_mavlink_fd;			/**< file description for mavlink to be able to send warnings */
+	orb_advert_t	_mavlink_log_pub;	/*< mavlink log pub, to send messages */
 	int		_buzzer;				/**< descriptor for the buzzer */
 
 	// handles to subscriptions needed
@@ -126,49 +127,30 @@ private:
 	struct {
 		float min_alt;
 		float max_alt;
-		float start_pos_N;
-		float start_pos_E;
-		float keepout_radius;
-		float tilt;
+		float max_phase_time;
 		float ctr_lat;
 		float ctr_lon;
 		float ctr_alt;
-		float leg_length;
-		float gate_width;
 		int mis_fail;
-		int team_num;
 		int debug_mode;
-		int force_start;
-                int mission_restart;
+		int mission_seed;
 	}		_parameters;			/**< local copies of interesting parameters */
 
 	struct {
 		param_t min_alt;
 		param_t max_alt;
-		param_t start_pos_N;
-		param_t start_pos_E;
-		param_t keepout_radius;
-		param_t tilt;
+		param_t max_phase_time;
 		param_t ctr_lat;
 		param_t ctr_lon;
 		param_t ctr_alt;
-		param_t leg_length;
-		param_t gate_width;
 		param_t mis_fail;
-		param_t team_num;
 		param_t debug_mode;
-		param_t force_start;
-                param_t mission_restart;
+		param_t mission_seed;
 	}		_parameter_handles;		/**< handles for interesting parameters */
 
 	hrt_abstime _mission_start_time;	/**< timestamp of when entered mission */
-	//float		_mission_start_battery;	/**< the mAh used when entered the mission */
 	bool 		_in_mission;			/**< if true, currently running a mission (fire is spreading) */
-	//bool		_can_start;				/**< if false conditions for starting have been violated */
-	//bool		_early_termination;		/**< if true terminating mission early, but still need to finish running fire */
 	bool		_mission_failed;		/**< if true terminating mission entirely with a score of 0 */
-	//float		_score;					/**< the current mission score */
-	//bool		_cross_min;				/**< if plane has crossed the minimum altitude (to delay checks between takeoff and first cross) */
 
 	// 
 
@@ -183,37 +165,29 @@ private:
 		float D;
 	} 	;
 
-	struct _pylon_pos {
-		float N;
-		float E;
-		float angle;
+	struct _keys {
+		uint64_t key_one;
+		uint64_t key_two;
 	}	;
 
-	_land_pos _start_gate[4];
-	_land_pos _lake_boundaries[9];
-
-	_land_pos  _start_pylon;
-	
-	_pylon_pos _pylon[2];
+	_land_pos _lake_boundaries[4];
 
 	_airplane_pos _cur_pos;
 	_airplane_pos _prev_pos;
 
-
 	hrt_abstime _start_time;
-	float _current_time;
+	hrt_abstime _phase_start_time;	/**< timestamp of when entered mission */
+	float _mission_time;
 	float _final_time;
 
-	bool 	_in_turn;
-	bool 	_just_started_turn;
-	int8_t _turn_num;
-	float 	_turn_radians;
-	float 	_turn_degrees;
-	float 	_req_turn_degrees;
-	uint8_t _num_of_turns;
-	uint8_t _num_violations;
-	bool 	_in_violation;
+	int8_t  _phase_num;
+	uint8_t _num_plumes_found;
 	bool	_out_of_bounds;
+	float   _plume_N[5];
+    float   _plume_E[5];
+	float   _plume_radius[5];
+	// check if all plumes in current phase have been visited
+	bool	_all_plumes_found;
 
 	
 
@@ -283,9 +257,11 @@ private:
 	int8_t  line_side(const _land_pos &a, 
 					  const _land_pos &b, 
 					  const _airplane_pos &c); 
-	// build the racecourse from the parameters
-	void 	build_racecourse();
-	bool	_build_racecourse_run;
+    // assign key based on student chosen parameter
+    void    assign_key();
+	// build the plume locations
+	void 	build_plumes();
+	bool	_build_plumes_run;
 	// check for hard field boundary violations
 	void 	check_field_bounds();
 	bool	_check_field_bounds_run; 
@@ -299,20 +275,13 @@ private:
 	void 	check_turn_start(); 
 	bool	_check_turn_start_run;
 	// check if a turn has ended
-	void 	check_turn_end();  
-	bool	_check_turn_end_run;
-	// check whether turn keepout has been violated
-	void 	check_violation(); 
+
+	// check whether plume visited
+	void 	check_near_plume(); 
 	bool	_check_violation_run;
-	// accumulate degrees on a turn
-	void 	turn_accumulate();
-	bool	_turn_accumulate_run;
-        // reset the mission variables if desired
-        void    reset_mission();
 
 	hrt_abstime _debug_timestamp;
 	bool	_debug_yell;
-
 
 	/**
 	 * Shim for calling task_main from task_create.

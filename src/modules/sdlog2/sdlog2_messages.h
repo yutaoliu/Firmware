@@ -640,14 +640,11 @@ struct log_DPRS_s {
 struct log_AMIS_s {
 	bool in_mission;
 	hrt_abstime start_time;
-	float current_time;
+	float mission_time;
 	float final_time;
 	bool mission_failed;
-	bool in_turn;
-	int32_t turn_num;
-	float turn_degrees;
-	int32_t num_violations;
-	bool in_violation;
+	int32_t phase_num;
+	int32_t num_plumes_found;
 	bool out_of_bounds;
 };
 
@@ -803,7 +800,7 @@ static const struct log_format_s log_formats[] = {
 	LOG_FORMAT(DPRS, "Qffff", "errors,DPRESraw,DPRES,DPRESmax,Temp"),
 
 	/* AA241x logging */
-	LOG_FORMAT(AMIS, "BQffBBifiBB", "InM,STim,CTim,FTim,MFail,InTrn,TrnNum,TurnDeg,NumV,InV,OoB"),
+	LOG_FORMAT(AMIS, "BQffBiiB", "InMis,STime,MisTime,FTime,MFail,MisPhase,NumPlume,OoB"),
 	LOG_FORMAT(HIGH, "ffffffffffffffff", "f01,f02,f03,f04,f05,f06,f07,f08,f09,f10,f11,f12,f13,f14,f15,f16"),
 	LOG_FORMAT(LOW, "ffffffffffffffff", "f01,f02,f03,f04,f05,f06,f07,f08,f09,f10,f11,f12,f13,f14,f15,f16"),
 	LOG_FORMAT(ADAT, "ffffffff", "N,E,Dbaro,Dgps,u,v,w,GrndSpd"),

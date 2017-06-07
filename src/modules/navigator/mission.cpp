@@ -514,10 +514,12 @@ Mission::set_mission_items()
 
 			if (_navigator->get_land_detected()->landed) {
 				/* landed, refusing to take off without a mission */
-				mavlink_log_critical(_navigator->get_mavlink_log_pub(), "no valid mission available, refusing takeoff");
+				//mavlink_log_critical(_navigator->get_mavlink_log_pub(), "no valid mission available, refusing takeoff");
+				mavlink_log_info(_navigator->get_mavlink_log_pub(), "AA241X Mission Started, takeoff not detected");
 
 			} else {
-				mavlink_log_critical(_navigator->get_mavlink_log_pub(), "no valid mission available, loitering");
+				//mavlink_log_critical(_navigator->get_mavlink_log_pub(), "no valid mission available, loitering");
+				mavlink_log_info(_navigator->get_mavlink_log_pub(), "AA241X Mission Started");
 			}
 
 			user_feedback_done = true;
