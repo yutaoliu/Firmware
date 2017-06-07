@@ -133,7 +133,7 @@ void computeABC() {
     float computed_a = cos(theta);
     float computed_b = sin(theta);
     float computed_c = -(computed_a * prevTarget.E + computed_b * prevTarget.N);
-    if ((int) high_data.field3 == 26 || (int) high_data.field3 == 27 || (int) high_data.field3 == 28 || (int) high_data.field3 == 29) {
+    if ((int) high_data.field3 == 26 || (int) high_data.field3 == 27 || (int) high_data.field3 == 28 || (int) high_data.field3 == 29 || (int) high_data.field3 == 18 || (int) high_data.field3 == 19) {
         computed_b = -sin(theta);
         computed_c = -(cosf(theta) * prevTarget.E) + (sinf(theta) * prevTarget.N);
     }
@@ -262,7 +262,7 @@ void low_loop()
         computeABC();
     }
 
-    if ((int) high_data.field3 == 28 || (int) high_data.field3 == 29) {
+    if ((int) high_data.field3 == 28 || (int) high_data.field3 == 29 || (int) high_data.field3 == 18 || (int) high_data.field3 == 19) {
         if (reachTarget() || missTarget()) {
             prevTarget.N = currTarget.N;
             prevTarget.E = currTarget.E;
