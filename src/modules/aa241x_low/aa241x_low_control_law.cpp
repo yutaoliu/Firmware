@@ -82,7 +82,7 @@ void fillTargetList() {
     Target target2;
     Target target3;
     Target target4;
-    if ((int) high_data.field3 == 9 || (int) high_data.field3 == 18) {
+    if ((int) high_data.field3 == 9 || (int) high_data.field3 == 18 || (int) high_data.field3 == 26) {
         target1.N = high_data.field4;
         target1.E = high_data.field5 + aal_parameters.distance;
         target1.radius = aal_parameters.targetBoundary;
@@ -133,6 +133,10 @@ void computeABC() {
     float computed_a = cos(theta);
     float computed_b = sin(theta);
     float computed_c = -(computed_a * prevTarget.E + computed_b * prevTarget.N);
+    if ((int) high_data.field3 == 26 || (int) high_data.field3 == 27) {
+        computed_b = -sin(theta);
+        computed_c = -(cosf(theta) * prevTarget.E) + (sinf(theta) * prevTarget.N);
+    }
     low_data.field1 = theta;
     low_data.field2 = computed_a;
     low_data.field3 = computed_b;

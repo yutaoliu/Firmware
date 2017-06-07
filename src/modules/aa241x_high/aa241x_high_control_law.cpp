@@ -424,7 +424,22 @@ void flight_control() {
             throttle_servo_out = throttle_control();
             high_data.field3 = 25;
             break;
-
+       // new line equations
+        case 26: // rectangle
+            roll_servo_out = line_acquisition_transitions();
+            pitch_servo_out = altitude_control();
+            yaw_servo_out = yaw_control();
+            throttle_servo_out = throttle_control();
+            high_data.field3 = 26;
+            break;
+        // full auto by using roll = line_acquisition_transitions (turn 15 and 45 degree)
+        case 27:
+            roll_servo_out = line_acquisition_transitions();
+            pitch_servo_out = altitude_control();
+            yaw_servo_out = yaw_control();
+            throttle_servo_out = throttle_control();
+            high_data.field3 = 27;
+            break;
         // full manual
         default:
             roll_servo_out = man_roll_in;
