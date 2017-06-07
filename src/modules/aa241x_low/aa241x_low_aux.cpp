@@ -135,15 +135,16 @@ uint64_t previous_loop_timestamp = 0;	// timestamp of start of previous loop
 
 bool in_mission;
 hrt_abstime start_time;
-float current_time;
+float mission_time;
 float final_time;
 bool mission_failed;
-bool in_turn;
-int32_t turn_num;
-float turn_degrees;
-int32_t num_violations;
-bool in_violation;
+int32_t phase_num;
+int32_t num_plumes_found;
+bool in_plume;
 bool out_of_bounds;
+float plume_N[5];
+float plume_E[5];
+float plume_radius[5];
 
 // data from threads
 struct aa241x_low_data_s low_data = {};

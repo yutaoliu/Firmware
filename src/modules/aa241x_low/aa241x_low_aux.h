@@ -140,15 +140,16 @@ extern uint64_t previous_loop_timestamp; 	// timestamp of start of previous loop
 // mission stuff
 extern bool in_mission;
 extern hrt_abstime start_time;
-extern float current_time;
+extern float mission_time;
 extern float final_time;
 extern bool mission_failed;
-extern bool in_turn;
-extern int32_t turn_num;
-extern float turn_degrees;
-extern int32_t num_violations;
-extern bool in_violation;
+extern int32_t phase_num;
+extern int32_t num_plumes_found;
+extern bool in_plume;
 extern bool out_of_bounds;
+extern float plume_N[5];
+extern float plume_E[5];
+extern float plume_radius[5];
 
 // communication data
 extern aa241x_low_data_s low_data;

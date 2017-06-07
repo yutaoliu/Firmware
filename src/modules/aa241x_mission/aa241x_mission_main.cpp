@@ -47,9 +47,10 @@
 #include <px4_tasks.h>
 #include <px4_posix.h>
 
+#include <cstring>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+#include <string>
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -82,7 +83,6 @@
  */
 extern "C" __EXPORT int aa241x_mission_main(int argc, char *argv[]);
 
-
 namespace aa241x_mission
 {
 
@@ -93,7 +93,7 @@ AA241xMission::AA241xMission() :
 	_task_should_exit(false),
 	_task_running(false),
 	_control_task(-1),
-	_mavlink_fd(-1),
+	_mavlink_log_pub(nullptr),
 	_buzzer(-1),
 	_vcontrol_mode_sub(-1),
 	_global_pos_sub(-1),
@@ -108,34 +108,29 @@ AA241xMission::AA241xMission() :
 	_in_mission(false),
 	_mission_failed(false),
 	_start_time(0),
-	_current_time(0.0f),
+	_phase_start_time(0),
+	_mission_time(0.0f),
 	_final_time(0.0f),
 
-	_in_turn(false),
-	_just_started_turn(false),
-	_turn_num(-1),
-	_turn_radians(0.0f),
-	_turn_degrees(0.0f),
-	_req_turn_degrees(-840.0f),
-	_num_of_turns(2),
-	_num_violations(0),
-	_in_violation(false),
+	_phase_num(-1),
+	_num_plumes_found(0),
 	_out_of_bounds(false),
+	_all_plumes_found(false),
 
 	_timestamp(0),
 	_previous_loop_timestamp(0),
 
-	_build_racecourse_run(false),
+
+	_build_plumes_run(false),
 	_check_field_bounds_run(false),
 	_check_finished_run(false),
 	_check_start_run(false),
-	_check_turn_start_run(false),
-	_check_turn_end_run(false),
 	_check_violation_run(false),
-	_turn_accumulate_run(false),
 
 	_debug_timestamp(0),
 	_debug_yell(false)
+
+
 {
 	_vcontrol_mode = {};
 	_global_pos = {};
@@ -144,23 +139,22 @@ AA241xMission::AA241xMission() :
 	_batt_stat = {};
 	_cur_pos.N = 0.0f; _cur_pos.E = 0.0f; _cur_pos.D = 0.0f;
 	_prev_pos = _cur_pos;
+    	for (int i= 0; i<5; i++) {
+		_plume_N[i] = 0.0f;
+		_plume_E[i] = 0.0f;
+		_plume_radius[i] = 0.0f;
+	}    
 
-	_parameter_handles.min_alt = param_find("AA_ALT_MIN");
-	_parameter_handles.max_alt = param_find("AA_ALT_MAX");
-	_parameter_handles.start_pos_N = param_find("AAMIS_SPOS_N");
-	_parameter_handles.start_pos_E = param_find("AAMIS_SPOS_E");
-	_parameter_handles.keepout_radius = param_find("AAMIS_RAD_KPT");
-	_parameter_handles.tilt = param_find("AAMIS_TILT");
-	_parameter_handles.leg_length = param_find("AAMIS_LEG_LEN");
-	_parameter_handles.gate_width = param_find("AAMIS_GTE_WID");
+
+	_parameter_handles.min_alt = param_find("AAMIS_ALT_MIN");
+	_parameter_handles.max_alt = param_find("AAMIS_ALT_MAX");
+	_parameter_handles.max_phase_time = param_find("AAMIS_PHASE_MAXT");
 	_parameter_handles.ctr_lat = param_find("AAMIS_CTR_LAT");
 	_parameter_handles.ctr_lon = param_find("AAMIS_CTR_LON");
 	_parameter_handles.ctr_alt = param_find("AAMIS_CTR_ALT");
-	_parameter_handles.team_num = param_find("AA_TEAM");
-	_parameter_handles.mission_restart = param_find("AA_MIS_RESET");
 	_parameter_handles.mis_fail = param_find("AAMIS_MIS_FAIL");
 	_parameter_handles.debug_mode = param_find("AAMIS_DEBUG");
-	_parameter_handles.force_start = param_find("AAMIS_FSTART");
+	_parameter_handles.mission_seed = param_find("AAMIS_MIS_SEED");
 
 	parameters_update();
 
@@ -190,46 +184,18 @@ AA241xMission::~AA241xMission() {
 	aa241x_mission::g_aa241x_mission = nullptr;
 }
 
-void
-AA241xMission::reset_mission()
-{
-  _in_mission = false;
-  _mission_failed = false;
-  _start_time = 0;
-  _current_time = 0.0f;
-  _final_time = 0.0f;
-
-  _in_turn = false;
-  _just_started_turn = false;
-  _turn_num = -1;
-  _turn_radians = 0.0f;
-  _turn_degrees = 0.0f;
-  _req_turn_degrees = -840.0f;
-  _num_of_turns = 2;
-  _num_violations = 0;
-  _in_violation = false;
-  _out_of_bounds = false;
-}
-
 int
 AA241xMission::parameters_update()
 {
 	param_get(_parameter_handles.min_alt, &(_parameters.min_alt));
 	param_get(_parameter_handles.max_alt, &(_parameters.max_alt));
-	param_get(_parameter_handles.mission_restart, &(_parameters.mission_restart));
-	param_get(_parameter_handles.start_pos_N, &(_parameters.start_pos_N));
-	param_get(_parameter_handles.start_pos_E, &(_parameters.start_pos_E));
-	param_get(_parameter_handles.keepout_radius, &(_parameters.keepout_radius));
-	param_get(_parameter_handles.tilt, &(_parameters.tilt));
-	param_get(_parameter_handles.leg_length, &(_parameters.leg_length));
-	param_get(_parameter_handles.gate_width, &(_parameters.gate_width));
+	param_get(_parameter_handles.max_phase_time, &(_parameters.max_phase_time));
 	param_get(_parameter_handles.ctr_lat, &(_parameters.ctr_lat));
 	param_get(_parameter_handles.ctr_lon, &(_parameters.ctr_lon));
 	param_get(_parameter_handles.ctr_alt, &(_parameters.ctr_alt));
-	param_get(_parameter_handles.team_num, &(_parameters.team_num));
 	param_get(_parameter_handles.mis_fail, &(_parameters.mis_fail));
 	param_get(_parameter_handles.debug_mode, &(_parameters.debug_mode));
-	param_get(_parameter_handles.force_start, &(_parameters.force_start));
+	param_get(_parameter_handles.mission_seed, &(_parameters.mission_seed));
 
 	// TODO: HANDLE ADDITIONAL PARAMETERS HERE
 
@@ -318,15 +284,16 @@ AA241xMission::publish_mission_status()
 	
 	mis_stat.in_mission 	= _in_mission;
 	mis_stat.start_time 	= _start_time;
-	mis_stat.current_time 	= _current_time;
+	mis_stat.mission_time 	= _mission_time;
 	mis_stat.final_time 	= _final_time;
 	mis_stat.mission_failed = _mission_failed;
-	mis_stat.in_turn	= _in_turn;
-	mis_stat.turn_num	= _turn_num;
-	mis_stat.turn_degrees	= _turn_degrees;
-	mis_stat.num_violations = _num_violations;
-	mis_stat.in_violation	= _in_violation;
+	mis_stat.phase_num	= _phase_num;
+	mis_stat.num_plumes_found = _num_plumes_found;
+	mis_stat.in_plume	= false;  //TODO: variable not used; remove it
 	mis_stat.out_of_bounds	= _out_of_bounds;
+	memcpy(&mis_stat.plume_N, _plume_N, sizeof(_plume_N));
+	memcpy(&mis_stat.plume_E, _plume_E, sizeof(_plume_E));
+	memcpy(&mis_stat.plume_radius, _plume_radius, sizeof(_plume_radius));
 
 
 	/* publish the mission status */
@@ -345,32 +312,12 @@ AA241xMission::initialize_mission()
 
 
 	// send message that mission has started
-	//mavlink_log_info(_mavlink_fd, "#AA241x mission started");
-
-	// trigger the buzzer audio for mission start
-	/*
-	switch(_parameters.team_num){
-	case 1:
-
-		break;
-	case 2:
-
-		break;
-	case 3:
-		ioctl(_buzzer, TONE_SET_ALARM, TONE_TRAINER_BATTLE_TUNE);
-		break;
-	case 4:
-
-		break;
-	default:
-
-		break;
-	} */
+	mavlink_log_info(&_mavlink_log_pub, "#AA241x mission initialized");
 
 	_in_mission = true;
 	//_can_start = false;	// don't allow restarting of a mission
 	_start_time = hrt_absolute_time();
-	//_mission_start_battery = _batt_stat.discharged_mah;
+    _num_plumes_found = 0;
 
 	// TODO: ADD ANY ADDITIONAL INITIALIZATION REQUIRED
 }
@@ -406,44 +353,10 @@ float AA241xMission::angular_difference(const float &theta1, const float &theta0
 	// b, end of line
 	// c, query point
 int8_t AA241xMission::line_side(const _land_pos &a, 
-								const _land_pos &b, 
-								const _airplane_pos &c)
+	const _land_pos &b, 
+	const _airplane_pos &c)
 {
-	
-
 	return sgnf((b.E - a.E)*(c.N - a.N) - (b.N - a.N)*(c.E - a.E));
-}
-
-
-// build the racecourse from parameters
-void AA241xMission::build_racecourse()
-{
-	if (_parameters.debug_mode == 1 && (_build_racecourse_run == false || _debug_yell == true)) {
-		_build_racecourse_run = true;
-		//mavlink_log_info(_mavlink_fd, "Build racecourse ran")
-	}
-	// populate the start pylon with the appropriate values
-	_start_pylon.N 	= _parameters.start_pos_N;
-	_start_pylon.E 	= _parameters.start_pos_E;
-	float tiltrad 	= _parameters.tilt * deg2rad;
-
-	// set up pylons
-	_pylon[0].E  = roundf(_start_pylon.E  + _parameters.leg_length*cosf(tiltrad));
-	_pylon[0].N  = roundf(_start_pylon.N  + _parameters.leg_length*sinf(tiltrad));
-	_pylon[0].angle = atan2f(_pylon[0].N - _start_pylon.N, _pylon[0].E - _start_pylon.E) + pi/2.0f;
-	_pylon[1].E  = roundf(_pylon[0].E + _parameters.leg_length*cosf(tiltrad-2.0f*pi/3.0f));
-	_pylon[1].N  = roundf(_pylon[0].N + _parameters.leg_length*sinf(tiltrad-2.0f*pi/3.0f));
-	_pylon[1].angle = atan2f(_pylon[1].N - _pylon[0].N, _pylon[1].E - _pylon[0].E) + pi/2.0f;
-
-	// set up start gate
-	_start_gate[0].E = _start_pylon.E + _parameters.gate_width/2.0f * cosf(tiltrad - 2.0f*pi/3.0f) - 10.0f*cosf(tiltrad - pi/6.0f); // 10 insignificant, just for visibility
-	_start_gate[0].N = _start_pylon.N + _parameters.gate_width/2.0f * sinf(tiltrad - 2.0f*pi/3.0f) - 10.0f*sinf(tiltrad - pi/6.0f);
-	_start_gate[1].E = _start_pylon.E + _parameters.gate_width/2.0f * cosf(tiltrad - 2.0f*pi/3.0f);
-	_start_gate[1].N = _start_pylon.N + _parameters.gate_width/2.0f * sinf(tiltrad - 2.0f*pi/3.0f);
-	_start_gate[2].E = _start_pylon.E + _parameters.gate_width/2.0f * cosf(tiltrad + pi/3.0f);
-	_start_gate[2].N = _start_pylon.N + _parameters.gate_width/2.0f * sinf(tiltrad + pi/3.0f);
-	_start_gate[3].E = _start_pylon.E + _parameters.gate_width/2.0f * cosf(tiltrad + pi/3.0f) - 10.0f*cosf(tiltrad - pi/6.0f);
-	_start_gate[3].N = _start_pylon.N + _parameters.gate_width/2.0f * sinf(tiltrad + pi/3.0f) - 10.0f*sinf(tiltrad - pi/6.0f);
 }
 
 
@@ -452,275 +365,248 @@ void AA241xMission::check_field_bounds()
 {
 	if (_parameters.debug_mode == 1 && (_check_field_bounds_run == false || _debug_yell == true)) {
 		_check_field_bounds_run = true;
-		//mavlink_log_info(_mavlink_fd, "Check field bounds ran")
+		//mavlink_log_info(&_mavlink_log_pub, "Check field bounds ran")
 	}
 	// Assign struct boundaries
 
-	_land_pos lake_boundaries[9];
+	_land_pos lake_boundaries[4];
 
-	lake_boundaries[0].E = -173.0f; lake_boundaries[0].N =  143.0f;
-	lake_boundaries[1].E = -82.0f;  lake_boundaries[1].N =  228.0f;
-	lake_boundaries[2].E = 176.0f;  lake_boundaries[2].N =   81.0f;
-	lake_boundaries[3].E = 181.0f;  lake_boundaries[3].N = -138.0f;
-	lake_boundaries[4].E =  54.0f;  lake_boundaries[4].N = -148.0f;
-	lake_boundaries[5].E =  62.0f;  lake_boundaries[5].N = -219.0f;
-	lake_boundaries[6].E = -36.0f;  lake_boundaries[6].N = -216.0f;
-	lake_boundaries[7].E = -101.0f; lake_boundaries[7].N = -142.0f;
-	lake_boundaries[8].E = -181.0f; lake_boundaries[8].N = -112.0f;
+	lake_boundaries[0].E =   16.9f;  lake_boundaries[0].N = -198.3f;
+	lake_boundaries[1].E = -102.7f;  lake_boundaries[1].N = -208.5f;
+	lake_boundaries[2].E = -138.3f;  lake_boundaries[2].N =  210.0f;
+	lake_boundaries[3].E =  -18.7f;  lake_boundaries[3].N =  220.2f;
 	
-	// check if already out of bounds so that it doesn't yell at you 1000 times
-	bool already_out = false;
-	
-	if (_out_of_bounds) {
-		already_out = true;
-	}
-
-
 	//% Set inbounds to start
 	_out_of_bounds = false;
 
 	//% Check if outside convex portions
-	uint8_t convex[5] = {0, 1, 2, 5, 8};
+	uint8_t convex[4] = {0, 1, 2, 3};
 
-	for (int i = 0; i < 5; i++) {
-	    // If at the last boundary (wrapping)
+	for (int i = 0; i < 4; i++) {
+		// If at the last boundary (wrapping)
 		uint8_t nextpt = convex[i]+1;
-	    if (i == 4) {
-	        nextpt = convex[0];
-	    }
-	    
-	    if (line_side(lake_boundaries[convex[i]], lake_boundaries[nextpt], _cur_pos) > 0 
-	            && (_in_mission == true || _cur_pos.D < -40)) {
-	        _mission_failed = true;
-	        
-	        if (_parameters.mis_fail == 1){
-                            if (_in_mission) {
-                              //mavlink_log_critical(_mavlink_fd, "AA241x. Mission ended");
-                            }
-			    _in_mission = false;
-			}
+		if (i == 3) {
+			nextpt = convex[0];
+		}
 
-	        _out_of_bounds = true;
-	        // TONE
-	        // send msg: aa241x mission failed, boundary violation
-	        if (!already_out) {
-		        //mavlink_log_critical(_mavlink_fd, "AA241x mission failed, lake boundary violation");
-		    }
-	    }
+		if (line_side(lake_boundaries[convex[i]], lake_boundaries[nextpt], _cur_pos) > 0 ) {
+			// If not already out of bounds, send mavlink
+		        if (!_out_of_bounds) {
+			        mavlink_log_critical(&_mavlink_log_pub, "Out of bounds at %5.1f E, %5.1f N; mission failed",(double)_cur_pos.E,(double)_cur_pos.N);
+				_out_of_bounds = true;
+			}
+		        _mission_failed = true;
+			_in_mission = false;
+		}
 	}
 
 	// Check if outside concave portions
+	// Note: All concave portions of Coyote Hill bounds were removed
+	/*uint8_t concave[1] = {4};
 
-	uint8_t concave[2] = {3, 6};
-
-	for (int i = 0; i < 2; i++) {
+	for (int i = 0; i < 1; i++) {
 	    if (line_side(lake_boundaries[concave[i]], lake_boundaries[concave[i]+1], _cur_pos) > 0 
-	    && line_side(lake_boundaries[concave[i]+1],lake_boundaries[concave[i]+2], _cur_pos) > 0 
-	    && (_in_mission == true || _cur_pos.D < -40) ) {
+	    && line_side(lake_boundaries[concave[i]+1],lake_boundaries[concave[i]+2], _cur_pos) > 0) {
 	        _mission_failed = true;
-	        
-	        if (_parameters.mis_fail == 1){
-                            if (_in_mission) {
-                              //mavlink_log_critical(_mavlink_fd, "AA241x. Mission ended");
-                            }
-			    _in_mission = false;
-			}
-	        _out_of_bounds = true;
-	        // TONE
-	        // send msg: aa241x mission failed, boundary violation
-	        if (!already_out) {
-		        //mavlink_log_critical(_mavlink_fd, "AA241x mission failed, lake boundary violation");
-		    }
+		_in_mission = false;
+	        // If not already out of bounds, send mavlink
+	        if (!_out_of_bounds) {
+		        mavlink_log_critical(_mavlink_fd, "AA241x mission failed, out of bounds");
+			_out_of_bounds = true;
+		}
 	    }
 	}
+        */
 
 	// Check if violating the flight window (5m safety buffer for errors)
-	if (_in_mission == true && (-_cur_pos.D > (_parameters.max_alt + 5.0f) || -_cur_pos.D < (_parameters.min_alt - 5.0f))) {
-	    _mission_failed = true;
-
-	    if (_parameters.mis_fail == 1){
-                    if (_in_mission) {
-                      //mavlink_log_critical(_mavlink_fd, "AA241x. Mission ended");
-                    }
-                    _in_mission = false;
+	if (-_cur_pos.D > (_parameters.max_alt + 5.0f) || -_cur_pos.D < (_parameters.min_alt - 5.0f)) {
+		_mission_failed = true;
+		_in_mission = false;
+		if (!_out_of_bounds) {
+			mavlink_log_critical(&_mavlink_log_pub, "AA241x mission failed, altitude violation");
+			_out_of_bounds = true;
 		}
-
-	    _out_of_bounds = true;
-	    // TONE
-	    // send msg: aa241x mission failed, boundary violation
-	    if (!already_out) {
-	        //mavlink_log_critical(_mavlink_fd, "AA241x mission failed, altitude violation");
-	    }
 	}
 }
 
+
+// build plume locations and radii here
+void AA241xMission::build_plumes() {
+
+    // students choose a number from 0 to size(keys)
+    _keys _mission_seeds[10];
+    _mission_seeds[0].key_one = 123456789012345678; _mission_seeds[0].key_two = 901234567890123456;
+    _mission_seeds[1].key_one = 483681881232343773; _mission_seeds[1].key_two = 381433262493621552;
+    _mission_seeds[2].key_one = 483681881232343773; _mission_seeds[2].key_two = 381433262493621552;
+    _mission_seeds[3].key_one = 483681881232343773; _mission_seeds[3].key_two = 381433262493621552;
+    _mission_seeds[4].key_one = 483681881232343773; _mission_seeds[4].key_two = 381433262493621552;
+    _mission_seeds[5].key_one = 483681881232343773; _mission_seeds[5].key_two = 381433262493621552;
+    _mission_seeds[6].key_one = 483681881232343773; _mission_seeds[6].key_two = 381433262493621552;
+    _mission_seeds[7].key_one = 483681881232343773; _mission_seeds[7].key_two = 381433262493621552;
+    _mission_seeds[8].key_one = 483681881232343773; _mission_seeds[8].key_two = 381433262493621552;
+    _mission_seeds[9].key_one = 483681881232343773; _mission_seeds[9].key_two = 381433262493621552;
+
+    int k = _parameters.mission_seed;
+    _keys key;
+    key = _mission_seeds[k];
+
+    //
+    int cell[5] = {0,0,0,0,0};
+    int diameter[5] = {-2,-2,-2,-2,-2};
+    float North[5] = {0.0,0.0,0.0,0.0,0.0};
+    float East[5] = {0.0,0.0,0.0,0.0,0.0};
+    // lower left corner:
+    float coord_E =  -93.574;
+    float coord_N = -197.675;
+
+    // parse key:
+    uint64_t key_cur, N, n, cur, old, star;
+    if (_phase_num == 1){
+        key_cur = key.key_one / pow(10,9);
+    }
+    else if (_phase_num == 2){
+        key_cur = key.key_one/pow(10,9);
+        key_cur = key_cur*pow(10,9);
+        key_cur = key.key_one - key_cur;
+        key_cur = key_cur*pow(10,3) + key.key_two/pow(10,15);
+    }
+    else if (_phase_num == 3){
+        key_cur = key.key_two/pow(10,15);
+        key_cur = key_cur*pow(10,15);
+        key_cur = key.key_two - key_cur;
+    }
+    else {key_cur = 0;}
+
+    old = 0;
+    star = 3*(_phase_num+1);
+    for (int i= 0; i<(_phase_num+2); i++) {
+        n = star - i*3;
+        cur = key_cur/pow(10,n);
+        N   = cur - old; 
+        old = cur*1000;
+        
+        cell[i] = (int)N/10;
+        diameter[i] = (int)N - cell[i]*10;
+    }
+
+    // convert cells to East, North coordinates:
+    for (int i = 0; i<5; i++) {
+        if (diameter[i] > 0) {
+            int findrow = cell[i]/5;
+            int findcol = cell[i]%5;
+            float np, ep;
+            np = 10.0f + (float)findrow*20.0f;
+            ep = 10.0f + (float)findcol*20.0f;
+
+            // rotate coordinates:
+            float theta = -atanf(1/11.75); // angle of Coyote Hill fly-area rectangle to vertical
+            North[i] = coord_N + cosf(theta)*np - sinf(theta)*ep;
+            East[i]  = coord_E + sinf(theta)*np + cosf(theta)*ep;
+        } 
+    }
+
+    // assign plume data:
+    for (int i = 0; i<5; i++) {
+        _plume_N[i] = North[i];
+        _plume_E[i] = East[i];
+        _plume_radius[i] = (float)diameter[i]*20/2;
+    }
+
+    // MESSAGE, debugging
+    //mavlink_log_info(&_mavlink_log_pub, "#AA241x plume1 N: %.1f m, E: %.1f, radius: %.1f", (double)_plume_N[0],(double)_plume_E[0],(double)_plume_radius[0]);
+}
+
+
+// Start mission if in bounds
 void AA241xMission::check_start()
 {
 
 	if (_parameters.debug_mode == 1 && (_check_start_run == false || _debug_yell == true)) {
 		_check_start_run = true;
-		//mavlink_log_info(_mavlink_fd, "Check start ran")
+		mavlink_log_info(&_mavlink_log_pub, "Check start ran");
 	}
 
-	//check that previous position was within bounds
-	if (line_side(_start_gate[0],_start_gate[1],_prev_pos) > 0 
-	    && line_side(_start_gate[1],_start_gate[2],_prev_pos) > 0 
-	    && line_side(_start_gate[2],_start_gate[3],_prev_pos) > 0 
-	    && -_prev_pos.D > _parameters.min_alt && -_prev_pos.D < _parameters.max_alt) {
-
-          if (_parameters.debug_mode == 1 && (_check_start_run == false || _debug_yell == true)) {
-            //mavlink_log_info(_mavlink_fd, "#Valid starting position")
-          }
-
-	    //check that new position is across start line
-          if (line_side(_start_gate[1],_start_gate[2],_cur_pos) < 0) {
-            _in_mission = true;
-            _turn_num = 0;
-            // MESSAGE, race started
-            //mavlink_log_info(_mavlink_fd, "#AA241x race started");
-          }
-	}
-
+	if (!_out_of_bounds) {
+		_in_mission = true;
+            	// MESSAGE, competition started
+            	mavlink_log_info(&_mavlink_log_pub, "Valid starting position at %5.1f E, %5.1f N",(double)_cur_pos.E,(double)_cur_pos.N);
+        } else {
+        	_mission_failed = true;
+		mavlink_log_critical(&_mavlink_log_pub, "Invalid starting position; mission failed");
+        }
 }
 
+// Advance through mission phases and finish
 void AA241xMission::check_finished()
 {
-
 	if (_parameters.debug_mode == 1 && (_check_finished_run == false || _debug_yell == true)) {
 		_check_finished_run = true;
-		//mavlink_log_info(_mavlink_fd, "Check finish ran")
+		mavlink_log_info(&_mavlink_log_pub, "Check finish ran");
 	}
 
-	//check that previous position was within bounds
-	if (line_side(_start_gate[1],_start_gate[2],_prev_pos) < 0) {
-		if (line_side(_start_gate[0],_start_gate[1],_cur_pos) > 0 
-		    && line_side(_start_gate[1],_start_gate[2],_cur_pos) > 0 
-		    && line_side(_start_gate[2],_start_gate[3],_cur_pos) > 0 
-		    && -_cur_pos.D > _parameters.min_alt && -_cur_pos.D < _parameters.max_alt) {
-		    //check that new position is across start line
-	            _in_mission = false;
-	            _turn_num = -1;
-		    // MESSAGE, race completed
-		    //mavlink_log_info(_mavlink_fd, "#AA241x race completed in %.1f seconds", (double)_current_time);
-	        }
+
+	// Time in current phase
+	float time_in_phase = (float)(hrt_absolute_time() - _phase_start_time)/1000000.0f;
+
+	// Init at true; set to false if any plumes not visited
+	_all_plumes_found = true;
+
+	for (int i= 0; i<5; i++) {
+		if (_plume_radius[i] > 0) {_all_plumes_found = false;}
 	}
-}
 
-void AA241xMission::check_turn_start()
-{
-	if (_parameters.debug_mode == 1 && (_check_turn_start_run == false || _debug_yell == true)) {
-		_check_turn_start_run = true;
-		//mavlink_log_info(_mavlink_fd, "Check turn start ran")
+	// Boolean if new phase should be triggered
+	bool new_phase = false;
+
+	// Move to next phase if all plumes found
+	if (_all_plumes_found) {
+		mavlink_log_info(&_mavlink_log_pub, "All plumes in phase %i found.",_phase_num);
+		new_phase = true;
+
+	// Move to next phase if time expired
+	} else if (time_in_phase > _parameters.max_phase_time) { 
+		mavlink_log_info(&_mavlink_log_pub, "Time limit in phase %i reached.",_phase_num);
+		new_phase = true;
+
 	}
-	// Calculate airplane current and previous angle relative to current pylon to turn around
 
-	float cur_angle = atan2f(_cur_pos.N - _pylon[_turn_num].N, _cur_pos.E - _pylon[_turn_num].E); // float
-	float prev_angle = atan2f(_prev_pos.N - _pylon[_turn_num].N, _prev_pos.E - _pylon[_turn_num].E); //float
-
-	// Check if the airplane has passed clockwise past the turn (assumes must
-	// have small angle
-
-	float cur_angle_diff = angular_difference(cur_angle,_pylon[_turn_num].angle); //float
-	float prev_angle_diff = angular_difference(prev_angle,_pylon[_turn_num].angle); //float
-
-	// If current angle is clockwise of required angle and previous angle is
-	// counterclockwise, plus the angular differences are less than pi/4 from
-	// the required angle (req'd so that it doesn't trigger when crossing
-	// opposite side) then start the turn
-	if (cur_angle_diff <= 0.0f && prev_angle_diff >= 0.0f && fabsf(cur_angle_diff) < 2.0f*pi/3.0f) {
-	    _in_turn = true;
-	    _just_started_turn = true;
-	    // MESSAGE, turn started
-	    //mavlink_log_info(_mavlink_fd, "#AA241x turn started");
+	if (new_phase) {
+		_phase_num += 1;
+		mavlink_log_info(&_mavlink_log_pub, "Current number of plumes found: %i",_num_plumes_found);
+		if (_phase_num < 4) {
+			build_plumes();
+			_all_plumes_found = false;
+			mavlink_log_info(&_mavlink_log_pub, "Phase %i started",_phase_num);
+			_phase_start_time = hrt_absolute_time();
+		} else {
+			mavlink_log_info(&_mavlink_log_pub, "Mission completed successfully in %4.1f seconds",(double)_mission_time);
+			_final_time = _mission_time;
+		}
 	}
 }
 
-void AA241xMission::check_turn_end() 
-{
-	if (_parameters.debug_mode == 1 && (_check_turn_end_run == false || _debug_yell == true)) {
-		_check_turn_end_run = true;
-		//mavlink_log_info(_mavlink_fd, "Check turn finish ran")
-	}
 
-	// Less than negative because clockwise rotation
-	if (_turn_radians < _req_turn_degrees * deg2rad) {
-	    // end turn
-	    _in_turn = false;
-	    // reset accumulator
-	    _turn_radians = 0.0f;
-      _turn_degrees = 0.0f;
-	    // step to next turn
-	    _turn_num = _turn_num + 1;
-	    // MESSAGE, turn completed
-	    //mavlink_log_info(_mavlink_fd, "#AA241x turn completed");
-	}
-}
 
-void AA241xMission::turn_accumulate()
-{
-	if (_parameters.debug_mode == 1 && (_turn_accumulate_run == false || _debug_yell == true)) {
-		_turn_accumulate_run = true;
-		//mavlink_log_info(_mavlink_fd, "Turn accumulator ran")
-	}
-
-	// initialize vars
-	float prev_angle;
-
-	// if just entered turn then accumulate from start line
-	if (_just_started_turn) {
-	    _just_started_turn = false;
-      _turn_radians = 0.0f; // reset turn when you have just started a new turn
-      _turn_degrees = 0.0f;
-	    prev_angle        = _pylon[_turn_num].angle;
-	} else { // else just use the previous position's angle relative to the pylon
-	    prev_angle        = atan2f(_prev_pos.N - _pylon[_turn_num].N, _prev_pos.E - _pylon[_turn_num].E);
-	}
-
-	// Calc current angle relative to pylon
-	float cur_angle       = atan2f(_cur_pos.N - _pylon[_turn_num].N, _cur_pos.E - _pylon[_turn_num].E);
-
-	// Calc angle traversed (assumes < 180 deg)
-	float accumAngle = angular_difference(cur_angle,prev_angle);
-
-	// Accumulate in the turn angle counter
-	_turn_radians = _turn_radians + accumAngle;
-
-	// Make sure you can't go positive (CCW accumulation) in accumulated angle
-	if (_turn_radians > 0.0f) {
-	    _turn_radians = 0.0f;
-	}
-
-	// set turn degrees
-	_turn_degrees = _turn_radians * rad2deg;
-}
-
-void AA241xMission::check_violation()
+void AA241xMission::check_near_plume() 
 {	
 	if (_parameters.debug_mode == 1 && (_check_violation_run == false || _debug_yell == true)) {
 		_check_violation_run = true;
-		//mavlink_log_info(_mavlink_fd, "Check violation ran")
+		mavlink_log_info(&_mavlink_log_pub, "Check near plume ran");
 	}
 
-	// Calculate r^2 distance from pylon
-	float r2 =   (_cur_pos.E - _pylon[_turn_num].E)*(_cur_pos.E - _pylon[_turn_num].E)
-	     + (_cur_pos.N - _pylon[_turn_num].N)*(_cur_pos.N - _pylon[_turn_num].N);
-	 
-	// calculate minimum radius^2 (with 2.5 meter safety buffer)
-	float min_r2 = (_parameters.keepout_radius-2.5f)*(_parameters.keepout_radius-2.5f);
+	for (int i= 0; i<5; i++) {
 
-	// Check if distance is smaller than min distance and reset accumulator if
-	// so
+		// Calculate distance from plume center
+		float rp = sqrtf(powf(_cur_pos.E - _plume_E[i],2) + powf(_cur_pos.N - _plume_N[i],2));
 
-	if (r2 < min_r2) {
-	    _turn_radians = 0;
-	    _in_violation = true;
-	} else if (_in_violation) {
-	    _in_violation = false;
-	    _num_violations = _num_violations + 1;
-		// MESSAGE, violation occured
-		//mavlink_log_critical(_mavlink_fd, "AA241x turn keep out violation");
+		// Check if inside radius
+		if (rp < _plume_radius[i]) {
+			_num_plumes_found += 1;	
+			mavlink_log_info(&_mavlink_log_pub, "Plume Found; %i total plumes found",_num_plumes_found);
+			//mavlink_log_info(&_mavlink_log_pub, "Plume found: N: %.1f m, E: %.1f, radius: %.1f", (double)_plume_N[i],(double)_plume_E[i],(double)_plume_radius[i]);
+			_plume_radius[i] = -1.0f; //mark plume as visited
+		}
 	}
-
 }
 
 void
@@ -736,9 +622,6 @@ AA241xMission::task_main()
 	/* inform about start */
 	warnx("Initializing..");
 	fflush(stdout);
-
-	/* open connection to mavlink logging */
-	//_mavlink_fd = open(MAVLINK_LOG_DEVICE, 0);
 
 	/* open buzzer */
 	_buzzer = open(TONEALARM0_DEVICE_PATH, O_WRONLY);
@@ -778,8 +661,8 @@ AA241xMission::task_main()
 	_prev_pos.E = 0.0f;
 	_prev_pos.D = 0.0f;
 
-	/* build the racecourse */
-	build_racecourse();
+	/* build the first set of plumes */
+	//build_plumes();  //wait until mission starts
 
 	/* wakeup source(s) */
 	px4_pollfd_struct_t fds[2] = {};
@@ -837,102 +720,73 @@ AA241xMission::task_main()
 		vehicle_status_update();
 		battery_status_update();
 
-		// Reset turn if dropped out of mission
-		if (_in_mission == false) { _turn_num = -1; }
-
 		// Yell position every 5 seconds if debugging
 		_debug_yell = false;
 		if (_parameters.debug_mode == 1 && (hrt_absolute_time() - _debug_timestamp > 5000000)) {
 			_debug_timestamp = hrt_absolute_time();
 			_debug_yell = true;
-
-			//mavlink_log_info(_mavlink_fd, "Current: N %.3f, E %.3f, D %.3f", (double)_cur_pos.N, (double)_cur_pos.E, (double)_cur_pos.D);
-			//mavlink_log_info(_mavlink_fd, "Previous: N %.3f, E %.3f D %.3f", (double)_prev_pos.N, (double)_prev_pos.E, (double)_prev_pos.D);
-
+			mavlink_log_info(&_mavlink_log_pub, "Current: N %.3f, E %.3f, D %.3f", (double)_cur_pos.N, (double)_cur_pos.E, (double)_cur_pos.D);
+			mavlink_log_info(&_mavlink_log_pub, "Origin at (%9.6f, %9.6f)",(double)_parameters.ctr_lat,(double)_parameters.ctr_lon)
+			//mavlink_log_info(&_mavlink_log_pub, "Previous: N %.3f, E %.3f D %.3f", (double)_prev_pos.N, (double)_prev_pos.E, (double)_prev_pos.D);
 		}
-		
-                // reset mission parameters remotely
-                if (_parameters.mission_restart) {
-                  reset_mission();
-                }
 
 
 		//  run required auto mission code
-		if (_vcontrol_mode.flag_control_auto_enabled && !_parameters.mission_restart) {
-			_timestamp = hrt_absolute_time();
-
-			// Force mission if so desired
-			if (_parameters.force_start == 1) {
-				_in_mission = true;
-				if (_start_time == 0) {
-					_start_time = hrt_absolute_time();
-				}
-			}
-			
+		if (_vcontrol_mode.flag_control_auto_enabled) {
+			_timestamp = hrt_absolute_time();	
 
 			// Check if there is no GPS lock and warn the user upon
 			// starting auto mode if that is the case.
+			// TODO: This gps flag is missing now; find where it went and add it back in
+
 			//if (!_vehicle_status.condition_global_position_valid
 				//&& (_timestamp - _previous_loop_timestamp) > 1000000) {
 
-				//mavlink_log_critical(_mavlink_fd, "AA241x. No GPS lock, do not launch airplane");
+				//mavlink_log_critical(&_mavlink_log_pub, "AA241x. No GPS lock, do not launch airplane");
 			//}
-			
+
 			// If not yet in mission check if mission has started
-			if (_in_mission == false) {
+			if (_in_mission == false && _mission_failed == false) {
+				// Check if in bounds
+				check_field_bounds();
 				check_start();
 				// If check start sets mission to true set the start time
-	            if (_in_mission) {
-	                _start_time = hrt_absolute_time(); // make hrt_absolute_time
-	            }
-	        }
+	            		if (_in_mission) {
+	                		_start_time = hrt_absolute_time(); 	// initialize mission start time
+					_phase_start_time = _start_time;   	// initialize phase start time
+					_phase_num = 1;				// initialize phase number
+					_num_plumes_found = 0;			// reset plumes found
+					_final_time = 0.0f;			// reset final time
+					build_plumes();				// initialize plumes
+	            		}
+	        	}
 
-			if (_in_mission == true) {
-			            
-	            // Report current time
-	            _current_time = (float)(hrt_absolute_time() - _start_time)/1000000.0f;
-	            
-	            if (_turn_num < _num_of_turns) {
-	                if (!_in_turn) {
-	                    check_turn_start();
-	                }
-	                // Not an elseif so that turn accumulate on first run
-	                if (_in_turn) {
-	                    turn_accumulate();
-	                    check_violation();
-	                    check_turn_end();
-	                }
-	            } else {// turns completed; check for finishing conditions
-	                check_finished();
-	                if (!_in_mission) {
-	                    _final_time = _current_time;
-	                }
-	            }
-	        }
+			if (_in_mission == true && _phase_num < 4 && _mission_failed == false) {
+	            		// Report current time
+	            		_mission_time = (float)(hrt_absolute_time() - _start_time)/1000000.0f;
+				check_field_bounds();
+				check_near_plume();
+				check_finished();
 
-        } else {// in manual mode
-	        // if still in mission when activating manual, fail the mission
-	        if (_in_mission == true) {
-	            _mission_failed = true;
-	            if (_parameters.mis_fail == 1){
-				    _in_mission = false;
-				    //mavlink_log_critical(_mavlink_fd, "AA241x. Mission ended");
+				// TODO: add mission stuff here
+
+	            	}
+	        
+
+        	} else {// in manual mode
+	        	// if still in mission when activating manual, fail the mission
+			_mission_failed = false;		// reset mission fail when exiting mission mode
+	        	if (_in_mission == true) {
+				_in_mission = false;
+				if (_phase_num < 4) {
+					mavlink_log_critical(&_mavlink_log_pub, "AA241x Mission Failed; manual mode activated");
 				}
-	            // tone, msg output
-	            //mavlink_log_critical(_mavlink_fd, "AA241x. Mission failed, manual mode activated during race");
-	        }
-	    }
-		    
-	    // CHECK IF HARD VIOLATIONS
-	    // if yea, mission_failed = true, final_time = 0
-	    //
-		check_field_bounds();
+	        	}
+		}
 		_previous_loop_timestamp = _timestamp;
 		
-
 		/* publish the mission status as the last thing to do each loop */
 		publish_mission_status();
-
 	}
 
 	warnx("exiting.\n");
