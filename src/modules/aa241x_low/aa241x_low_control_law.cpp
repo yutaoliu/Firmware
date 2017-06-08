@@ -151,7 +151,7 @@ void updateCurrentIndex() {
 }
 
 bool reachTarget() {
-    if (pow(position_E - currTarget.E, 2) + pow(position_N - currTarget.N, 2) <= pow(currTarget.radius, 2)) {
+    if (pow(position_E - currTarget.E, 2) + pow(position_N - currTarget.N, 2) < pow(currTarget.radius, 2)) {
         return true;
     }
     return false;
