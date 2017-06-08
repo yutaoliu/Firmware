@@ -503,7 +503,7 @@ void AA241xMission::check_field_bounds()
 void AA241xMission::build_plumes() {
     
     float coord_N, coord_E;
-    _keys _mission_seeds[60];
+    _keys _mission_seeds[30];
 
     if (_parameters.lake_lag == 0) { // Coyote Hill specific code
     // students choose a number from 0 to size(keys)
@@ -537,36 +537,7 @@ void AA241xMission::build_plumes() {
     _mission_seeds[27].key_one = 562163813082433862; _mission_seeds[27].key_two = 231181411782091571;
     _mission_seeds[28].key_one = 232821041541741362; _mission_seeds[28].key_two = 923482813201221291;
     _mission_seeds[29].key_one = 422081801923482232; _mission_seeds[29].key_two = 672363913091691181;
-    _mission_seeds[30].key_one = 881481041521813081; _mission_seeds[30].key_two = 161371662171991481;
-    _mission_seeds[31].key_one = 581382251611823581; _mission_seeds[31].key_two = 421161421631061531;
-    _mission_seeds[32].key_one = 772091151513691251; _mission_seeds[32].key_two = 911462173682861441;
-    _mission_seeds[33].key_one = 332822581781531111; _mission_seeds[33].key_two = 141923583082361271;
-    _mission_seeds[34].key_one = 562411941101571933; _mission_seeds[34].key_two = 731863172462661331;
-    _mission_seeds[35].key_one = 672911131891241441; _mission_seeds[35].key_two = 91451991291631083;
-    _mission_seeds[36].key_one = 331741101731071322; _mission_seeds[36].key_two = 861362682201291531;
-    _mission_seeds[37].key_one = 401113432181762271; _mission_seeds[37].key_two = 51773121091422211;
-    _mission_seeds[38].key_one = 551211913551162981; _mission_seeds[38].key_two = 681533121291932741;
-    _mission_seeds[39].key_one = 682211821162701671; _mission_seeds[39].key_two = 441751063632991381;
-    _mission_seeds[40].key_one = 183732451083981683; _mission_seeds[40].key_two = 332241682412211923;
-    _mission_seeds[41].key_one = 221672101091311331; _mission_seeds[41].key_two = 513621391132923541;
-    _mission_seeds[42].key_one = 612971951281712451; _mission_seeds[42].key_two = 132363872083651581;
-    _mission_seeds[43].key_one = 923282472263783981; _mission_seeds[43].key_two = 451881672122432861;
-    _mission_seeds[44].key_one = 662212591051832523; _mission_seeds[44].key_two = 271761173532931551;
-    _mission_seeds[45].key_one = 771373591901533172; _mission_seeds[45].key_two = 762122341672961271;
-    _mission_seeds[46].key_one = 132781641833273081; _mission_seeds[46].key_two = 511722312101912941;
-    _mission_seeds[47].key_one = 581821201133571362; _mission_seeds[47].key_two = 971582301183911762;
-    _mission_seeds[48].key_one = 182513932232961051; _mission_seeds[48].key_two = 582432711801161191;
-    _mission_seeds[49].key_one = 323612873463071641; _mission_seeds[49].key_two = 41481222762911391;
-    _mission_seeds[50].key_one = 632323121112882361; _mission_seeds[50].key_two = 851281683801401251;
-    _mission_seeds[51].key_one = 382161091761291521; _mission_seeds[51].key_two = 551681232401541821;
-    _mission_seeds[52].key_one = 413782241222041683; _mission_seeds[52].key_two = 801933221583191151;
-    _mission_seeds[53].key_one = 933482651563891221; _mission_seeds[53].key_two = 311651271882441512;
-    _mission_seeds[54].key_one = 871212501421941721; _mission_seeds[54].key_two = 871291921582212441;
-    _mission_seeds[55].key_one = 523071781781221572; _mission_seeds[55].key_two = 121073723301911931;
-    _mission_seeds[56].key_one = 51682231322111971; _mission_seeds[56].key_two = 951061591791601922;
-    _mission_seeds[57].key_one = 272912111313001572; _mission_seeds[57].key_two = 31082363811631731;
-    _mission_seeds[58].key_one = 832123701672461371; _mission_seeds[58].key_two = 212433073671851921;
-    _mission_seeds[59].key_one = 333622081872433081; _mission_seeds[59].key_two = 241811583133971941;
+
     // lower left corner:
     coord_E =  -93.574f;
     coord_N = -197.675f;
@@ -602,37 +573,6 @@ void AA241xMission::build_plumes() {
     _mission_seeds[27].key_one = 701343921281233701; _mission_seeds[27].key_two = 641181772623041231;
     _mission_seeds[28].key_one = 691523291343851691; _mission_seeds[28].key_two = 911361571541832091;
     _mission_seeds[29].key_one = 821863262262321021; _mission_seeds[29].key_two = 771143531683812951;
-    _mission_seeds[30].key_one = 111662821191132782; _mission_seeds[30].key_two = 621881471123641071;
-    _mission_seeds[31].key_one = 141743301863071391; _mission_seeds[31].key_two = 413882183112721571;
-    _mission_seeds[32].key_one = 372331612223823582; _mission_seeds[32].key_two = 281811412071131552;
-    _mission_seeds[33].key_one = 112681512841201772; _mission_seeds[33].key_two = 541881631372941041;
-    _mission_seeds[34].key_one = 391652301401722861; _mission_seeds[34].key_two = 332743153091501291;
-    _mission_seeds[35].key_one = 543171101771621122; _mission_seeds[35].key_two = 452813491091562311;
-    _mission_seeds[36].key_one = 591741541212652181; _mission_seeds[36].key_two = 921591123951811081;
-    _mission_seeds[37].key_one = 71421041241921663; _mission_seeds[37].key_two = 621742121071601151;
-    _mission_seeds[38].key_one = 423971281601541143; _mission_seeds[38].key_two = 862353501961691832;
-    _mission_seeds[39].key_one = 643781191163711321; _mission_seeds[39].key_two = 752491653201131811;
-    _mission_seeds[40].key_one = 651471212353691751; _mission_seeds[40].key_two = 941552882101281822;
-    _mission_seeds[41].key_one = 171563111341812283; _mission_seeds[41].key_two = 861852381681421101;
-    _mission_seeds[42].key_one = 311291581291742123; _mission_seeds[42].key_two = 361101633172582981;
-    _mission_seeds[43].key_one = 51381601991652511; _mission_seeds[43].key_two = 101533881581011381;
-    _mission_seeds[44].key_one = 242832582443601101; _mission_seeds[44].key_two = 691863332272821001;
-    _mission_seeds[45].key_one = 383323911301632991; _mission_seeds[45].key_two = 351283883542041101;
-    _mission_seeds[46].key_one = 231451862513991762; _mission_seeds[46].key_two = 71852272551801021;
-    _mission_seeds[47].key_one = 421471241372901212; _mission_seeds[47].key_two = 521371561301101801;
-    _mission_seeds[48].key_one = 311182011872191741; _mission_seeds[48].key_two = 721741881233911961;
-    _mission_seeds[49].key_one = 551921801333661871; _mission_seeds[49].key_two = 61822951412251491;
-    _mission_seeds[50].key_one = 112173662223382781; _mission_seeds[50].key_two = 981371661333931181;
-    _mission_seeds[51].key_one = 382351621532971172; _mission_seeds[51].key_two = 582761971301612161;
-    _mission_seeds[52].key_one = 601881231801683132; _mission_seeds[52].key_two = 431623191211961381;
-    _mission_seeds[53].key_one = 632131801361723772; _mission_seeds[53].key_two = 121373621312841921;
-    _mission_seeds[54].key_one = 522591941763242101; _mission_seeds[54].key_two = 511001452883411491;
-    _mission_seeds[55].key_one = 172841132863011331; _mission_seeds[55].key_two = 911222471951971813;
-    _mission_seeds[56].key_one = 241812573163621431; _mission_seeds[56].key_two = 851771541401051211;
-    _mission_seeds[57].key_one = 871112482401782372; _mission_seeds[57].key_two = 41663212391152081;
-    _mission_seeds[58].key_one = 231531711132951681; _mission_seeds[58].key_two = 661172751541721771;
-    _mission_seeds[59].key_one = 311251763021773921; _mission_seeds[59].key_two = 173421491231871081;
-
 
     // lower left corner:
     coord_E = -100.0f;
