@@ -188,7 +188,7 @@ void low_loop()
         currTarget = targetList[0];
         computeABC();
     } else { // currPhase == phase_num --> still in the same phase
-        if (reachTarget() || missTarget()) { // go to next target
+        if (reachTarget() == true || missTarget() == true) { // go to next target
             prevTarget.N = currTarget.N;
             prevTarget.E = currTarget.E;
             updateCurrentIndex();
