@@ -324,6 +324,10 @@ void flight_control() {
             yaw_servo_out = yaw_control();
             throttle_servo_out = throttle_control();
             high_data.field3 = 17;
+            if (mission_failed) {
+                roll_desired = -1.0;
+                roll_servo_out = roll_control();
+            }
             break;
         // Bacon
         case 18:
@@ -332,6 +336,10 @@ void flight_control() {
             yaw_servo_out = yaw_control();
             throttle_servo_out = man_throttle_in;
             high_data.field3 = 18;
+            if (mission_failed) {
+                roll_desired = -0.5;
+                roll_servo_out = roll_control();
+            }
             break;
         // full manual
         default:
