@@ -58,7 +58,6 @@ float altitude_desired = 0.0f;
 float speed_desired = 10.0f;
 const float PI =3.14159265358979f;
 float input_c = 0.0f;
-int target_reached_arbitary = 0;
 
 /*
  * Do bounds checking to keep the roll/pitch/yaw/throttle correction within the -1..1 limits of the servo output
@@ -152,55 +151,6 @@ float line_acquisition_transitions() {
     high_data.field8 = aah_parameters.proportional_heading_gain;
 
     return roll_control();
-}
-
-float line_acquisition_ver6() {
-    float theta = aah_parameters.input_heading_angle_deg * PI / 180;
-    float a = cos(theta);
-    float b = sin(theta);
-    float c = -(a * (high_data.field5 + aah_parameters.delta_E) + b * high_data.field4);
-    float distance = -(a * position_E + b * position_N + c);
-    float yaw_target = theta + (PI/2 * bound_checking((aah_parameters.proportional_dist_gain * distance)/PI*2));
-    roll_desired = aah_parameters.proportional_heading_gain * wrap_to_pi(yaw_target - yaw);
-    // logging data
-    high_data.field1 = distance;
-    high_data.field2 = roll_desired;
-    high_data.field7 = aah_parameters.proportional_dist_gain;
-    high_data.field8 = aah_parameters.proportional_heading_gain;
-    return roll_control();
-}
-
-float go_to_target(){
-    float theta = atan2(aah_parameters.target_E - high_data.field5, aah_parameters.target_N - high_data.field4);
-    float a = cos(theta);
-    float b = sin(theta);
-    float c = -(a * high_data.field5 + b * high_data.field4);
-    float distance = -(a * position_E + b * position_N + c);
-    float yaw_target = theta + (PI/2 * bound_checking((aah_parameters.proportional_dist_gain * distance)/PI*2));
-    roll_desired = aah_parameters.proportional_heading_gain * wrap_to_pi(yaw_target - yaw);
-    // logging data
-    high_data.field1 = distance;
-    high_data.field2 = roll_desired;
-    high_data.field7 = aah_parameters.proportional_dist_gain;
-    high_data.field8 = aah_parameters.proportional_heading_gain;
-    high_data.field10 = target_reached_arbitary;
-    high_data.field11 = aah_parameters.target_E;
-    high_data.field12 = aah_parameters.target_N;
-    if (target_reached_arbitary == 0 && sqrt(pow(aah_parameters.target_E - position_E, 2) + pow(aah_parameters.target_N - position_N, 2)) < 20.0) {
-        target_reached_arbitary = 1;
-    }
-    if (target_reached_arbitary == 1) { // reached target, do constant turn
-        roll_desired = -1.0;
-    }
-    return roll_control();
-}
-
-
-bool inBoundary() {
-    if (position_E <= 2000 && position_E >= 1800 && position_N <= -2200 && position_N >= -2600) {
-        return true;
-    }
-    return false;
 }
 
 /**
@@ -315,146 +265,73 @@ void flight_control() {
             throttle_servo_out = throttle_control();
             high_data.field3 = 10;
             break;
-        // full auto by using roll = line_acquisition_transitions fixed coordinate
-        case 11:
-            roll_servo_out = line_acquisition_transitions();
-            pitch_servo_out = altitude_control();
-            yaw_servo_out = yaw_control();
-            throttle_servo_out = throttle_control();
-            high_data.field3 = 11;
-            break;
-        case 12: // line acquisition with arbitrary heading, delta_E meters to the East
-            roll_servo_out = line_acquisition_ver6();
-            pitch_servo_out = altitude_control();
-            yaw_servo_out = yaw_control();
-            throttle_servo_out = throttle_control();
-            high_data.field3 = 12;
-                break;
-         case 13: // Go to target, then circle it
-            target_reached_arbitary = 0;
-            roll_servo_out = go_to_target();
-            pitch_servo_out = altitude_control();
-            yaw_servo_out = yaw_control();
-            throttle_servo_out = throttle_control();
-            high_data.field3 = 13;
-            break;
         // BACONNNNN - Manual throttle
         // roll = coordinated_turn, manual throttle
-        case 14:
+        case 11:
             roll_servo_out = coordinated_turn();
             pitch_servo_out = altitude_control();
             yaw_servo_out = yaw_control();
             throttle_servo_out = man_throttle_in;
-            high_data.field3 = 14;
+            high_data.field3 = 11;
             break;
         // roll = heading_control_roll_input_desired_heading(), manual throttle
-        case 15:
+        case 12:
             roll_servo_out = heading_control_roll_input_desired_heading();
             pitch_servo_out = altitude_control();
             yaw_servo_out = yaw_control();
             throttle_servo_out = man_throttle_in;
-            high_data.field3 = 15;
+            high_data.field3 = 12;
             break;
         // full auto by using roll = line_acquisition_straightline East
-        case 16:
+        case 13:
             input_c = -(high_data.field5 + aah_parameters.delta_E);
             roll_servo_out = line_acquisition_straightline();
             pitch_servo_out = altitude_control();
             yaw_servo_out = yaw_control();
             throttle_servo_out = man_throttle_in;
-            high_data.field3 = 16;
+            high_data.field3 = 13;
             break;
         // full auto by using roll = line_acquisition_straightline North
-        case 17:
+        case 14:
             input_c = -(high_data.field4 + aah_parameters.delta_N);
             roll_servo_out = line_acquisition_straightline();
             pitch_servo_out = altitude_control();
             yaw_servo_out = yaw_control();
             throttle_servo_out = man_throttle_in;
-            high_data.field3 = 17;
+            high_data.field3 = 14;
             break;
         // full auto by using roll = line_acquisition_transitions rectangle
+        case 15:
+            roll_servo_out = line_acquisition_transitions();
+            pitch_servo_out = altitude_control();
+            yaw_servo_out = yaw_control();
+            throttle_servo_out = man_throttle_in;
+            high_data.field3 = 15;
+            break;
+        // full auto by using roll = line_acquisition_transitions (turn 15 and 45 degree)
+        case 16:
+            roll_servo_out = line_acquisition_transitions();
+            pitch_servo_out = altitude_control();
+            yaw_servo_out = yaw_control();
+            throttle_servo_out = man_throttle_in;
+            high_data.field3 = 16;
+            break;
+        // MISSION
+        // Bixler
+        case 17:
+            roll_servo_out = line_acquisition_transitions();
+            pitch_servo_out = altitude_control();
+            yaw_servo_out = yaw_control();
+            throttle_servo_out = throttle_control();
+            high_data.field3 = 17;
+            break;
+        // Bacon
         case 18:
             roll_servo_out = line_acquisition_transitions();
             pitch_servo_out = altitude_control();
             yaw_servo_out = yaw_control();
             throttle_servo_out = man_throttle_in;
             high_data.field3 = 18;
-            break;
-        // full auto by using roll = line_acquisition_transitions (turn 15 and 45 degree)
-        case 19:
-            roll_servo_out = line_acquisition_transitions();
-            pitch_servo_out = altitude_control();
-            yaw_servo_out = yaw_control();
-            throttle_servo_out = man_throttle_in;
-            high_data.field3 = 19;
-            break;
-        // full auto by using roll = line_acquisition_transitions fixed coordinate
-        case 20:
-            roll_servo_out = line_acquisition_transitions();
-            pitch_servo_out = altitude_control();
-            yaw_servo_out = yaw_control();
-            throttle_servo_out = man_throttle_in;
-            high_data.field3 = 20;
-            break;
-        case 21: // line acquisition with arbitrary heading, delta_E meters to the East
-            roll_servo_out = line_acquisition_ver6();
-            pitch_servo_out = altitude_control();
-            yaw_servo_out = yaw_control();
-            throttle_servo_out = man_throttle_in;
-            high_data.field3 = 21;
-            break;
-        case 22: // Go to target, then circle it
-            target_reached_arbitary = 0;
-            roll_servo_out = go_to_target();
-            pitch_servo_out = altitude_control();
-            yaw_servo_out = yaw_control();
-            throttle_servo_out = man_throttle_in;
-            high_data.field3 = 22;
-            break;
-        case 25: // auto throttle
-            if (!inBoundary()) {
-                roll_desired = -1.0;
-                roll_servo_out = roll_control();
-            } else {
-                roll_servo_out = heading_control_roll_input_desired_heading();
-            }
-            pitch_servo_out = altitude_control();
-            yaw_servo_out = yaw_control();
-            throttle_servo_out = throttle_control();
-            high_data.field3 = 25;
-            break;
-       // new line equations
-        case 26: // rectangle
-            roll_servo_out = line_acquisition_transitions();
-            pitch_servo_out = altitude_control();
-            yaw_servo_out = yaw_control();
-            throttle_servo_out = throttle_control();
-            high_data.field3 = 26;
-            break;
-        // full auto by using roll = line_acquisition_transitions (turn 15 and 45 degree)
-        case 27:
-            roll_servo_out = line_acquisition_transitions();
-            pitch_servo_out = altitude_control();
-            yaw_servo_out = yaw_control();
-            throttle_servo_out = throttle_control();
-            high_data.field3 = 27;
-            break;
-        // with miss target
-        case 28: // rectangle
-            roll_servo_out = line_acquisition_transitions();
-            pitch_servo_out = altitude_control();
-            yaw_servo_out = yaw_control();
-            throttle_servo_out = throttle_control();
-            high_data.field3 = 28;
-            break;
-        // full auto by using roll = line_acquisition_transitions (turn 15 and 45 degree)
-        case 29:
-            roll_servo_out = line_acquisition_transitions();
-            pitch_servo_out = altitude_control();
-            yaw_servo_out = yaw_control();
-            throttle_servo_out = throttle_control();
-            high_data.field3 = 29;
             break;
         // full manual
         default:
@@ -464,29 +341,4 @@ void flight_control() {
             throttle_servo_out = man_throttle_in;
         }
 
-        /*
-        // // Make a really simple proportional roll stabilizer // //
-        //
-
-        roll_desired = 0.0f; // roll_desired already exists in aa241x_high_aux so no need to repeat float declaration
-
-        // Now use your parameter gain and multiply by the error from desired
-        float proportionalRollCorrection = aah_parameters.proportional_roll_gain * (roll - roll_desired);
-
-        // Note the use of x.0f, this is important to specify that these are single and not double float values!
-
-        // Do bounds checking to keep the roll correction within the -1..1 limits of the servo output
-        if (proportionalRollCorrection > 1.0f) {
-                proportionalRollCorrection = 1.0f;
-        } else if (proportionalRollCorrection < -1.0f ) {
-                proportionalRollCorrection = -1.0f;
-        }
-
-        // ENSURE THAT YOU SET THE SERVO OUTPUTS!!!
-        // Set output of roll servo to the control law output calculated above
-        roll_servo_out = proportionalRollCorrection;
-        // as an example, just passing through manual control to everything but roll
-        pitch_servo_out = man_pitch_in; // had to be flipped for our controller
-        yaw_servo_out = man_yaw_in;
-        throttle_servo_out = man_throttle_in;*/
 }

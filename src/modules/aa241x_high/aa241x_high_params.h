@@ -83,8 +83,6 @@ struct aah_params {
         float delta_N;
         float input_heading_angle_deg;
         float proportional_dist_gain;
-        float target_E;
-        float target_N;
 
 };
 
@@ -123,8 +121,6 @@ struct aah_param_handles {
         param_t delta_N;
         param_t input_heading_angle_deg;
         param_t proportional_dist_gain;
-        param_t target_E;
-        param_t target_N;
 };
 
 /**

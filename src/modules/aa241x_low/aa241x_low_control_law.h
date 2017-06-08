@@ -105,8 +105,6 @@ void computeABC();
 void updateCurrentIndex();
 bool reachTarget();
 bool missTarget();
-void findClosestTarget();
-float exitPath(Coordinate A, Coordinate B, Coordinate D, bool isUpdatePrevTarget);
 
 
 

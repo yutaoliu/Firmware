@@ -93,9 +93,6 @@ PARAM_DEFINE_FLOAT(AAH_DELTA_E, 100.0f);
 PARAM_DEFINE_FLOAT(AAH_DELTA_N, 100.0f);
 PARAM_DEFINE_FLOAT(AAH_HEADING, 0.0f);
 PARAM_DEFINE_FLOAT(AAH_DISTGAIN, 1.0f);
-PARAM_DEFINE_FLOAT(AAH_TARGET_E, 1.0f);
-PARAM_DEFINE_FLOAT(AAH_TARGET_N, 1.0f);
-
 
 int aah_parameters_init(struct aah_param_handles *h)
 {
@@ -130,8 +127,6 @@ int aah_parameters_init(struct aah_param_handles *h)
         h->delta_E                      = param_find("AAH_DELTA_E");
         h->delta_N                      = param_find("AAH_DELTA_N");
         h->proportional_dist_gain       = param_find("AAH_DISTGAIN");
-        h->target_E                     = param_find("AAH_TARGET_E");
-        h->target_N                     = param_find("AAH_TARGET_N");
 	return OK;
 }
 
@@ -163,7 +158,5 @@ int aah_parameters_update(const struct aah_param_handles *h, struct aah_params *
         param_get(h->delta_E , &(p->delta_E ));
         param_get(h->delta_N , &(p->delta_N ));
         param_get(h->proportional_dist_gain  , &(p->proportional_dist_gain));
-        param_get(h->target_E , &(p->target_E ));
-        param_get(h->target_N , &(p->target_N ));
 	return OK;
 }

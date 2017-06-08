@@ -72,9 +72,6 @@ float heading_control_roll_input_desired_heading();
 float coordinated_turn();
 float line_acquisition_straightline();
 float line_acquisition_transitions();
-float line_acquisition_ver6();
-float go_to_target();
-bool inBoundary();
 
 
 
