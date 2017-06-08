@@ -325,7 +325,7 @@ void flight_control() {
             throttle_servo_out = throttle_control();
             high_data.field3 = 17;
             if (mission_failed == true) {
-                roll_desired = -1.0;
+                roll_desired = -0.5;
                 roll_servo_out = roll_control();
             }
             break;
