@@ -121,37 +121,37 @@ void fillTargetList() {
         targetList.push_back(target3);
         targetList.push_back(target4);
     } else { // mission
-        // fill in targetList
+        // fill in temp_targetList
         for (int i = 0; i < 5; i++) {
             if (plume_radius[i] > 0) { //
                 Target target;
                 target.N = plume_N[i];
                 target.E = plume_E[i];
                 target.radius = plume_radius[i];
-                targetList.push_back(target);
+                //targetList.push_back(target);
+                temp_targetList.push_back(target);
             }
         }
-        // rearrange targetList --> closest target comes first
-        int numTarget = targetList.size();
+        // rearrange targetList --> closest target comes first --> store in targetList
+        int numTarget = temp_targetList.size();
         Target start;
         start.N = position_N;
         start.E = position_E;
         for (int i = 0; i < numTarget - 1; i++) {
             float minDistance = 1000000.0f;
             int minIndex = 0;
-            for (int j = 0; j < targetList.size() - 1; j++) {
-                float distance = sqrt(pow(start.E - targetList[j].E, 2) + pow(start.N - targetList[j].N, 2));
+            for (int j = 0; j < temp_targetList.size() - 1; j++) {
+                float distance = sqrt(pow(start.E - temp_targetList[j].E, 2) + pow(start.N - temp_targetList[j].N, 2));
                 if (distance < minDistance) {
                     minDistance = distance;
                     minIndex = j;
                 }
             }
-            temp_targetList.push_back(targetList[minIndex]);
-            start.N = targetList[minIndex].N;
-            start.E = targetList[minIndex].E;
-            targetList.erase(targetList.begin() + minIndex);
+            targetList.push_back(temp_targetList[minIndex]);
+            start.N = temp_targetList[minIndex].N;
+            start.E = temp_targetList[minIndex].E;
+            temp_targetList.erase(temp_targetList.begin() + minIndex);
         }
-        targetList = temp_targetList;
     }
 }
 
