@@ -144,5 +144,22 @@ PARAM_DEFINE_INT32(AAMIS_DEBUG, 0);
  */
 PARAM_DEFINE_INT32(AAMIS_MIS_SEED, 0);
 
+/**
+ * Set to 1 for lake lagunita boundaries; 0 for coyote hill
+ *
+ *
+ * @group AA241x Mission
+ */
+PARAM_DEFINE_INT32(AAMIS_LAKE_LAG, 0);
+
+
+/**
+ * Set to 1 to enforce boundaries; 0 to skip
+ *
+ *
+ * @group AA241x Mission
+ */
+PARAM_DEFINE_INT32(AAMIS_BOUND_ON, 1);
+
 
 // TODO: DEFINE ADDITIONAL GLOBAL MISSION PARAMETERS HERE

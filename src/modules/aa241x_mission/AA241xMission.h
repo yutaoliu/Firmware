@@ -134,6 +134,8 @@ private:
 		int mis_fail;
 		int debug_mode;
 		int mission_seed;
+		int lake_lag;
+		int bounds_enforced;
 	}		_parameters;			/**< local copies of interesting parameters */
 
 	struct {
@@ -146,6 +148,8 @@ private:
 		param_t mis_fail;
 		param_t debug_mode;
 		param_t mission_seed;
+		param_t lake_lag;
+		param_t bounds_enforced;
 	}		_parameter_handles;		/**< handles for interesting parameters */
 
 	hrt_abstime _mission_start_time;	/**< timestamp of when entered mission */
@@ -170,7 +174,7 @@ private:
 		uint64_t key_two;
 	}	;
 
-	_land_pos _lake_boundaries[4];
+//	_land_pos _lake_boundaries[4];
 
 	_airplane_pos _cur_pos;
 	_airplane_pos _prev_pos;

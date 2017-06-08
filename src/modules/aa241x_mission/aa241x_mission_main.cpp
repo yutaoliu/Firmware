@@ -155,6 +155,8 @@ AA241xMission::AA241xMission() :
 	_parameter_handles.mis_fail = param_find("AAMIS_MIS_FAIL");
 	_parameter_handles.debug_mode = param_find("AAMIS_DEBUG");
 	_parameter_handles.mission_seed = param_find("AAMIS_MIS_SEED");
+	_parameter_handles.lake_lag = param_find("AAMIS_LAKE_LAG");
+	_parameter_handles.bounds_enforced = param_find("AAMIS_BOUND_ON");	
 
 	parameters_update();
 
@@ -196,6 +198,8 @@ AA241xMission::parameters_update()
 	param_get(_parameter_handles.mis_fail, &(_parameters.mis_fail));
 	param_get(_parameter_handles.debug_mode, &(_parameters.debug_mode));
 	param_get(_parameter_handles.mission_seed, &(_parameters.mission_seed));
+	param_get(_parameter_handles.lake_lag, &(_parameters.lake_lag));
+	param_get(_parameter_handles.bounds_enforced, &(_parameters.bounds_enforced));
 
 	// TODO: HANDLE ADDITIONAL PARAMETERS HERE
 
@@ -367,74 +371,142 @@ void AA241xMission::check_field_bounds()
 		_check_field_bounds_run = true;
 		//mavlink_log_info(&_mavlink_log_pub, "Check field bounds ran")
 	}
-	// Assign struct boundaries
 
-	_land_pos lake_boundaries[4];
 
-	lake_boundaries[0].E =   16.9f;  lake_boundaries[0].N = -198.3f;
-	lake_boundaries[1].E = -102.7f;  lake_boundaries[1].N = -208.5f;
-	lake_boundaries[2].E = -138.3f;  lake_boundaries[2].N =  210.0f;
-	lake_boundaries[3].E =  -18.7f;  lake_boundaries[3].N =  220.2f;
-	
 	//% Set inbounds to start
 	_out_of_bounds = false;
 
-	//% Check if outside convex portions
-	uint8_t convex[4] = {0, 1, 2, 3};
+	//// Coyote Hill Boundary check ////
+	if (_parameters.lake_lag == 0 && _parameters.bounds_enforced == 1) {
+		// Assign struct boundaries
 
-	for (int i = 0; i < 4; i++) {
-		// If at the last boundary (wrapping)
-		uint8_t nextpt = convex[i]+1;
-		if (i == 3) {
-			nextpt = convex[0];
+		_land_pos lake_boundaries[4];
+
+		lake_boundaries[0].E =   16.9f;  lake_boundaries[0].N = -198.3f;
+		lake_boundaries[1].E = -102.7f;  lake_boundaries[1].N = -208.5f;
+		lake_boundaries[2].E = -138.3f;  lake_boundaries[2].N =  210.0f;
+		lake_boundaries[3].E =  -18.7f;  lake_boundaries[3].N =  220.2f;
+	
+
+		//% Check if outside convex portions
+		uint8_t convex[4] = {0, 1, 2, 3};
+
+		for (int i = 0; i < 4; i++) {
+			// If at the last boundary (wrapping)
+			uint8_t nextpt = convex[i]+1;
+			if (i == 3) {
+				nextpt = convex[0];
+			}
+
+			if (line_side(lake_boundaries[convex[i]], lake_boundaries[nextpt], _cur_pos) > 0 ) {
+				// If not already out of bounds, send mavlink
+			        if (!_out_of_bounds) {
+				        mavlink_log_critical(&_mavlink_log_pub, "Out of bounds at %5.1f E, %5.1f N; mission failed",(double)_cur_pos.E,(double)_cur_pos.N);
+					_out_of_bounds = true;
+				}
+			        _mission_failed = true;
+				_in_mission = false;
+			}
+		}
+	
+		// Check if outside concave portions
+		// Note: All concave portions of Coyote Hill bounds were removed
+		/*uint8_t concave[1] = {4};
+	
+		for (int i = 0; i < 1; i++) {
+		    if (line_side(lake_boundaries[concave[i]], lake_boundaries[concave[i]+1], _cur_pos) > 0 
+		    && line_side(lake_boundaries[concave[i]+1],lake_boundaries[concave[i]+2], _cur_pos) > 0) {
+		        _mission_failed = true;
+			_in_mission = false;
+		        // If not already out of bounds, send mavlink
+		        if (!_out_of_bounds) {
+			        mavlink_log_critical(_mavlink_fd, "AA241x mission failed, out of bounds");
+				_out_of_bounds = true;
+			}
+		    }
+		}
+        	*/
+
+	//// Lake Lag Boundary Check ////
+	} else if (_parameters.bounds_enforced == 1) {
+		// Assign struct boundaries
+
+		_land_pos lake_boundaries[9];
+
+		lake_boundaries[0].E = -173.0f; lake_boundaries[0].N =  143.0f;
+		lake_boundaries[1].E = -82.0f;  lake_boundaries[1].N =  228.0f;
+		lake_boundaries[2].E = 176.0f;  lake_boundaries[2].N =   81.0f;
+		lake_boundaries[3].E = 181.0f;  lake_boundaries[3].N = -138.0f;
+		lake_boundaries[4].E =  54.0f;  lake_boundaries[4].N = -148.0f;
+		lake_boundaries[5].E =  62.0f;  lake_boundaries[5].N = -219.0f;
+		lake_boundaries[6].E = -36.0f;  lake_boundaries[6].N = -216.0f;
+		lake_boundaries[7].E = -101.0f; lake_boundaries[7].N = -142.0f;
+		lake_boundaries[8].E = -181.0f; lake_boundaries[8].N = -112.0f;
+
+		//% Check if outside convex portions
+		uint8_t convex[5] = {0, 1, 2, 5, 8};
+
+		for (int i = 0; i < 5; i++) {
+			// If at the last boundary (wrapping)
+			uint8_t nextpt = convex[i]+1;
+			if (i == 4) {
+				nextpt = convex[0];
+			}
+
+			if (line_side(lake_boundaries[convex[i]], lake_boundaries[nextpt], _cur_pos) > 0 ) {
+				// If not already out of bounds, send mavlink
+			        if (!_out_of_bounds) {
+				        mavlink_log_critical(&_mavlink_log_pub, "Out of bounds at %5.1f E, %5.1f N; mission failed",(double)_cur_pos.E,(double)_cur_pos.N);
+					_out_of_bounds = true;
+				}
+			        _mission_failed = true;
+				_in_mission = false;
+			}
 		}
 
-		if (line_side(lake_boundaries[convex[i]], lake_boundaries[nextpt], _cur_pos) > 0 ) {
-			// If not already out of bounds, send mavlink
+
+		// Check if outside concave portions
+		// Note: All concave portions of Coyote Hill bounds were removed
+		uint8_t concave[2] = {3, 6};
+	
+		for (int i = 0; i < 2; i++) {
+		    if (line_side(lake_boundaries[concave[i]], lake_boundaries[concave[i]+1], _cur_pos) > 0 
+		    && line_side(lake_boundaries[concave[i]+1],lake_boundaries[concave[i]+2], _cur_pos) > 0) {
+		        _mission_failed = true;
+			_in_mission = false;
+		        // If not already out of bounds, send mavlink
 		        if (!_out_of_bounds) {
 			        mavlink_log_critical(&_mavlink_log_pub, "Out of bounds at %5.1f E, %5.1f N; mission failed",(double)_cur_pos.E,(double)_cur_pos.N);
 				_out_of_bounds = true;
 			}
-		        _mission_failed = true;
+		    }
+		}
+
+	}
+
+	if (_parameters.bounds_enforced == 1) {
+		// Altitude check same for lag and coyote hill
+		// Check if violating the flight window (5m safety buffer for errors)
+		if (-_cur_pos.D > (_parameters.max_alt + 5.0f) || -_cur_pos.D < (_parameters.min_alt - 5.0f)) {
+			_mission_failed = true;
 			_in_mission = false;
+			if (!_out_of_bounds) {
+				mavlink_log_critical(&_mavlink_log_pub, "AA241x mission failed, altitude violation");
+				_out_of_bounds = true;
+			}
 		}
 	}
-
-	// Check if outside concave portions
-	// Note: All concave portions of Coyote Hill bounds were removed
-	/*uint8_t concave[1] = {4};
-
-	for (int i = 0; i < 1; i++) {
-	    if (line_side(lake_boundaries[concave[i]], lake_boundaries[concave[i]+1], _cur_pos) > 0 
-	    && line_side(lake_boundaries[concave[i]+1],lake_boundaries[concave[i]+2], _cur_pos) > 0) {
-	        _mission_failed = true;
-		_in_mission = false;
-	        // If not already out of bounds, send mavlink
-	        if (!_out_of_bounds) {
-		        mavlink_log_critical(_mavlink_fd, "AA241x mission failed, out of bounds");
-			_out_of_bounds = true;
-		}
-	    }
-	}
-        */
-
-	// Check if violating the flight window (5m safety buffer for errors)
-	if (-_cur_pos.D > (_parameters.max_alt + 5.0f) || -_cur_pos.D < (_parameters.min_alt - 5.0f)) {
-		_mission_failed = true;
-		_in_mission = false;
-		if (!_out_of_bounds) {
-			mavlink_log_critical(&_mavlink_log_pub, "AA241x mission failed, altitude violation");
-			_out_of_bounds = true;
-		}
-	}
-}
-
+}	
+	
 
 // build plume locations and radii here
 void AA241xMission::build_plumes() {
-
-    // students choose a number from 0 to size(keys)
+    
+    float coord_N, coord_E;
     _keys _mission_seeds[60];
+
+    if (_parameters.lake_lag == 0) { // Coyote Hill specific code
+    // students choose a number from 0 to size(keys)
     _mission_seeds[0].key_one = 781231111971462951; _mission_seeds[0].key_two = 61591791601922272;
     _mission_seeds[1].key_one = 912111313291001132; _mission_seeds[1].key_two = 401572212031811381;
     _mission_seeds[2].key_one = 731821123732373151; _mission_seeds[2].key_two = 82701461371212671;
@@ -495,6 +567,77 @@ void AA241xMission::build_plumes() {
     _mission_seeds[57].key_one = 272912111313001572; _mission_seeds[57].key_two = 31082363811631731;
     _mission_seeds[58].key_one = 832123701672461371; _mission_seeds[58].key_two = 212433073671851921;
     _mission_seeds[59].key_one = 333622081872433081; _mission_seeds[59].key_two = 241811583133971941;
+    // lower left corner:
+    coord_E =  -93.574f;
+    coord_N = -197.675f;
+
+    } else  { // Lake Lag mission keys:
+    _mission_seeds[0].key_one = 991941151071511981; _mission_seeds[0].key_two = 812751531122882462;
+    _mission_seeds[1].key_one = 171581712111061532; _mission_seeds[1].key_two = 921422291901111751;
+    _mission_seeds[2].key_one = 112191971212252611; _mission_seeds[2].key_two = 801133762531081481;
+    _mission_seeds[3].key_one = 881581253591831263; _mission_seeds[3].key_two = 872253641521841401;
+    _mission_seeds[4].key_one = 883332283433071382; _mission_seeds[4].key_two = 1572613241221091;
+    _mission_seeds[5].key_one = 813212881872361281; _mission_seeds[5].key_two = 141791132271291611;
+    _mission_seeds[6].key_one = 522153991782372423; _mission_seeds[6].key_two = 1582541901041951;
+    _mission_seeds[7].key_one = 691191522161863081; _mission_seeds[7].key_two = 11152751431981401;
+    _mission_seeds[8].key_one = 861261061272901783; _mission_seeds[8].key_two = 222141673211421601;
+    _mission_seeds[9].key_one = 413751261172111612; _mission_seeds[9].key_two = 921251753591401211;
+    _mission_seeds[10].key_one = 372842213813131382; _mission_seeds[10].key_two = 351682612841991441;
+    _mission_seeds[11].key_one = 541031821613391153; _mission_seeds[11].key_two = 851252883613201221;
+    _mission_seeds[12].key_one = 553981491041781761; _mission_seeds[12].key_two = 723733311471041172;
+    _mission_seeds[13].key_one = 621552251391791253; _mission_seeds[13].key_two = 411822541153511491;
+    _mission_seeds[14].key_one = 291951782852051321; _mission_seeds[14].key_two = 241223712582852261;
+    _mission_seeds[15].key_one = 171132853383833222; _mission_seeds[15].key_two = 781351812881111591;
+    _mission_seeds[16].key_one = 322391783833401211; _mission_seeds[16].key_two = 981441241071211981;
+    _mission_seeds[17].key_one = 862591361872721123; _mission_seeds[17].key_two = 281462171961731881;
+    _mission_seeds[18].key_one = 423811991151931511; _mission_seeds[18].key_two = 552051543191691811;
+    _mission_seeds[19].key_one = 322831483331491612; _mission_seeds[19].key_two = 961821553061701691;
+    _mission_seeds[20].key_one = 351041431601281561; _mission_seeds[20].key_two = 721763121163411431;
+    _mission_seeds[21].key_one = 832142562361911161; _mission_seeds[21].key_two = 721871732373222801;
+    _mission_seeds[22].key_one = 301661723183541021; _mission_seeds[22].key_two = 891301743121101161;
+    _mission_seeds[23].key_one = 251911482221271862; _mission_seeds[23].key_two = 141241172911321491;
+    _mission_seeds[24].key_one = 463941061823371401; _mission_seeds[24].key_two = 571491763512151281;
+    _mission_seeds[25].key_one = 712051591163782112; _mission_seeds[25].key_two = 801313691851161081;
+    _mission_seeds[26].key_one = 862491081071401361; _mission_seeds[26].key_two = 621762243481711991;
+    _mission_seeds[27].key_one = 701343921281233701; _mission_seeds[27].key_two = 641181772623041231;
+    _mission_seeds[28].key_one = 691523291343851691; _mission_seeds[28].key_two = 911361571541832091;
+    _mission_seeds[29].key_one = 821863262262321021; _mission_seeds[29].key_two = 771143531683812951;
+    _mission_seeds[30].key_one = 111662821191132782; _mission_seeds[30].key_two = 621881471123641071;
+    _mission_seeds[31].key_one = 141743301863071391; _mission_seeds[31].key_two = 413882183112721571;
+    _mission_seeds[32].key_one = 372331612223823582; _mission_seeds[32].key_two = 281811412071131552;
+    _mission_seeds[33].key_one = 112681512841201772; _mission_seeds[33].key_two = 541881631372941041;
+    _mission_seeds[34].key_one = 391652301401722861; _mission_seeds[34].key_two = 332743153091501291;
+    _mission_seeds[35].key_one = 543171101771621122; _mission_seeds[35].key_two = 452813491091562311;
+    _mission_seeds[36].key_one = 591741541212652181; _mission_seeds[36].key_two = 921591123951811081;
+    _mission_seeds[37].key_one = 71421041241921663; _mission_seeds[37].key_two = 621742121071601151;
+    _mission_seeds[38].key_one = 423971281601541143; _mission_seeds[38].key_two = 862353501961691832;
+    _mission_seeds[39].key_one = 643781191163711321; _mission_seeds[39].key_two = 752491653201131811;
+    _mission_seeds[40].key_one = 651471212353691751; _mission_seeds[40].key_two = 941552882101281822;
+    _mission_seeds[41].key_one = 171563111341812283; _mission_seeds[41].key_two = 861852381681421101;
+    _mission_seeds[42].key_one = 311291581291742123; _mission_seeds[42].key_two = 361101633172582981;
+    _mission_seeds[43].key_one = 51381601991652511; _mission_seeds[43].key_two = 101533881581011381;
+    _mission_seeds[44].key_one = 242832582443601101; _mission_seeds[44].key_two = 691863332272821001;
+    _mission_seeds[45].key_one = 383323911301632991; _mission_seeds[45].key_two = 351283883542041101;
+    _mission_seeds[46].key_one = 231451862513991762; _mission_seeds[46].key_two = 71852272551801021;
+    _mission_seeds[47].key_one = 421471241372901212; _mission_seeds[47].key_two = 521371561301101801;
+    _mission_seeds[48].key_one = 311182011872191741; _mission_seeds[48].key_two = 721741881233911961;
+    _mission_seeds[49].key_one = 551921801333661871; _mission_seeds[49].key_two = 61822951412251491;
+    _mission_seeds[50].key_one = 112173662223382781; _mission_seeds[50].key_two = 981371661333931181;
+    _mission_seeds[51].key_one = 382351621532971172; _mission_seeds[51].key_two = 582761971301612161;
+    _mission_seeds[52].key_one = 601881231801683132; _mission_seeds[52].key_two = 431623191211961381;
+    _mission_seeds[53].key_one = 632131801361723772; _mission_seeds[53].key_two = 121373621312841921;
+    _mission_seeds[54].key_one = 522591941763242101; _mission_seeds[54].key_two = 511001452883411491;
+    _mission_seeds[55].key_one = 172841132863011331; _mission_seeds[55].key_two = 911222471951971813;
+    _mission_seeds[56].key_one = 241812573163621431; _mission_seeds[56].key_two = 851771541401051211;
+    _mission_seeds[57].key_one = 871112482401782372; _mission_seeds[57].key_two = 41663212391152081;
+    _mission_seeds[58].key_one = 231531711132951681; _mission_seeds[58].key_two = 661172751541721771;
+    _mission_seeds[59].key_one = 311251763021773921; _mission_seeds[59].key_two = 173421491231871081;
+
+
+    // lower left corner:
+    coord_E = -100.0f;
+    coord_N = -100.0f;
+    }
 
     int k = _parameters.mission_seed;
     _keys key;
@@ -505,9 +648,7 @@ void AA241xMission::build_plumes() {
     int diameter[5] = {-2,-2,-2,-2,-2};
     float North[5] = {0.0,0.0,0.0,0.0,0.0};
     float East[5] = {0.0,0.0,0.0,0.0,0.0};
-    // lower left corner:
-    float coord_E =  -93.574;
-    float coord_N = -197.675;
+
 
     // parse key:
     uint64_t key_cur, N, n, cur, old, star;
@@ -542,23 +683,34 @@ void AA241xMission::build_plumes() {
     // convert cells to East, North coordinates:
     for (int i = 0; i<5; i++) {
         if (diameter[i] > 0) {
-            int findrow = cell[i]/5;
-            int findcol = cell[i]%5;
+            int findrow, findcol;
+            if (_parameters.lake_lag == 0){
+                findrow = cell[i]/5;
+                findcol = cell[i]%5; }
+            else {
+                findrow = cell[i]/10;
+                findcol = cell[i]%10; }
             float np, ep;
             np = 10.0f + (float)findrow*20.0f;
             ep = 10.0f + (float)findcol*20.0f;
-
-            // rotate coordinates:
-            float theta = -atanf(1/11.75); // angle of Coyote Hill fly-area rectangle to vertical
-            North[i] = coord_N + cosf(theta)*np - sinf(theta)*ep;
-            East[i]  = coord_E + sinf(theta)*np + cosf(theta)*ep;
+            
+            if (_parameters.lake_lag == 0){
+                // rotate coordinates: (useful for Coyote Hill)
+                float theta = -atanf(1/11.75); // angle of Coyote Hill fly-area rectangle to vertical
+                North[i] = cosf(theta)*np - sinf(theta)*ep;
+                East[i]  = sinf(theta)*np + cosf(theta)*ep; 
+            } 
+            else {
+                North[i] = np;
+                East[i] = ep; 
+            }
         } 
     }
 
     // assign plume data:
     for (int i = 0; i<5; i++) {
-        _plume_N[i] = North[i];
-        _plume_E[i] = East[i];
+        _plume_N[i] = coord_N + North[i];
+        _plume_E[i] = coord_E + East[i];
         _plume_radius[i] = (float)diameter[i]*20/2;
     }
 
@@ -576,10 +728,14 @@ void AA241xMission::check_start()
 		mavlink_log_info(&_mavlink_log_pub, "Check start ran");
 	}
 
-	if (!_out_of_bounds) {
+	if (!_parameters.bounds_enforced == 1) {
+		mavlink_log_critical(&_mavlink_log_pub, "Boundaries not enforced; started at %5.1f E, %5.1f N",(double)_cur_pos.E,(double)_cur_pos.N);
+		_in_mission = true;
+	} else if (!_out_of_bounds) {
 		_in_mission = true;
             	// MESSAGE, competition started
             	mavlink_log_info(&_mavlink_log_pub, "Valid starting position at %5.1f E, %5.1f N",(double)_cur_pos.E,(double)_cur_pos.N);
+
         } else {
         	_mission_failed = true;
 		mavlink_log_critical(&_mavlink_log_pub, "Invalid starting position; mission failed");
