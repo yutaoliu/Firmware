@@ -57,6 +57,7 @@ const float PI =3.14159265358979f;
 Target currTarget;
 Target prevTarget;
 std::vector<Target> targetList;
+std::vector<Target> temp_targetList;
 int currTargetIndex = 0;
 int currPhase = 0;
 
@@ -76,6 +77,7 @@ Aircraft aircraft = Aircraft(0.87, 0.8, 6.0, 0.103, 10.0, 15.0);*/
 void fillTargetList() {
     // Target(East, North, Radius)
     targetList.clear();
+    temp_targetList.clear();
     if ((int) high_data.field3 == 9 || (int) high_data.field3 == 15 || currPhase == 4) {
         Target target1;
         Target target2;
@@ -119,6 +121,7 @@ void fillTargetList() {
         targetList.push_back(target3);
         targetList.push_back(target4);
     } else { // mission
+        // fill in targetList
         for (int i = 0; i < 5; i++) {
             if (plume_radius[i] > 0) { //
                 Target target;
@@ -128,6 +131,27 @@ void fillTargetList() {
                 targetList.push_back(target);
             }
         }
+        // rearrange targetList --> closest target comes first
+        int numTarget = targetList.size();
+        Target start;
+        start.N = position_N;
+        start.E = position_E;
+        for (int i = 0; i < numTarget - 1; i++) {
+            float minDistance = 1000000.0f;
+            int minIndex = 0;
+            for (int j = 0; j < targetList.size() - 1; j++) {
+                float distance = sqrt(pow(start.E - targetList[j].E, 2) + pow(start.N - targetList[j].N, 2));
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    minIndex = j;
+                }
+            }
+            temp_targetList.push_back(targetList[minIndex]);
+            start.N = targetList[minIndex].N;
+            start.E = targetList[minIndex].E;
+            targetList.erase(targetList.begin() + minIndex);
+        }
+        targetList = temp_targetList;
     }
 }
 
