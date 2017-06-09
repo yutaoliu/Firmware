@@ -38,7 +38,7 @@
  * control law for the AA241x class.
  *
  *  @author Adrien Perkins		<adrienp@stanford.edu>
- *  @author YOUR NAME			<YOU@EMAIL.COM>
+ *  @author Chonnuttida Koracharkornradt<kchonnut@stanford.edu>
  */
 
 #include <uORB/uORB.h>

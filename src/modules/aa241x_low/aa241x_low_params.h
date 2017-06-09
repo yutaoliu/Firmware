@@ -37,7 +37,7 @@
  * Definition of custom parameters for low priority controller.
  *
  *  @author Adrien Perkins		<adrienp@stanford.edu>
- *  @author YOUR NAME			<YOU@EMAIL.COM>
+ *  @author Chonnuttida Koracharkornradt<kchonnut@stanford.edu>
  */
 
 #ifndef AA241X_LOW_PARAM_H_

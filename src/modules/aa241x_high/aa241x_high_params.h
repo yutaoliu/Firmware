@@ -38,6 +38,7 @@
  * being written for AA241x.
  *
  *  @author Adrien Perkins		<adrienp@stanford.edu>
+ *  @author Chonnuttida Koracharkornradt<kchonnut@stanford.edu>
  */
 #pragma once
 

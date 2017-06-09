@@ -38,7 +38,7 @@
  * logic to be executed with a lower priority, and "slowly"
  *
  *  @author Adrien Perkins		<adrienp@stanford.edu>
- *  @author YOUR NAME			<YOU@EMAIL.COM>
+ *  @author Chonnuttida Koracharkornradt<kchonnut@stanford.edu>
  */
 
 

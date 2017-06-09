@@ -37,7 +37,7 @@
  * Header file for student's fixedwing control law.
  *
  *  @author Adrien Perkins		<adrienp@stanford.edu>
- *  @author YOUR NAME			<YOU@EMAIL.COM>
+ *  @author Chonnuttida Koracharkornradt<kchonnut@stanford.edu>
  */
 #pragma once
 

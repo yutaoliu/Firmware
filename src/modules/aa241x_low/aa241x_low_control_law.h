@@ -38,7 +38,7 @@
  * Runs at ~ XX HZ TODO: figure out XX
  *
  *  @author Adrien Perkins		<adrienp@stanford.edu>
- *  @author YOUR NAME			<YOU@EMAIL.COM>
+ *  @author Chonnuttida Koracharkornradt<kchonnut@stanford.edu>
  */
 #ifndef AA241X_LOW_H_
 #define AA241X_LOW_H_
