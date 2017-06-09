@@ -78,7 +78,7 @@ void fillTargetList() {
     // Target(East, North, Radius)
     targetList.clear();
     temp_targetList.clear();
-    if ((int) high_data.field3 == 9 || (int) high_data.field3 == 15 || currPhase == 4) {
+    if ((int) high_data.field3 == 9 || (int) high_data.field3 == 15 || currPhase == 4 || mission_failed == true) {
         Target target1;
         Target target2;
         Target target3;
@@ -220,6 +220,16 @@ void low_loop()
             currTarget = targetList[currTargetIndex];
             computeABC();
         }
+    }
+
+    if (mission_failed == true) {
+        currPhase = 0;
+        fillTargetList();
+        prevTarget.N = high_data.field4; // latest position_N before switch to auto mode
+        prevTarget.E = high_data.field5; // latest position_E before switch to auto mode
+        currTargetIndex = 0;
+        currTarget = targetList[0];
+        computeABC();
     }
 
     // logging data
