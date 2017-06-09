@@ -131,6 +131,7 @@ void fillTargetList() {
                 //targetList.push_back(target);
                 temp_targetList.push_back(target);
             }
+
         }
         // rearrange targetList --> closest target comes first --> store in targetList
         int numTarget = temp_targetList.size();

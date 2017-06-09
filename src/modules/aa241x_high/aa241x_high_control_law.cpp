@@ -58,6 +58,7 @@ float altitude_desired = 0.0f;
 float speed_desired = 10.0f;
 const float PI =3.14159265358979f;
 float input_c = 0.0f;
+float lastThrottleSetting = 0.0f;
 
 /*
  * Do bounds checking to keep the roll/pitch/yaw/throttle correction within the -1..1 limits of the servo output
@@ -172,6 +173,7 @@ void flight_control() {
                 speed_desired = aah_parameters.input_speed;
                 high_data.field4 = position_N;
                 high_data.field5 = position_E;
+                lastThrottleSetting = man_throttle_in;
         }
 
         switch (aah_parameters.caseNum) {
@@ -334,7 +336,8 @@ void flight_control() {
             roll_servo_out = line_acquisition_transitions();
             pitch_servo_out = altitude_control();
             yaw_servo_out = yaw_control();
-            throttle_servo_out = man_throttle_in;
+            //throttle_servo_out = man_throttle_in;
+            throttle_servo_out = lastThrottleSetting;
             high_data.field3 = 18;
             if (mission_failed == true) {
                 roll_desired = -0.5;
