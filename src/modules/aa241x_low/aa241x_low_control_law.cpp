@@ -222,7 +222,7 @@ void low_loop()
         }
     }
 
-    if (mission_failed == true) {
+    if (mission_failed == true || currPhase == 4) {
         currPhase = 0;
         fillTargetList();
         prevTarget.N = high_data.field4; // latest position_N before switch to auto mode
