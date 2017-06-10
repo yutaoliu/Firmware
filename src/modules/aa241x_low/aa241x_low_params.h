@@ -60,6 +60,7 @@ struct aal_params {
 
         float distance;
         float targetBoundary;
+        float offset;
 };
 
 
@@ -76,6 +77,7 @@ struct aal_param_handles {
 
         param_t distance;
         param_t targetBoundary;
+        param_t offset;
 };
 
 /**

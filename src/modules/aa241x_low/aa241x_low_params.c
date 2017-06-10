@@ -61,6 +61,7 @@
  */
 PARAM_DEFINE_FLOAT(AAL_DISTANCE, 100.0f);
 PARAM_DEFINE_FLOAT(AAL_BOUNDARY, 20.0f);
+PARAM_DEFINE_FLOAT(AAL_OFFSET, 0.0f);
 
 int aal_parameters_init(struct aal_param_handles *h)
 {
@@ -75,6 +76,7 @@ int aal_parameters_init(struct aal_param_handles *h)
 	 */
         h->distance     =       param_find("AAL_DISTANCE");
         h->targetBoundary =     param_find("AAL_BOUNDARY");
+        h->offset       =       param_find("AAL_OFFSET");
 	return OK;
 }
 
@@ -85,5 +87,6 @@ int aal_parameters_update(const struct aal_param_handles *h, struct aal_params *
 	// the corresponding variable name
         param_get(h->distance, &(p->distance));
         param_get(h->targetBoundary, &(p->targetBoundary));
+        param_get(h->offset, &(p->offset));
 	return OK;
 }

@@ -123,7 +123,7 @@ void fillTargetList() {
     } else { // mission
         // fill in temp_targetList
         for (int i = 0; i < 5; i++) {
-            if (plume_radius[i] > 0) { //
+            if (plume_radius[i] > 0 && plume_E[i] < 110 - aal_parameters.offset && plume_N[i] < 110 - aal_parameters.offset) {
                 Target target;
                 target.N = plume_N[i];
                 target.E = plume_E[i];
