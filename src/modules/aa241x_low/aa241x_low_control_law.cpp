@@ -222,14 +222,8 @@ void low_loop()
         }
     }
 
-    if (mission_failed == true || currPhase == 4) {
-        currPhase = 0;
-        fillTargetList();
-        prevTarget.N = high_data.field4; // latest position_N before switch to auto mode
-        prevTarget.E = high_data.field5; // latest position_E before switch to auto mode
-        currTargetIndex = 0;
-        currTarget = targetList[0];
-        computeABC();
+    if (mission_failed == true) {
+        currPhase = 4;
     }
 
     // logging data
